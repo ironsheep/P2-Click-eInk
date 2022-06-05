@@ -5,6 +5,27 @@ Driving the Mikroe eInk Click with our P2
 
 [![License][license-shield]](LICENSE)
 
+
+## eInk CLICK
+
+
+## Table of Contents
+
+On this Page:
+
+- TBA
+
+Additional pages:
+
+- TBA
+
+## How to Contribute
+
+This is a project supporting our P2 Development Community. Please feel free to contribute to this project. You can contribute in the following ways:
+
+- File **Feature Requests** or **Issues** (describing things you are seeing while using our code) at the [Project Issue Tracking Page](hhttps://github.com/ironsheep/P2-Click-UWB/issues)
+- Fork this repo and then add your code to it. Finally, create a Pull Request to contribute your code back to this repository for inclusion with the projects code. See [CONTRIBUTING](CONTRIBUTING.md)
+
 ---
 
 > If you like my work and/or this has helped you in some way then feel free to help me out for a couple of :coffee:'s or :pizza: slices!
