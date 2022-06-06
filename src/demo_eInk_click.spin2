@@ -1,0 +1,118 @@
+'' =================================================================================================
+''
+''   File....... demo_uwb_click.spin2
+''   Purpose.... Demonstrate interaction with the Mikroe UWB Click module
+''   Authors.... Stephen M Moraco
+''               -- Copyright (c) 2022 Iron Sheep Productions, LLC
+''               -- see below for terms of use
+''   E-mail..... stephen@ironsheep.biz
+''   Started.... Apr 2022
+''   Updated.... 23 Apr 2022
+''
+'' =================================================================================================
+
+CON { timing }
+
+  CLK_FREQ = 270_000_000                                        ' system freq as a constant
+  _clkfreq = CLK_FREQ                                           ' set system clock
+
+CON { fixed io pins }
+
+  RX1      = 63  { I }                                          ' programming / debug
+  TX1      = 62  { O }
+
+  SF_CS    = 61  { O }                                          ' serial flash
+  SF_SCK   = 60  { O }
+  SF_SDO   = 59  { O }
+  SF_SDI   = 58  { I }
+
+CON { click module io pins }
+
+    ' our Click module is on 16-31!
+    UWB_CLICK_PINGROUP = uwbRadio.PINS_P16_P31
+
+OBJ { the object being demo'd }
+
+    uwbRadio : "isp_uwb_click"
+
+PUB main() | ok, deviceID, uniqMSB, uniqLSB
+'' DEMO let's see what our radio hears!
+
+    ' tell object where the module is connected
+    ok := uwbRadio.start(UWB_CLICK_PINGROUP)
+    if not ok
+        debug("* SPI FAILED to start")
+    else
+        debug("* SPI started OK")
+
+        uwbRadio.uwb_set_mode(uwbRadio.UWB_MODE_IDLE)
+
+        deviceID := uwbRadio.getDeviceId()
+
+        uniqMSB, uniqLSB := uwbRadio.getUniqueId()
+
+        uwbRadio.stop()
+
+DAT { demo test data }
+
+    dev_mode        BYTE    uwbRadio.UWB_MODE_TX
+    data_tx         BYTE    "MikroE",0              ' Transmit buffer
+    temp_len        BYTE    0                       ' Transmit length read var
+    transmit_data   BYTE    0[256]                  ' Recieved data buffer
+    didInterrupt    BYTE    0                       ' interrupt status var
+
+PRI application_task()
+    didInterrupt := uwbRadio.uwb_get_qint_pin_status()
+
+    if uwbRadio.getDeviceMode() == uwbRadio.UWB_MODE_RX
+        if didInterrupt
+            ' Reading transtimed data logs it and resetting to receive mode
+            uwbRadio.uwb_set_mode(uwbRadio.UWB_MODE_IDLE)
+            uwbRadio.uwb_clear_status()
+            temp_len := uwbRadio.uwb_get_transmit_len()
+            uwbRadio.uwb_get_transmit(@transmit_data[ 0 ], temp_len)
+            'mikrobus_logWrite("Received data:", _LOG_TEXT)
+            'mikrobus_logWrite(transmit_data, _LOG_LINE)
+            'mikrobus_logWrite(" - Receive done - ", _LOG_LINE)
+            uwbRadio.uwb_set_mode(uwbRadio.UWB_MODE_RX)
+            uwbRadio.uwb_start_transceiver()
+    elseif uwbRadio.getDeviceMode() == uwbRadio.UWB_MODE_TX
+        if didInterrupt
+            ' Transmits data resetting to transmit mode and sets 2sec delay
+            'mikrobus_logWrite(" - Transmit done - ", _LOG_LINE)
+            uwbRadio.uwb_set_mode(uwbRadio.UWB_MODE_IDLE)
+            uwbRadio.uwb_clear_status()
+            uwbRadio.uwb_set_transmit(@data_tx[ 0 ], 6)
+            uwbRadio.uwb_set_mode(uwbRadio.UWB_MODE_TX)
+            uwbRadio.uwb_start_transceiver()
+            waitms(2000)
+
+
+
+CON { license }
+{{
+
+ -------------------------------------------------------------------------------------------------
+  MIT License
+
+  Copyright (c) 2022 Iron Sheep Productions, LLC
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+ =================================================================================================
+}}

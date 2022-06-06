@@ -1,0 +1,1254 @@
+'' =================================================================================================
+''
+''   File....... isp_uwb_click.spin2
+''   Purpose.... Interface to the Mikroe UWB Click module
+''   Authors.... Stephen M Moraco
+''               -- Copyright(c) 2022 Iron Sheep Productions, LLC
+''               -- see below for terms of use
+''   E-mail..... stephen@ironsheep.biz
+''   Started.... Apr 2022
+''   Updated.... 23 Apr 2022
+''
+'' =================================================================================================
+
+CON { Public Interface Constants }
+
+    '  ID where the P2 Eval Motor Board is plugged in(Enum)
+    '   (Names of supported PinGroups)
+    #0[16], PINS_P0_P15, PINS_P16_P31, PINS_P32_P47
+    ' return value when user makes bad choice
+    INVALID_PIN_BASE = -1
+
+
+OBJ { Objects / constants included by this object }
+
+  spi  : "jm_ez_spi"                                            '   smart pin mode 0 spi coms
+
+
+CON { Test PINs for LA measurement }
+
+CON { Click Module offsets }
+ {
+
+    P2 Eval Click Adapter IO Assignments
+    * - used by UWB(Ultra Wide Band) board
+
+               ┌─────────────────────────────┐
+    Base + 06  │ [ ] AN              PWM [ ] │  Base + 05
+               │                             │
+    Base + 07  │(*) RST             INT(*) │  Base + 04
+               │                             │
+    Base + 08  │(*) CS            <-- RX() │  Base + 03 (marked TX on Click modules)
+               │                             │
+    Base + 09  │(*) SCK  <--      --> TX() │  Base + 02 (marked RX on Click modules)
+               │                             │
+    Base + 10  │(*) MISO -->     --> SCL() │  Base + 01
+               │                             │
+    Base + 11  │(*) MOSI <--     <-> SDA() │  Base + 00
+               │                             │
+               │(*) 3v3              5v0() │
+               │                             │
+               │(*) GND             GND(*) │
+               └─────────────────────────────/
+}
+
+    ' specs for Click UWB board
+   CLICK_OFST_MOSI = 11     ' Mikroe pin 6  - SPI Data - In
+   CLICK_OFST_MISO = 10     ' Mikroe pin 5  - SPI Data - Out
+   CLICK_OFST_SCK = 9       ' Mikroe pin 4  - SPI Clock - Out
+   CLICK_OFST_CS = 8        ' Mikroe pin 3  - SPI Chip Select - Out
+   CLICK_OFST_RST = 7       ' Mikroe pin 2  - Reset - Out
+   'CLICK_OFST_AN = 6       ' N/C  Mikroe pin 1
+
+   'CLICK_OFST_PWM = 5      ' N/C  Mikroe pin 16
+   CLICK_OFST_INT = 4       ' Mikroe pin 15 - Interrupt - In
+   'CLICK_OFST_RX = 3       ' N/C  Mikroe pin 14
+   'CLICK_OFST_TX = 2       ' N/C  Mikroe pin 13
+   'CLICK_OFST_SCL = 1      ' N/C  Mikroe pin 12
+   'CLICK_OFST_SDA = 0      ' N/C  Mikroe pin 11
+
+CON { UWB Constants }
+
+{
+ * error_code Error Code
+ *
+}
+
+    UWB_OK           = $00
+    UWB_INIT_ERROR   = $FF
+
+
+{
+ * no_sub_address_macro No sub address macro
+ *
+}
+    UWB_SUB_NO                       = $00
+
+
+{
+ * register_address_macros Register address macros
+ *
+}
+    UWB_REG_DEV_ID                   = $00
+    UWB_REG_EU_ID                    = $01
+    UWB_REG_PAN_ID                   = $03
+    UWB_REG_SYS_CFG                  = $04
+    UWB_REG_SYS_CNT                  = $06
+    UWB_REG_SYS_TX_CTRL              = $08
+    UWB_REG_TX_DATA_BUF              = $09
+    UWB_REG_DX_TIME                  = $0A
+    UWB_REG_RX_TIMEOUT               = $0C
+    UWB_REG_SYS_CTRL                 = $0D
+    UWB_REG_SYS_EVENT_MASK           = $0E
+    UWB_REG_EVENT_STATUS             = $0F
+    UWB_REG_RX_INFO                  = $10
+    UWB_REG_RX_BUF                   = $11
+    UWB_REG_RX_QUALITY_INFO          = $12
+    UWB_REG_RX_TIME_INTERVAL         = $13
+    UWB_REG_RX_TIME_OFFSET           = $14
+    UWB_REG_RX_MESSAGE_TOA           = $15
+    UWB_REG_TX_MESSAGE_TOS           = $17
+    UWB_REG_TX_ANTD                  = $18
+    UWB_REG_SYS_STATE                = $19
+    UWB_REG_ACK_RESPONSE_TIME        = $1A
+    UWB_REG_RX_SNIFF_CFG             = $1D
+    UWB_REG_TX_POWER                 = $1E
+    UWB_REG_CHN_CTRL                 = $1F
+    UWB_REG_SFD                      = $21
+    UWB_REG_AUTO_GAIN_CFG            = $23
+    UWB_REG_EXTERNAL_SYNC            = $24
+    UWB_REG_READ_AA_DATA             = $25
+    UWB_REG_GPIO_CTRL                = $26
+    UWB_REG_DRX_CFG                  = $27
+    UWB_REG_RF_CFG                   = $28
+    UWB_REG_TX_CALIBRATION           = $2A
+    UWB_REG_FREQ_SYNTH_CTRL          = $2B
+    UWB_REG_ALWAYS_ON_REG            = $2C
+    UWB_REG_OTP_INTERFACE            = $2D
+    UWB_REG_LEAD_EDGE_DET_CTRL       = $2E
+    UWB_REG_DIGITAL_DIAG_IF          = $2F
+    UWB_REG_POWER_MANAGE_SYS_CTRL    = $36
+
+
+{
+ * otp_memory OTP memory
+ *
+}
+    UWB_OTP_WRITE                    = $00
+    UWB_OTP_ADR                      = $04
+    UWB_OTP_CTRL                     = $06
+    UWB_OTP_STATUS                   = $08
+    UWB_OTP_RDAT                     = $0A
+    UWB_OTP_SRDAT                    = $0E
+    UWB_OTP_SF                       = $12
+
+
+{
+ * data_rate Data rate
+ *
+}
+    UWB_DATA_RATE_110KBSPS           = $00
+    UWB_DATA_RATE_850KBSPS           = $01
+    UWB_DATA_RATE_6800KBSPS          = $02
+
+
+{
+ * pulse_frequency Pulse frequency
+ *
+}
+    UWB_PULSTE_FREQ_4MHZ             = $00
+    UWB_PULSTE_FREQ_16MHZ            = $01
+    UWB_PULSTE_FREQ_64MHZ            = $02
+
+
+{
+ * preamble_length Preamble length
+ *
+}
+    UWB_PREAMBLE_LEN_64              = $01
+    UWB_PREAMBLE_LEN_128             = $05
+    UWB_PREAMBLE_LEN_256             = $09
+    UWB_PREAMBLE_LEN_512             = $0D
+    UWB_PREAMBLE_LEN_1024            = $02
+    UWB_PREAMBLE_LEN_1536            = $06
+    UWB_PREAMBLE_LEN_2048            = $0A
+    UWB_PREAMBLE_LEN_4096            = $03
+
+
+{
+ * pac_size PAC size
+ *
+}
+    UWB_PAC_SIZE_8                   = 8
+    UWB_PAC_SIZE_16                  = 16
+    UWB_PAC_SIZE_32                  = 32
+    UWB_PAC_SIZE_64                  = 64
+
+
+{
+ * channel Channel
+ *
+}
+    UWB_CHANNEL_1                    = 1
+    UWB_CHANNEL_2                    = 2
+    UWB_CHANNEL_3                    = 3
+    UWB_CHANNEL_4                    = 4
+    UWB_CHANNEL_5                    = 5
+    UWB_CHANNEL_7                    = 7
+
+
+{
+ * preamble_code Preamble code
+ *
+}
+    UWB_PREAMBLE_CODE_1              = 1
+    UWB_PREAMBLE_CODE_2              = 2
+    UWB_PREAMBLE_CODE_3              = 3
+    UWB_PREAMBLE_CODE_4              = 4
+    UWB_PREAMBLE_CODE_5              = 5
+    UWB_PREAMBLE_CODE_6              = 6
+    UWB_PREAMBLE_CODE_7              = 7
+    UWB_PREAMBLE_CODE_8              = 8
+    UWB_PREAMBLE_CODE_9              = 9
+    UWB_PREAMBLE_CODE_10             = 10
+    UWB_PREAMBLE_CODE_11             = 11
+    UWB_PREAMBLE_CODE_12             = 12
+    UWB_PREAMBLE_CODE_13             = 13
+    UWB_PREAMBLE_CODE_14             = 14
+    UWB_PREAMBLE_CODE_15             = 15
+    UWB_PREAMBLE_CODE_16             = 16
+    UWB_PREAMBLE_CODE_17             = 17
+    UWB_PREAMBLE_CODE_18             = 18
+    UWB_PREAMBLE_CODE_19             = 19
+    UWB_PREAMBLE_CODE_20             = 20
+    UWB_PREAMBLE_CODE_21             = 21
+    UWB_PREAMBLE_CODE_22             = 22
+    UWB_PREAMBLE_CODE_23             = 23
+    UWB_PREAMBLE_CODE_24             = 24
+
+
+{
+ * frame_length Frame length
+ *
+}
+    UWB_FRAME_LEN_NORMAL             = $00
+    UWB_FRAME_LEN_EXTENDED           = $03
+
+
+{
+ * configuration_tranmit_type_mode Configuration tranmit type mode
+ *
+}
+    UWB_HIGH                         = 1
+    UWB_LOW                          = 0
+
+
+{
+ * device_mode Device mode
+ *
+}
+    UWB_DEV_ERROR                    = $FF
+    UWB_DEV_OK                       = $00
+
+
+{
+ * pin_bit_state Pin/bit state
+ *
+}
+    UWB_MODE_IDLE                    = 1
+    UWB_MODE_RX                      = 2
+    UWB_MODE_TX                      = 3
+
+
+{
+ * function_return Function return
+ *
+}
+    UWB_TAG                          = $DECA
+
+
+{
+ * masks Masks
+ *
+}
+    WRITE_MASK                       = $80
+    SUB_MASK                         = $40
+    READ_MASK                        = $00
+    SUB_EXT_MASK                     = $80
+
+
+{
+ * tunes Tunes
+ *
+}
+    AGC_TUNE1_SUB                    = $04
+    AGC_TUNE2_SUB                    = $0C
+    AGC_TUNE3_SUB                    = $12
+    LEN_AGC_TUNE1                    = 2
+    LEN_AGC_TUNE2                    = 4
+    LEN_AGC_TUNE3                    = 2
+    DRX_TUNE0b_SUB                   = $02
+    DRX_TUNE1a_SUB                   = $04
+    DRX_TUNE1b_SUB                   = $06
+    DRX_TUNE2_SUB                    = $08
+    DRX_TUNE4H_SUB                   = $26
+    LEN_DRX_TUNE0b                   = 2
+    LEN_DRX_TUNE1a                   = 2
+    LEN_DRX_TUNE1b                   = 2
+    LEN_DRX_TUNE2                    = 4
+    LEN_DRX_TUNE4H                   = 2
+    LDE_CFG1_SUB                     = $0806
+    LDE_RXANTD_SUB                   = $1804
+    LDE_CFG2_SUB                     = $1806
+    LDE_REPC_SUB                     = $2804
+    LEN_LDE_CFG1                     = 1
+    LEN_LDE_CFG2                     = 2
+    LEN_LDE_REPC                     = 2
+    LEN_LDE_RXANTD                   = 2
+    LEN_TX_POWER                     = 4
+    RF_RXCTRLH_SUB                   = $0B
+    RF_TXCTRL_SUB                    = $0C
+    LEN_RF_RXCTRLH                   = 1
+    LEN_RF_TXCTRL                    = 4
+    TC_PGDELAY_SUB                   = $0B
+    LEN_TC_PGDELAY                   = 1
+    TC_SARC                          = $00
+    TC_SARL                          = $03
+    FS_PLLCFG_SUB                    = $07
+    FS_PLLTUNE_SUB                   = $0B
+    FS_XTALT_SUB                     = $0E
+    LEN_FS_PLLCFG                    = 4
+    LEN_FS_PLLTUNE                   = 1
+    LEN_FS_XTALT                     = 1
+
+    ' UWB Tx Buffer Size
+    UWB_BUFFER_SIZE_IN_BYTES = 1024
+
+    ' SPI Communication Freq w/UWB Board
+    UWB_SPI_CLK_MHZ = 20_000
+
+DAT { UWB Device Config }
+
+    ' Structure for device configuration(orig: uwb_dev_t)
+    dev_mode        BYTE    UWB_MODE_IDLE
+    extended_frame  BYTE    UWB_FRAME_LEN_NORMAL
+    pac_size        BYTE    UWB_PAC_SIZE_8
+    pulse_freq      BYTE    UWB_PULSTE_FREQ_16MHZ
+    data_rate       BYTE    UWB_DATA_RATE_850KBSPS
+    preamble_len    BYTE    UWB_PREAMBLE_LEN_256
+    preamble_code   BYTE    UWB_PREAMBLE_CODE_3
+    channel         BYTE    UWB_CHANNEL_5
+    antenna_delay   WORD    16384
+    antenna_calib   BYTE    0
+    smart_power     BYTE    1
+    frame_check     BYTE    1
+    permanent_rx    BYTE    1
+    debounce_clk_en BYTE    0
+
+
+
+PUB null()
+
+'' This is not a top-level object
+
+DAT { object class data }
+
+    pinbase long    0
+
+
+PUB start(eClickBasePin) : ok | legalBase
+'' Specify the eval board connect location for the UWB click and start SPI
+' REF https://www.mikroe.com/uwb-click
+   ' ensure we only use legal values
+    legalBase := eClickBasePin
+    case eClickBasePin
+        PINS_P0_P15 :
+        PINS_P16_P31 :
+        PINS_P32_P47 :
+        OTHER :
+            legalBase := INVALID_PIN_BASE
+
+    ' if legal base-pin then start cog
+    ok := false
+    if legalBase <> INVALID_PIN_BASE
+        pinbase := legalBase                    ' record base pin number
+        ' configure inputs
+        pinfloat(pinbase + CLICK_OFST_INT)
+        'pinfloat(pinbase + CLICK_OFST_MOSI)
+        ' assert reset while starting up
+        pinlow(pinbase + CLICK_OFST_RST)
+        spi_master_deselect_device()
+        ok := spi.start(pinbase + CLICK_OFST_MISO, pinbase + CLICK_OFST_MOSI, pinbase + CLICK_OFST_SCK, UWB_SPI_CLK_MHZ)                     ' spi to UWB @ 3MHz(can run at 20MHz)
+        ' reset device
+        resetDevice()
+
+
+PUB stop()
+'' Stop the UWB Click SPI Object
+    spi.stop()
+
+PUB enableDevice()
+'' Enable the UWB Device(pull it out of reset)
+    pinh(pinbase + CLICK_OFST_RST)                                 ' de-assert reset
+
+PUB resetDevice()
+'' Reset the UWB device
+    pinl(pinbase + CLICK_OFST_RST)                                 ' assert reset
+    waitms(100)
+    pinh(pinbase + CLICK_OFST_RST)                                 ' de-assert reset
+    waitms(100)
+
+PUB getDeviceId() : dvcID | workValue
+'' Read and return value from the device-id register of Decawave's DW1000 Ultra-Wideband(UWB) transceiver
+    ' Read value into our 4-byte long
+    uwb_generic_read(UWB_SUB_NO, UWB_REG_DEV_ID, @workValue, 4)
+    dvcID := workValue
+    debug("uwb: getDeviceId() ", uhex_long(dvcID))
+
+PUB getUniqueId() : uniqueIdMSB, uniqueIdLSB | LONG uniqBffr[2]
+'' Return the hardware unique ID(guid equiv.) - 8 bytes long
+    uwb_generic_read(UWB_SUB_NO, UWB_REG_EU_ID, @uniqBffr, 8)
+    uniqueIdMSB := LONG [@uniqBffr][1]
+    uniqueIdLSB := LONG [@uniqBffr][0]
+
+    debug("uwb: getUniqueId() ", uhex_long(uniqueIdMSB), uhex_long(uniqueIdLSB), UHEX_BYTE_ARRAY(@uniqBffr, 8))
+
+PUB getDeviceMode() : nCurrMode
+'' Return the current UWB mode [UWB_MODE_IDLE, UWB_MODE_RX, or UWB_MODE_TX]
+    nCurrMode := dev_mode
+
+PUB uwb_set_mode(mode) : status
+'' Set device working mode to [UWB_MODE_IDLE, UWB_MODE_RX, or UWB_MODE_TX]
+''  Returns UWB_OK, or UWB_DEV_ERROR if invalid request
+    ' void uwb_set_mode(uint8_t mode) - Setting device in one working mode
+    status := UWB_OK
+    case mode
+        UWB_MODE_IDLE:
+            uwb_set_bit(UWB_REG_SYS_CTRL, 6, UWB_HIGH)
+        UWB_MODE_RX:
+            uwb_tune_config()
+            uwb_set_bit(UWB_REG_SYS_CTRL, 6, UWB_LOW)
+            uwb_set_bit(UWB_REG_SYS_CFG, 29, UWB_HIGH)
+        UWB_MODE_TX:
+            uwb_tune_config()
+            uwb_set_bit(UWB_REG_SYS_CTRL, 6, UWB_LOW)
+        other:
+            status := UWB_DEV_ERROR
+
+    if status == UWB_OK
+        ' record latest value in device configuration data
+        dev_mode := mode
+
+PUB uwb_set_dev_adr_n_network_id(dev_adr,  net_id) | temp_id, id_len
+'' Configure Addr and network ID
+    BYTE [@temp_id][ 0 ] := (dev_adr >> 8) & $FF
+    BYTE [@temp_id][ 1 ] := dev_adr & $FF
+    BYTE [@temp_id][ 2 ] := (net_id >> 8) & $FF
+    BYTE [@temp_id][ 3 ] := net_id & $FF
+
+    id_len := uwb_reg_data_len(UWB_REG_PAN_ID)
+    uwb_generic_write(UWB_SUB_NO, UWB_REG_PAN_ID, temp_id, id_len)
+
+
+PUB uwb_set_data_rate(rate) : status | BYTE sfd_len, BYTE tx_ctrl[5], WORD adr_len
+'' Set DataRate to [UWB_DATA_RATE_110KBSPS, UWB_DATA_RATE_850KBSPS, or UWB_DATA_RATE_6800KBSPS]
+''  Returns UWB_OK, or UWB_DEV_ERROR if invalid request
+    status := UWB_OK
+    case rate
+        UWB_DATA_RATE_110KBSPS:
+            uwb_set_bit(UWB_REG_SYS_CFG, 22, UWB_HIGH)      ' rxm110k
+            uwb_set_bit(UWB_REG_CHN_CTRL, 17, UWB_HIGH)     ' dwsfd
+            uwb_set_bit(UWB_REG_CHN_CTRL, 20, UWB_LOW)      ' tnssfd
+            uwb_set_bit(UWB_REG_CHN_CTRL, 21, UWB_LOW)      ' rnssfd
+            sfd_len := $40
+        UWB_DATA_RATE_850KBSPS:
+            uwb_set_bit(UWB_REG_SYS_CFG, 22, UWB_LOW)       ' rxm110k
+            uwb_set_bit(UWB_REG_CHN_CTRL, 17, UWB_HIGH)     ' dwsfd
+            uwb_set_bit(UWB_REG_CHN_CTRL, 20, UWB_HIGH)     ' tnssfd
+            uwb_set_bit(UWB_REG_CHN_CTRL, 21, UWB_HIGH)     ' rnssfd
+            sfd_len := $10
+        UWB_DATA_RATE_6800KBSPS:
+            uwb_set_bit(UWB_REG_SYS_CFG, 22, UWB_LOW)       ' rxm110k
+            uwb_set_bit(UWB_REG_CHN_CTRL, 17, UWB_LOW)      ' dwsfd
+            uwb_set_bit(UWB_REG_CHN_CTRL, 20, UWB_LOW)      ' tnssfd
+            uwb_set_bit(UWB_REG_CHN_CTRL, 21, UWB_LOW)      ' rnssfd
+            sfd_len := $08
+        other:
+            status := UWB_DEV_ERROR
+
+    if status == UWB_OK
+        adr_len := uwb_reg_data_len(UWB_REG_SYS_TX_CTRL)
+
+        uwb_generic_read(UWB_SUB_NO, UWB_REG_SYS_TX_CTRL, @tx_ctrl, adr_len)
+        BYTE [@tx_ctrl][ 1 ] &= $83
+        BYTE [@tx_ctrl][ 1 ] |= (rate << 5) & $FF
+        uwb_generic_write(UWB_SUB_NO, UWB_REG_SYS_TX_CTRL, @tx_ctrl, adr_len)
+        uwb_generic_write(UWB_SUB_NO, UWB_REG_SFD, @sfd_len, 1)
+        ' record latest value in device configuration data
+        data_rate := rate
+
+
+PUB uwb_set_pulse_freq(freq) | tx_len, chn_len, chn_ctrl, BYTE tx_ctrl[5]
+'' Set UWB Pulse Freq
+    tx_len := uwb_reg_data_len(UWB_REG_SYS_TX_CTRL)
+    chn_len := uwb_reg_data_len(UWB_REG_CHN_CTRL)
+
+    uwb_generic_read(UWB_SUB_NO, UWB_REG_SYS_TX_CTRL, @tx_ctrl, tx_len)
+    uwb_generic_read(UWB_SUB_NO, UWB_REG_CHN_CTRL, @chn_ctrl, chn_len)
+
+    freq &= $03
+    BYTE [@tx_ctrl][ 2 ] &= $FC
+    BYTE [@tx_ctrl][ 2 ] |= freq & $FF
+    BYTE [@chn_ctrl][ 2 ] &= $F3
+    BYTE [@chn_ctrl][ 2 ] |= (freq << 2) & $FF
+
+    uwb_generic_write(UWB_SUB_NO, UWB_REG_SYS_TX_CTRL, @tx_ctrl, tx_len)
+    uwb_generic_write(UWB_SUB_NO, UWB_REG_CHN_CTRL, @chn_ctrl, chn_len)
+    ' record latest value in device configuration data
+    pulse_freq := freq
+
+
+PUB uwb_set_preamble_len(prealen) : status | tx_len, BYTE tx_ctrl[5]
+'' Set Preamble Length to [UWB_PREAMBLE_LEN_64, UWB_PREAMBLE_LEN_128, UWB_PREAMBLE_LEN_256, UWB_PREAMBLE_LEN_512,
+''   UWB_PREAMBLE_LEN_1024, UWB_PREAMBLE_LEN_1536, UWB_PREAMBLE_LEN_2048, or UWB_PREAMBLE_LEN_4096]
+''  Returns UWB_OK, or UWB_DEV_ERROR if invalid request
+    status := UWB_OK
+    ' validate passed param while
+    '  determinng pac size value and record it in device configuration data
+    case prealen
+        UWB_PREAMBLE_LEN_64, UWB_PREAMBLE_LEN_128:
+            pac_size := UWB_PAC_SIZE_8
+
+        UWB_PREAMBLE_LEN_256, UWB_PREAMBLE_LEN_512:
+            pac_size := UWB_PAC_SIZE_16
+
+        UWB_PREAMBLE_LEN_1024:
+            pac_size := UWB_PAC_SIZE_32
+        UWB_PREAMBLE_LEN_1536, UWB_PREAMBLE_LEN_2048, UWB_PREAMBLE_LEN_4096:
+            pac_size := UWB_PAC_SIZE_64
+        other:
+            status := UWB_DEV_ERROR
+
+    if status == UWB_OK
+        tx_len := uwb_reg_data_len(UWB_REG_SYS_TX_CTRL)
+        uwb_generic_read(UWB_SUB_NO, UWB_REG_SYS_TX_CTRL, @tx_ctrl, tx_len)
+
+        prealen &= $0F
+        BYTE [@tx_ctrl][ 2 ] &= $C3
+        BYTE [@tx_ctrl][ 2 ] |= (prealen << 2) & $FF
+
+        ' record latest value in device configuration data
+        preamble_len := prealen
+
+        uwb_generic_write(UWB_SUB_NO, UWB_REG_SYS_TX_CTRL, @tx_ctrl, tx_len)
+
+
+PUB uwb_set_preamble_code(preamble) | chn_ctrl, chn_len
+'' Set Preamble code to [0-$1f]
+    preamble &= $1F
+
+    chn_len := uwb_reg_data_len(UWB_REG_CHN_CTRL)
+
+    uwb_generic_read(UWB_SUB_NO, UWB_REG_CHN_CTRL, @chn_ctrl, chn_len)
+
+    chn_ctrl[ 2 ] &= $3F
+    chn_ctrl[ 2 ] |=(preamble << 6) & $FF
+    chn_ctrl[ 3 ] := $00
+    chn_ctrl[ 3 ] :=((((preamble >> 2) & $07) |(preamble << 3)) & $FF)
+
+    ' record latest value in device configuration data
+    preamble_code := preamble
+
+    uwb_generic_write(UWB_SUB_NO, UWB_REG_CHN_CTRL, @chn_ctrl, chn_len)
+
+
+PUB uwb_set_channel(mChannel)
+'' Set channel to [0-15]
+''  NOTE: Sets preamble code specific to channel and selected Pulse Freq
+
+    mChannel &= $F
+
+    ' record latest value in device configuration data
+    channel := mChannel
+
+    case channel
+        UWB_CHANNEL_1:
+            if pulse_freq == UWB_PULSTE_FREQ_16MHZ
+                uwb_set_preamble_code(UWB_PREAMBLE_CODE_2)
+            else
+                uwb_set_preamble_code(UWB_PREAMBLE_CODE_10)
+        UWB_CHANNEL_3:
+            if pulse_freq == UWB_PULSTE_FREQ_16MHZ
+                uwb_set_preamble_code(UWB_PREAMBLE_CODE_6)
+            else
+                uwb_set_preamble_code(UWB_PREAMBLE_CODE_10)
+        UWB_CHANNEL_4, UWB_CHANNEL_7:
+            if pulse_freq == UWB_PULSTE_FREQ_16MHZ
+                uwb_set_preamble_code(UWB_PREAMBLE_CODE_8)
+            else
+                uwb_set_preamble_code(UWB_PREAMBLE_CODE_18)
+        other:
+            if pulse_freq == UWB_PULSTE_FREQ_16MHZ
+                uwb_set_preamble_code(UWB_PREAMBLE_CODE_4)
+            else
+                uwb_set_preamble_code(UWB_PREAMBLE_CODE_10)
+
+
+PUB uwb_get_transmit_len() : nTxByteCount | data_bytes, temp_len
+'' Return the length of transmit data [0-127]
+    temp_len := uwb_reg_data_len(UWB_REG_RX_INFO)
+    uwb_generic_read(UWB_SUB_NO, UWB_REG_RX_INFO, @data_bytes, temp_len)
+
+    nTxByteCount := BYTE [@data_bytes][ 0 ] & $7F
+
+
+PUB uwb_get_transmit_status() : status | bitValue
+'' return transmit/receive status where status is TRUE(-1), FALSE (0), or UWB_DEV_ERROR (255)
+    status := UWB_OK
+    case dev_mode
+        UWB_MODE_RX:
+            bitValue := uwb_get_bit(UWB_REG_EVENT_STATUS, 8)  ' has Rx Preamble been detected? (proxy for bit REG:0F:b13 which would cause us to use a 2-byte read of REG:0F to get bit-13)
+        UWB_MODE_TX:
+            bitValue := uwb_get_bit(UWB_REG_EVENT_STATUS, 7)  ' is Tx Frame send complete?
+        other:
+            status := UWB_DEV_ERROR
+
+    if status == UWB_OK
+        status := bitValue == 0 ? FALSE : TRUE
+
+
+PUB uwb_int_mask_set() | int_mask, int_mask_val, status, len_mask
+'' Set interrupt mask for current mode
+    status := UWB_OK
+    case dev_mode
+        UWB_MODE_TX:
+            int_mask_val := $00000020
+        UWB_MODE_RX:
+            int_mask_val := $00006000
+        other:
+            status := UWB_DEV_ERROR
+
+    len_mask := uwb_reg_data_len(UWB_REG_SYS_EVENT_MASK)
+    dev_value_to_array(int_mask_val, @int_mask, len_mask)
+    uwb_generic_write(UWB_SUB_NO, UWB_REG_SYS_EVENT_MASK, @int_mask, len_mask)
+
+
+CON { --------------------------- }
+
+PRI uwb_generic_read(offset, regAddr, pRxBffr, lenBffr) | address_len, BYTE address_data[3]
+'' Reading data from device
+    ' void uwb_generic_read(uint8_t regAddr, uint16_t offset,pRxBffr, uint16_t lenBffr) - Reading data from device
+    address_len := prepAddress(READ_MASK, offset, regAddr, @address_data)
+    debug("uwb: uwb_generic_read() ofs=", udec_byte_(offset), ", reg=", uhex_byte_(regAddr))
+
+    spi_master_select_device()
+    spi_master_write(@address_data, address_len)
+    spi_master_read(pRxBffr, lenBffr)
+    spi_master_deselect_device()
+
+
+PRI uwb_generic_write(offset, regAddr, pTxBffr, lenBffr) | address_len, BYTE address_data[3]
+'' Writing data to device
+    ' void uwb_generic_write(uwb_t *ctx, uint8_t regAddr, pTxBffr, uint16_t lenBffr) - Writing data to device
+
+    address_len := prepAddress(WRITE_MASK, offset, regAddr, @address_data)
+    debug("uwb: uwb_generic_write() ofs=", udec_byte_(offset), ", reg=", uhex_byte_(regAddr))
+
+    spi_master_select_device()
+    spi_master_write(@address_data, address_len)
+    spi_master_write(pTxBffr, lenBffr)
+    spi_master_deselect_device()
+
+    waitms(10)
+
+PRI uwb_generic_fill(offset, regAddr, nValue, byteCount) | address_len, BYTE address_data[3]
+'' Writing {byteCount} {nValue} bytes to device
+    ' void uwb_generic_write(uwb_t *ctx, uint8_t regAddr, pTxBffr, uint16_t lenBffr) - Writing data to device
+
+    address_len := prepAddress(WRITE_MASK, offset, regAddr, @address_data)
+    debug("uwb: uwb_generic_fill() ofs=", udec_byte_(offset), ", reg=", uhex_byte_(regAddr))
+
+    spi_master_select_device()
+    spi_master_write(@address_data, address_len)
+    spi_master_fill(nValue, byteCount)
+    spi_master_deselect_device()
+    waitms(10)
+
+
+PRI prepAddress(opMask, offset, regAddr, pAddr) : nFinalLen
+' load address value based on request
+    nFinalLen := 1
+    BYTE [pAddr][ 0 ] := opMask | regAddr
+
+    if offset <> UWB_SUB_NO
+        BYTE [pAddr][ 0 ] |= SUB_MASK
+        if offset < 128
+            BYTE [pAddr][ 1 ] :=  offset & $7F
+            nFinalLen++
+        else
+            BYTE [pAddr][ 1 ] := SUB_EXT_MASK |(offset & $FF)
+            BYTE [pAddr][ 2 ] := ((offset >> 8) & $FF)
+            nFinalLen += 2
+
+PRI dev_value_to_array(nValue, pTarget, lenTarget) | bytIdx
+' place bytes in SPI transmission order
+    repeat bytIdx from 0 to lenTarget - 1
+        BYTE [pTarget][bytIdx] :=(nValue >>(bytIdx * 8)) & $FF
+
+
+PRI dev_agc_tune_1(pAgc_tune)
+    case pulse_freq
+        UWB_PULSTE_FREQ_16MHZ:
+            dev_value_to_array($8870, pAgc_tune, LEN_AGC_TUNE1)
+        UWB_PULSTE_FREQ_64MHZ:
+            dev_value_to_array($889B, pAgc_tune, LEN_AGC_TUNE1)
+
+
+PRI dev_agc_tune_2(pAgc_tune)
+
+    dev_value_to_array($2502A907, pAgc_tune, LEN_AGC_TUNE2)
+
+
+PRI dev_agc_tune_3(pAgc_tune)
+    dev_value_to_array($0035, pAgc_tune, LEN_AGC_TUNE3)
+
+
+PRI dev_drx_tune_0b(pDrx_tune)
+    case data_rate
+        UWB_DATA_RATE_110KBSPS:
+            dev_value_to_array($0016, pDrx_tune, LEN_DRX_TUNE0b)
+        UWB_DATA_RATE_850KBSPS:
+            dev_value_to_array($0006, pDrx_tune,LEN_DRX_TUNE0b)
+        UWB_DATA_RATE_6800KBSPS:
+            dev_value_to_array($0001, pDrx_tune, LEN_DRX_TUNE0b)
+
+
+PRI dev_drx_tune_1a(pDrx_tune)
+    case pulse_freq
+        UWB_PULSTE_FREQ_16MHZ:
+            dev_value_to_array($0087, pDrx_tune, LEN_DRX_TUNE1a)
+        UWB_PULSTE_FREQ_64MHZ:
+            dev_value_to_array($008D, pDrx_tune, LEN_DRX_TUNE1a)
+
+
+PRI dev_drx_tune_1b(pDrx_tune)
+    case preamble_len
+        UWB_PREAMBLE_LEN_1536, UWB_PREAMBLE_LEN_2048, UWB_PREAMBLE_LEN_4096:
+            if data_rate == UWB_DATA_RATE_110KBSPS
+                dev_value_to_array($0064, pDrx_tune, LEN_DRX_TUNE1b)
+        UWB_PREAMBLE_LEN_64:
+            if data_rate == UWB_DATA_RATE_850KBSPS || data_rate == UWB_DATA_RATE_6800KBSPS
+                dev_value_to_array($0020, pDrx_tune,LEN_DRX_TUNE1b)
+        other:
+            if data_rate == UWB_DATA_RATE_6800KBSPS
+                dev_value_to_array($0010, pDrx_tune, LEN_DRX_TUNE1b)
+
+
+PRI dev_drx_tune_2(pDrx_tune)
+    case pac_size
+        UWB_PAC_SIZE_8:
+            if pulse_freq == UWB_PULSTE_FREQ_16MHZ
+                dev_value_to_array($311A002D, pDrx_tune, LEN_DRX_TUNE2)
+            elseif pulse_freq == UWB_PULSTE_FREQ_64MHZ
+                dev_value_to_array($313B006B, pDrx_tune, LEN_DRX_TUNE2)
+        UWB_PAC_SIZE_16:
+            if pulse_freq == UWB_PULSTE_FREQ_16MHZ
+                dev_value_to_array($331A0052, pDrx_tune, LEN_DRX_TUNE2)
+            elseif pulse_freq == UWB_PULSTE_FREQ_64MHZ
+                dev_value_to_array($333B00BE, pDrx_tune, LEN_DRX_TUNE2)
+        UWB_PAC_SIZE_32:
+            if pulse_freq == UWB_PULSTE_FREQ_16MHZ
+                dev_value_to_array($351A009A, pDrx_tune, LEN_DRX_TUNE2)
+            elseif pulse_freq == UWB_PULSTE_FREQ_64MHZ
+                dev_value_to_array($353B015E, pDrx_tune, LEN_DRX_TUNE2)
+        UWB_PAC_SIZE_64:
+            if pulse_freq == UWB_PULSTE_FREQ_16MHZ
+                dev_value_to_array($371A011D, pDrx_tune, LEN_DRX_TUNE2)
+            elseif pulse_freq == UWB_PULSTE_FREQ_64MHZ
+                dev_value_to_array($373B0296, pDrx_tune, LEN_DRX_TUNE2)
+
+
+PRI dev_drx_tune_4h(pDrx_tune)
+    if preamble_len == UWB_PREAMBLE_LEN_64
+        dev_value_to_array($0010, pDrx_tune, LEN_DRX_TUNE4H)
+    else
+        dev_value_to_array($0028, pDrx_tune, LEN_DRX_TUNE4H)
+
+
+PRI dev_lde_cfg_1(pLde_cfg)
+    dev_value_to_array($D, pLde_cfg, LEN_LDE_CFG1)
+
+
+PRI dev_lde_cfg_2(pLde_cfg)
+    case pulse_freq
+        UWB_PULSTE_FREQ_16MHZ:
+            dev_value_to_array($1607, pLde_cfg, LEN_LDE_CFG2)
+        UWB_PULSTE_FREQ_64MHZ:
+            dev_value_to_array($0607, pLde_cfg, LEN_LDE_CFG2)
+
+
+PRI dev_lde_repc_help(pLde_cfg, r_110, r_o)
+    if data_rate == UWB_DATA_RATE_110KBSPS
+        dev_value_to_array(r_110, pLde_cfg, LEN_LDE_REPC)
+    else
+        dev_value_to_array(r_o, pLde_cfg, LEN_LDE_REPC)
+
+
+PRI dev_lde_repc(pLde_cfg)
+    case preamble_code
+        UWB_PREAMBLE_CODE_1, UWB_PREAMBLE_CODE_2:
+            dev_lde_repc_help(pLde_cfg, (($5998 >> 3) & $FFFF), $5998)
+        UWB_PREAMBLE_CODE_3, UWB_PREAMBLE_CODE_8:
+            dev_lde_repc_help(pLde_cfg, (($51EA >> 3) & $FFFF), $51EA)
+        UWB_PREAMBLE_CODE_4:
+            dev_lde_repc_help(pLde_cfg, (($428E >> 3) & $FFFF), $428E)
+        UWB_PREAMBLE_CODE_5:
+            dev_lde_repc_help(pLde_cfg, (($451E >> 3) & $FFFF), $451E)
+        UWB_PREAMBLE_CODE_6:
+            dev_lde_repc_help(pLde_cfg, (($2E14 >> 3) & $FFFF), $2E14)
+        UWB_PREAMBLE_CODE_7:
+            dev_lde_repc_help(pLde_cfg, (($8000 >> 3) & $FFFF), $8000)
+        UWB_PREAMBLE_CODE_9:
+            dev_lde_repc_help(pLde_cfg, (($28F4 >> 3) & $FFFF), $28F4)
+        UWB_PREAMBLE_CODE_10, UWB_PREAMBLE_CODE_17:
+            dev_lde_repc_help(pLde_cfg, (($3332 >> 3) & $FFFF), $3332)
+        UWB_PREAMBLE_CODE_11:
+            dev_lde_repc_help(pLde_cfg, (($3AE0 >> 3) & $FFFF), $3AE0)
+        UWB_PREAMBLE_CODE_12:
+            dev_lde_repc_help(pLde_cfg, (($3D70 >> 3) & $FFFF), $3D70)
+        UWB_PREAMBLE_CODE_18, UWB_PREAMBLE_CODE_19:
+            dev_lde_repc_help(pLde_cfg, (($35C2 >> 3) & $FFFF), $35C2)
+        UWB_PREAMBLE_CODE_20:
+            dev_lde_repc_help(pLde_cfg, (($47AE >> 3) & $FFFF), $47AE)
+
+
+PRI dev_tx_power_help(pTx_power, sp, nsp)
+    if smart_power
+        dev_value_to_array(sp, pTx_power, LEN_TX_POWER)
+    else
+        dev_value_to_array(nsp, pTx_power, LEN_TX_POWER)
+
+
+PRI dev_tx_power (pTx_power)
+    case channel
+        UWB_CHANNEL_1, UWB_CHANNEL_2:
+            if (UWB_PULSTE_FREQ_16MHZ == pulse_freq)
+                dev_tx_power_help(pTx_power, $15355575, $75757575)
+            elseif (UWB_PULSTE_FREQ_64MHZ == pulse_freq)
+                dev_tx_power_help(pTx_power, $07274767, $67676767)
+        UWB_CHANNEL_3:
+            if (UWB_PULSTE_FREQ_16MHZ == pulse_freq)
+                dev_tx_power_help(pTx_power, $0F2F4F6F, $6F6F6F6F)
+            elseif (UWB_PULSTE_FREQ_64MHZ == pulse_freq)
+                dev_tx_power_help(pTx_power, $2B4B6B8B, $8B8B8B8B)
+        UWB_CHANNEL_4:
+            if (UWB_PULSTE_FREQ_16MHZ == pulse_freq)
+                dev_tx_power_help(pTx_power, $1F1F3F5F, $5F5F5F5F)
+            elseif (UWB_PULSTE_FREQ_64MHZ == pulse_freq)
+                dev_tx_power_help(pTx_power, $3A5A7A9A, $9A9A9A9A)
+        UWB_CHANNEL_5:
+            if (UWB_PULSTE_FREQ_16MHZ == pulse_freq)
+                dev_tx_power_help(pTx_power, $0E082848, $48484848)
+            elseif (UWB_PULSTE_FREQ_64MHZ == pulse_freq)
+                dev_tx_power_help(pTx_power, $25456585, $85858585)
+        UWB_CHANNEL_7:
+            if (UWB_PULSTE_FREQ_16MHZ == pulse_freq)
+                dev_tx_power_help(pTx_power, $32527292, $92929292)
+            elseif (UWB_PULSTE_FREQ_64MHZ == pulse_freq)
+                dev_tx_power_help(pTx_power, $5171B1D1, $D1D1D1D1)
+
+
+PRI dev_rf_rx_ctrl(pRf_ctrl)
+    case channel
+        UWB_CHANNEL_4, UWB_CHANNEL_7:
+            dev_value_to_array($D8, pRf_ctrl, LEN_RF_RXCTRLH)
+        other:
+            dev_value_to_array($BC, pRf_ctrl, LEN_RF_RXCTRLH)
+
+
+PRI dev_rf_tx_ctrl(pRf_ctrl)
+    case channel
+        UWB_CHANNEL_1:
+            dev_value_to_array($00005C40,  pRf_ctrl, LEN_RF_TXCTRL)
+        UWB_CHANNEL_2:
+            dev_value_to_array($00045CA0, pRf_ctrl, LEN_RF_TXCTRL)
+        UWB_CHANNEL_3:
+            dev_value_to_array($00086CC0, pRf_ctrl, LEN_RF_TXCTRL)
+        UWB_CHANNEL_4:
+            dev_value_to_array($00045C80, pRf_ctrl, LEN_RF_TXCTRL)
+        UWB_CHANNEL_5:
+            dev_value_to_array($001E3FE0, pRf_ctrl, LEN_RF_TXCTRL)
+        UWB_CHANNEL_7:
+            dev_value_to_array($001E7DE0, pRf_ctrl, LEN_RF_TXCTRL)
+
+
+PRI dev_tcpg_delay(pTcpg_delay)
+    case channel
+        UWB_CHANNEL_1:
+            dev_value_to_array($C9, pTcpg_delay, LEN_TC_PGDELAY)
+        UWB_CHANNEL_2:
+            dev_value_to_array($C2, pTcpg_delay, LEN_TC_PGDELAY)
+        UWB_CHANNEL_3:
+            dev_value_to_array($C5, pTcpg_delay, LEN_TC_PGDELAY)
+        UWB_CHANNEL_4:
+            dev_value_to_array($95, pTcpg_delay, LEN_TC_PGDELAY)
+        UWB_CHANNEL_5:
+            dev_value_to_array($C0, pTcpg_delay, LEN_TC_PGDELAY)
+        UWB_CHANNEL_7:
+            dev_value_to_array($93, pTcpg_delay, LEN_TC_PGDELAY)
+
+
+PRI dev_fs_pll_cfg (pFs)
+    case channel
+        UWB_CHANNEL_1:
+            dev_value_to_array($09000407, pFs, LEN_FS_PLLCFG)
+        UWB_CHANNEL_2, UWB_CHANNEL_4:
+            dev_value_to_array($08400508, pFs, LEN_FS_PLLCFG)
+        UWB_CHANNEL_3:
+            dev_value_to_array($08401009, pFs, LEN_FS_PLLCFG)
+        UWB_CHANNEL_5, UWB_CHANNEL_7:
+            dev_value_to_array($0800041D, pFs, LEN_FS_PLLCFG)
+
+PRI dev_fs_pll_tune (pFs)
+    case channel
+        UWB_CHANNEL_1:
+            dev_value_to_array($1E, pFs, LEN_FS_PLLTUNE)
+        UWB_CHANNEL_2, UWB_CHANNEL_4:
+            dev_value_to_array($26, pFs, LEN_FS_PLLTUNE)
+        UWB_CHANNEL_3:
+            dev_value_to_array($56, pFs, LEN_FS_PLLTUNE)
+        UWB_CHANNEL_5, UWB_CHANNEL_7:
+            dev_value_to_array($BE, pFs, LEN_FS_PLLTUNE)
+
+
+PRI dev_fs_xtalt (pFs) | otp_data
+
+    uwb_read_otp($01E, @otp_data)
+
+    if BYTE [@otp_data][ 0 ] == 0
+        dev_value_to_array((($10 & $1F) | $60), pFs, LEN_FS_XTALT)
+    else
+        dev_value_to_array(((otp_data[ 0 ] & $1F) | $60), pFs, LEN_FS_XTALT)
+
+
+PRi uwb_read_otp (otp_adr, rx_buf) | address_bytes, temp_dat
+' Return the contents of the OTP buffer
+    BYTE [@address_bytes][ 0 ] := (otp_adr & $FF)
+    BYTE [@address_bytes][ 1 ] := ((otp_adr >> 8) & $FF)
+
+    uwb_generic_write(UWB_OTP_ADR, UWB_REG_OTP_INTERFACE, @address_bytes, 2)
+    temp_dat := $03
+    uwb_generic_write(UWB_OTP_CTRL, UWB_REG_OTP_INTERFACE, @temp_dat, 1)
+    temp_dat := $01
+    uwb_generic_write(UWB_OTP_CTRL, UWB_REG_OTP_INTERFACE, @temp_dat, 1)
+    uwb_generic_read(UWB_OTP_RDAT, UWB_REG_OTP_INTERFACE, rx_buf, 4)
+    temp_dat := $00
+    uwb_generic_write(UWB_OTP_CTRL, UWB_REG_OTP_INTERFACE, @temp_dat, 1)
+
+
+PUB uwb_get_qint_pin_status() : nBitVal
+'' Return state of INT pin [0, 1]
+    nBitVal := pinread(pinbase + CLICK_OFST_INT)
+
+
+PUB uwb_clear_status()
+'' Clear Rx/Tx status bits (reset interrupt sources)
+    if dev_mode == UWB_MODE_RX
+        uwb_set_bit(UWB_REG_EVENT_STATUS, 13, UWB_HIGH)
+        uwb_set_bit(UWB_REG_EVENT_STATUS, 10, UWB_HIGH)
+        uwb_set_bit(UWB_REG_EVENT_STATUS, 18, UWB_HIGH)
+        uwb_set_bit(UWB_REG_EVENT_STATUS, 12, UWB_HIGH)
+        uwb_set_bit(UWB_REG_EVENT_STATUS, 15, UWB_HIGH)
+        uwb_set_bit(UWB_REG_EVENT_STATUS, 14, UWB_HIGH)
+        uwb_set_bit(UWB_REG_EVENT_STATUS, 16, UWB_HIGH)
+    elseif dev_mode == UWB_MODE_TX
+        uwb_set_bit(UWB_REG_EVENT_STATUS, 4, UWB_HIGH)
+        uwb_set_bit(UWB_REG_EVENT_STATUS, 5, UWB_HIGH)
+        uwb_set_bit(UWB_REG_EVENT_STATUS, 6, UWB_HIGH)
+        uwb_set_bit(UWB_REG_EVENT_STATUS, 7, UWB_HIGH)
+
+
+PUB uwb_get_transmit(pRxBffr, nBffrLen)
+'' Get received data
+
+    uwb_generic_read(UWB_SUB_NO, UWB_REG_RX_BUF, pRxBffr, nBffrLen)
+
+PUB uwb_set_transmit(pTxBffr, nBffrLen)
+'' Set data to transmit
+
+    ' zero the transmit buffer
+    uwb_generic_fill(UWB_SUB_NO, UWB_REG_TX_DATA_BUF, 0, UWB_BUFFER_SIZE_IN_BYTES)
+    ' write user contents to transmit buffer
+    uwb_generic_write(UWB_SUB_NO, UWB_REG_TX_DATA_BUF, pTxBffr, nBffrLen)
+
+
+PUB uwb_start_transceiver()
+'' Start receiving or transmitig data
+    uwb_set_bit(UWB_REG_SYS_CTRL, 0, !frame_check)
+
+    case dev_mode
+        UWB_MODE_RX:
+            uwb_set_bit(UWB_REG_SYS_CTRL, 8, UWB_HIGH)
+        UWB_MODE_TX:
+            uwb_set_bit(UWB_REG_SYS_CTRL, 1, UWB_HIGH)
+
+
+CON { -- PRIVATE Utility Methods -- }
+
+DAT { device temp config vars }
+    agc_cfg_1       BYTE    0[ 2 ]
+    agc_cfg_2       BYTE    0[ 4 ]
+    agc_cfg_3       BYTE    0[ 2 ]
+    drx_cfg_0b       BYTE    0[ 2 ]
+    drx_cfg_1a       BYTE    0[ 2 ]
+    drx_cfg_1b       BYTE    0[ 2 ]
+    drx_cfg_2       BYTE    0[ 4 ]
+    drx_cfg_4h       BYTE    0[ 2 ]
+    lde_cfg_1       BYTE    0
+    lde_cfg_2       BYTE    0[ 2 ]
+    lde_repc       BYTE    0[ 2 ]
+    tx_power       BYTE    0[ 4 ]
+    rf_rx_ctrl       BYTE    0
+    rf_tx_ctrl       BYTE    0[ 4 ]
+    tcpg_delay       BYTE    0
+    fs_pll_cfg       BYTE    0[ 4 ]
+    fs_pll_tune       BYTE    0
+    fs_xtalt       BYTE    0
+
+PRI uwb_tune_config()   ' ctx was passed but NOT needed?
+    ' load values based on current config into data areas in send byte-order
+    dev_agc_tune_1(@agc_cfg_1)
+    dev_agc_tune_2(@agc_cfg_2)
+    dev_agc_tune_3(@agc_cfg_3)
+    dev_drx_tune_0b(@drx_cfg_0b)
+    dev_drx_tune_1a(@drx_cfg_1a)
+    dev_drx_tune_1b(@drx_cfg_1b)
+    dev_drx_tune_2(@drx_cfg_2)
+    dev_drx_tune_4h(@drx_cfg_4h)
+    dev_lde_cfg_1(@lde_cfg_1)
+    dev_lde_cfg_2(@lde_cfg_2)
+    dev_lde_repc(@lde_repc)
+    dev_tx_power(@tx_power)
+    dev_rf_rx_ctrl(@rf_rx_ctrl)
+    dev_rf_tx_ctrl(@rf_tx_ctrl)
+    dev_tcpg_delay(@tcpg_delay)
+    dev_fs_pll_cfg(@fs_pll_cfg)
+    dev_fs_pll_tune(@fs_pll_tune)
+    dev_fs_xtalt(@fs_xtalt)
+
+    ' now write new configuration values to device
+    uwb_generic_write(AGC_TUNE1_SUB, UWB_REG_AUTO_GAIN_CFG, @agc_cfg_1, LEN_AGC_TUNE1)
+    uwb_generic_write(AGC_TUNE2_SUB, UWB_REG_AUTO_GAIN_CFG, @agc_cfg_2, LEN_AGC_TUNE2)
+    uwb_generic_write(AGC_TUNE3_SUB, UWB_REG_AUTO_GAIN_CFG, @agc_cfg_3, LEN_AGC_TUNE3)
+    uwb_generic_write(DRX_TUNE0b_SUB, UWB_REG_DRX_CFG, @drx_cfg_0b, LEN_DRX_TUNE0b)
+    uwb_generic_write(DRX_TUNE1a_SUB, UWB_REG_DRX_CFG, @drx_cfg_1a, LEN_DRX_TUNE1a)
+    uwb_generic_write(DRX_TUNE1b_SUB, UWB_REG_DRX_CFG, @drx_cfg_1b, LEN_DRX_TUNE1b)
+    uwb_generic_write(DRX_TUNE2_SUB, UWB_REG_DRX_CFG, @drx_cfg_2, LEN_DRX_TUNE2)
+    uwb_generic_write(DRX_TUNE4H_SUB, UWB_REG_DRX_CFG, @drx_cfg_4h, LEN_DRX_TUNE4H)
+    uwb_generic_write(LDE_CFG1_SUB, UWB_REG_LEAD_EDGE_DET_CTRL, @lde_cfg_1, LEN_LDE_CFG1)
+    uwb_generic_write(LDE_CFG2_SUB, UWB_REG_LEAD_EDGE_DET_CTRL, @lde_cfg_2, LEN_LDE_CFG2)
+    uwb_generic_write(LDE_REPC_SUB, UWB_REG_LEAD_EDGE_DET_CTRL, @lde_repc, LEN_LDE_REPC)
+    uwb_generic_write(UWB_SUB_NO, UWB_REG_TX_POWER, @tx_power, LEN_TX_POWER)
+    uwb_generic_write(RF_RXCTRLH_SUB, UWB_REG_RF_CFG, @rf_rx_ctrl, LEN_RF_RXCTRLH)
+    uwb_generic_write(RF_TXCTRL_SUB, UWB_REG_RF_CFG, @rf_tx_ctrl, LEN_RF_TXCTRL)
+    uwb_generic_write(TC_PGDELAY_SUB, UWB_REG_TX_CALIBRATION, @tcpg_delay, LEN_TC_PGDELAY)
+    uwb_generic_write(FS_PLLTUNE_SUB, UWB_REG_FREQ_SYNTH_CTRL, @fs_pll_cfg, LEN_FS_PLLTUNE)
+    uwb_generic_write(FS_PLLCFG_SUB, UWB_REG_FREQ_SYNTH_CTRL, @fs_pll_tune, LEN_FS_PLLCFG)
+    uwb_generic_write(FS_XTALT_SUB, UWB_REG_FREQ_SYNTH_CTRL, @fs_xtalt, LEN_FS_XTALT)
+
+PRI uwb_reg_data_len(regAddr) : nBytes
+' Return the number of bytes associated with the given register
+    case regAddr
+        UWB_REG_DEV_ID:
+            nBytes := 4
+        UWB_REG_EU_ID:
+            nBytes := 8
+        UWB_REG_PAN_ID:
+            nBytes := 4
+        UWB_REG_SYS_CFG:
+            nBytes := 4
+        UWB_REG_SYS_CNT:
+            nBytes := 5
+        UWB_REG_SYS_TX_CTRL:
+            nBytes := 5
+        UWB_REG_DX_TIME:
+            nBytes := 5
+        UWB_REG_RX_TIMEOUT:
+            nBytes := 2
+        UWB_REG_SYS_CTRL:
+            nBytes := 4
+        UWB_REG_SYS_EVENT_MASK:
+            nBytes := 4
+        UWB_REG_EVENT_STATUS:
+            nBytes := 5
+        UWB_REG_RX_INFO:
+            nBytes := 4
+        UWB_REG_RX_QUALITY_INFO:
+            nBytes := 8
+        UWB_REG_RX_TIME_INTERVAL:
+            nBytes := 4
+        UWB_REG_RX_TIME_OFFSET:
+            nBytes := 5
+        UWB_REG_RX_MESSAGE_TOA:
+            nBytes := 14
+        UWB_REG_TX_MESSAGE_TOS:
+            nBytes := 10
+        UWB_REG_TX_ANTD:
+            nBytes := 2
+        UWB_REG_SYS_STATE:
+            nBytes := 5
+        UWB_REG_ACK_RESPONSE_TIME:
+            nBytes := 4
+        UWB_REG_RX_SNIFF_CFG:
+            nBytes := 4
+        UWB_REG_TX_POWER:
+            nBytes := 4
+        UWB_REG_CHN_CTRL:
+            nBytes := 4
+        UWB_REG_SFD:
+            nBytes := 41
+        UWB_REG_AUTO_GAIN_CFG:
+            nBytes := 33
+        UWB_REG_EXTERNAL_SYNC:
+            nBytes := 12
+        UWB_REG_READ_AA_DATA:
+            nBytes := 4064
+        UWB_REG_GPIO_CTRL:
+            nBytes := 44
+        UWB_REG_DRX_CFG:
+            nBytes := 44
+        UWB_REG_RF_CFG:
+            nBytes := 58
+        UWB_REG_TX_CALIBRATION:
+            nBytes := 52
+        UWB_REG_FREQ_SYNTH_CTRL:
+            nBytes := 21
+        UWB_REG_ALWAYS_ON_REG:
+            nBytes := 12
+        UWB_REG_OTP_INTERFACE:
+            nBytes := 18
+        UWB_REG_DIGITAL_DIAG_IF:
+            nBytes := 41
+        UWB_REG_POWER_MANAGE_SYS_CTRL:
+            nBytes := 48
+        UWB_REG_TX_DATA_BUF:
+            nBytes := 1024
+        UWB_REG_RX_BUF:
+            nBytes := 1024
+        other:
+            nBytes := UWB_DEV_ERROR
+
+    if nBytes == UWB_DEV_ERROR
+        debug("* uwb_reg_data_len() ERROR: unknown dvc reg: ", uhex_byte_(regAddr), "!")
+
+
+DAT { uwb_set_bit() work areas }
+
+     reg_data byte 0[1024]
+
+PRI uwb_set_bit(regAddr, bit_num, bit_state) | data_len, byte_num, temp_bit
+    ' set bit in UWB device register
+    data_len := uwb_reg_data_len(regAddr)
+    if UWB_DEV_ERROR == data_len
+        return
+
+    byte_num := bit_num / 8
+    if(byte_num > data_len)
+        debug("* uwb_set_bit() ERROR: BYTE #", udec_(byte_num), " not in register(", udec_(data_len), ") bytes")
+        return
+
+    if(0 <> byte_num)
+        temp_bit := bit_num // 8
+    else
+        temp_bit := bit_num
+
+    uwb_generic_read(UWB_SUB_NO, regAddr, @reg_data, data_len)
+
+    if(bit_state)
+        BYTE [@reg_data][byte_num] |= (1 << temp_bit)
+    else
+        BYTE [@reg_data][byte_num]  &= !(1 << bit_num)
+
+    uwb_generic_write(UWB_SUB_NO, regAddr, @reg_data, data_len)
+
+
+PRI uwb_get_bit(regAddr, bit_num) : nbit | data_len, byte_num, temp_bit, temp_mask
+    ' get bit from UWB device register - return 0,1, or UWB_DEV_ERROR
+    data_len := uwb_reg_data_len(regAddr)
+
+    if data_len == UWB_DEV_ERROR
+        return UWB_DEV_ERROR
+
+    uwb_generic_read(UWB_SUB_NO, regAddr, @reg_data, data_len)
+
+    byte_num := bit_num / 8
+    if(byte_num > data_len)
+        return UWB_DEV_ERROR
+
+    if(0 <> byte_num)
+        temp_bit := bit_num // 8
+    else
+        temp_bit := bit_num
+
+    temp_mask := BYTE [@reg_data][ byte_num ] >> temp_bit
+    temp_mask &= $01
+
+    return temp_mask
+
+
+
+PRI spi_master_deselect_device()
+    ' Deselect the click SPI device
+    pinhigh(pinbase + CLICK_OFST_CS)                                ' deselect UWB Click
+
+PRI spi_master_select_device()
+    ' Select the click SPI device
+    pinlow(pinbase + CLICK_OFST_CS)                                 ' select UWB Click
+
+PRI spi_master_fill(nValue, nLen) | bytIdx
+    ' clock-out {nLen} bytes of {nValue}
+    debug("uwb: spi_master_fill() len= (", udec_(nLen), ") ", udec_(nValue))
+    repeat bytIdx from 0 to nLen - 1
+        spi.shiftout(spi.MSBFIRST, nValue, 8)
+
+PRI spi_master_write(pBffr, nBffrLen) | bytIdx
+    ' clock-out N bytes of data
+    debug("uwb: spi_master_write() len= (", udec_(nBffrLen), ") ", UHEX_BYTE_ARRAY(pBffr, nBffrLen))
+    repeat bytIdx from 0 to nBffrLen - 1
+        spi.shiftout(spi.MSBFIRST, BYTE[pBffr][bytIdx], 8)
+
+PRI spi_master_read(pBffr, nBffrLen) | bytIdx
+    ' clock-in N bytes of data
+    repeat bytIdx from 0 to nBffrLen - 1
+        ' shiftout(mode, value, bits)
+        ' shiftio(mode, outval, bits) : inval
+        BYTE[pBffr][bytIdx] := spi.shiftio(spi.MSBFIRST, 0, 8)
+    debug("uwb: spi_master_read() len= (", udec_(nBffrLen), ") ", UHEX_BYTE_ARRAY(pBffr, nBffrLen))
+
+CON { license }
+{{
+
+ -------------------------------------------------------------------------------------------------
+  MIT License
+
+  Copyright(c) 2022 Iron Sheep Productions, LLC
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files(the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+ =================================================================================================
+}}
