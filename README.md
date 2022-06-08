@@ -10,15 +10,69 @@ Driving the Mikroe eInk Click with our P2
 
 [eINK click](https://www.mikroe.com/eink-click) is an adapter Click board™ from [Mikroe.com](https://www.mikroe.com/), used to interface a [compatible eINK display](https://www.mikroe.com/accessories/e-paper-displays) with the host MCU. The most distinctive feature of the eINK displays is their very low power consumption and the **ability to retain the information, even after disconnecting from the power source**. The power is consumed only when the display content is changing. [The Click board™ as delivered from Parallax.com](https://www.parallax.com/product/eink-click-e-paper-bundle-2/) comes shipped with the 172x72 eINK display, driven by the integrated SSD1606 controller and it can display 4 shades: black, dark gray, light gray and white. The same type of display is used on the popular Kindle E-readers. 
 
+## P2 Driver for the eInk Click Module
+
+This project provides a working driver for the P2 developed in spin2.  It started as a port of the C example code for the 2.13" eInk display which Parallax ships.  It has been extended to add capabilities to create more creative displays. 
+
+### Features
+
+Initial ported capabilties:
+
+- Show fullscreen bitmap
+- Show text on screen using built-in fonts, w/orientations, and in 4 colors
+- Fonts:
+ - Tahoma [6, 7, 8, 10, 14, 16, 18pt]
+ - Exo2 Condensed [10x16, 15x23, 21x32]
+ - Roboto Mono [11x23]
+- Font orientations:
+ - Vertical, Vertical-Column, Horizontal
+- eInk colors:
+ - Black, light Gray, dark Gray, White
+
+To this, we added these additional capabilities
+
+- Set background color
+- Invert font
+- Set region background color
+- Show bitmap in region as color
+
+## Current status
+
+Latest Changes:
+
+```
+08 June 2022 
+- display is working, full screen bitmaps work
+- font orientation is not correct
+05 June 2022 
+- Project Started
+
+```
+
+## Known Issues
+
+Things we know about that still need attention:
+
+```
+We're getting the font display working
+then:
+- adding region coloring
+- adding small bitmap placement
+- adding font inversion
+```
+
+
 ## Table of Contents
 
 On this Page:
 
-- TBA
+- Driver Features
+- How to contribute
 
 Additional pages:
 
-- TBA
+- [Start your project using this object](Develop.md) - Walks thru configuration and setup of your own project using this object
+- There are a small number of .PDFs in the [Docs](Docs) directory providing  detailed information on the display and controller chips
 
 ## How to Contribute
 
