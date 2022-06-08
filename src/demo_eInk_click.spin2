@@ -1,13 +1,13 @@
 '' =================================================================================================
 ''
-''   File....... demo_uwb_click.spin2
-''   Purpose.... Demonstrate interaction with the Mikroe UWB Click module
+''   File....... demo_eInk_click.spin2
+''   Purpose.... Demonstrate interaction with the Mikroe eInk Click module w/display
 ''   Authors.... Stephen M Moraco
 ''               -- Copyright (c) 2022 Iron Sheep Productions, LLC
 ''               -- see below for terms of use
 ''   E-mail..... stephen@ironsheep.biz
-''   Started.... Apr 2022
-''   Updated.... 23 Apr 2022
+''   Started.... Jun 2022
+''   Updated.... 05 Jun 2022
 ''
 '' =================================================================================================
 
@@ -29,64 +29,81 @@ CON { fixed io pins }
 CON { click module io pins }
 
     ' our Click module is on 16-31!
-    UWB_CLICK_PINGROUP = uwbRadio.PINS_P16_P31
+    EINK_CLICK_PINGROUP = eInkDisplay.PINS_P16_P31
 
 OBJ { the object being demo'd }
 
-    uwbRadio : "isp_uwb_click"
+    eInkDisplay : "isp_eInk_click"
+    eInkImages  : "isp_eInk_demo_images"
 
 PUB main() | ok, deviceID, uniqMSB, uniqLSB
 '' DEMO let's see what our radio hears!
 
     ' tell object where the module is connected
-    ok := uwbRadio.start(UWB_CLICK_PINGROUP)
+    ok := eInkDisplay.start(EINK_CLICK_PINGROUP)
     if not ok
         debug("* SPI FAILED to start")
     else
         debug("* SPI started OK")
 
-        uwbRadio.uwb_set_mode(uwbRadio.UWB_MODE_IDLE)
 
-        deviceID := uwbRadio.getDeviceId()
+    '  Click initialization.
+    eInkDisplay.startConfig()
+    eInkDisplay.setDeviceLut(@EINK154_LUT_TABLE, 30)
+    waitms(1000)
 
-        uniqMSB, uniqLSB := uwbRadio.getUniqueId()
+    'text_demo()
 
-        uwbRadio.stop()
+    image_demo()
 
-DAT { demo test data }
+    'repeat 10
+    '    image_demo()
 
-    dev_mode        BYTE    uwbRadio.UWB_MODE_TX
-    data_tx         BYTE    "MikroE",0              ' Transmit buffer
-    temp_len        BYTE    0                       ' Transmit length read var
-    transmit_data   BYTE    0[256]                  ' Recieved data buffer
-    didInterrupt    BYTE    0                       ' interrupt status var
+    eInkDisplay.stop()
 
-PRI application_task()
-    didInterrupt := uwbRadio.uwb_get_qint_pin_status()
+DAT { demonstration data }
 
-    if uwbRadio.getDeviceMode() == uwbRadio.UWB_MODE_RX
-        if didInterrupt
-            ' Reading transtimed data logs it and resetting to receive mode
-            uwbRadio.uwb_set_mode(uwbRadio.UWB_MODE_IDLE)
-            uwbRadio.uwb_clear_status()
-            temp_len := uwbRadio.uwb_get_transmit_len()
-            uwbRadio.uwb_get_transmit(@transmit_data[ 0 ], temp_len)
-            'mikrobus_logWrite("Received data:", _LOG_TEXT)
-            'mikrobus_logWrite(transmit_data, _LOG_LINE)
-            'mikrobus_logWrite(" - Receive done - ", _LOG_LINE)
-            uwbRadio.uwb_set_mode(uwbRadio.UWB_MODE_RX)
-            uwbRadio.uwb_start_transceiver()
-    elseif uwbRadio.getDeviceMode() == uwbRadio.UWB_MODE_TX
-        if didInterrupt
-            ' Transmits data resetting to transmit mode and sets 2sec delay
-            'mikrobus_logWrite(" - Transmit done - ", _LOG_LINE)
-            uwbRadio.uwb_set_mode(uwbRadio.UWB_MODE_IDLE)
-            uwbRadio.uwb_clear_status()
-            uwbRadio.uwb_set_transmit(@data_tx[ 0 ], 6)
-            uwbRadio.uwb_set_mode(uwbRadio.UWB_MODE_TX)
-            uwbRadio.uwb_start_transceiver()
-            waitms(2000)
+    eINK_Text       BYTE "eINK",0
 
+    demo_text       BYTE  "eINK" , 0
+    demo_text1      BYTE  "Display", 0
+    demo_text2      BYTE  "1.54inch", 0
+
+EINK154_LUT_TABLE   BYTE    $02, $02, $01, $11, $12, $12, $22, $22
+                    BYTE    $66, $69, $69, $59, $58, $99, $99, $88
+                    BYTE    $00, $00, $00, $00, $F8, $B4, $13, $51
+                    BYTE    $35, $51, $51, $19, $01, $00
+
+PRI text_demo() | col, row, nChars
+    ' demo display text on screen
+    eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.SCREEN_COLOR_WHITE, eInkDisplay.FONT_Tahoma_18)
+
+    col := 10
+    row := 50
+    eInkDisplay.showTextAtRC(row, col, @demo_text)
+
+    col := 10
+    row := 90
+    eInkDisplay.showTextAtRC(row, col, @demo_text1)
+
+    col := 10
+    row := 130
+    eInkDisplay.showTextAtRC(row, col, @demo_text2)
+
+    waitms(5000)
+
+
+PRI image_demo()
+    ' draw our two images to display
+    eInkDisplay.displayImage(eInkImages.imageAddress(eInkImages.IMAGE_light))
+    waitms(1000)
+
+    eInkDisplay.displayImage(eInkImages.imageAddress(eInkImages.IMAGE_dark))
+    waitms(1000)
+
+
+
+PRI demoRaw()
 
 
 CON { license }
