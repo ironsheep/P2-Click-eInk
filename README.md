@@ -21,13 +21,13 @@ Initial ported capabilties:
 - Show fullscreen bitmap
 - Show text on screen using built-in fonts, w/orientations, and in 4 colors
 - Fonts:
- - Tahoma [6, 7, 8, 10, 14, 16, 18pt]
- - Exo2 Condensed [10x16, 15x23, 21x32]
- - Roboto Mono [11x23]
+  - Tahoma [6, 7, 8, 10, 14, 16, 18pt]
+  - Exo2 Condensed [10x16, 15x23, 21x32]
+  - Roboto Mono [11x23]
 - Font orientations:
- - Vertical, Vertical-Column, Horizontal
+  - Vertical, Vertical-Column, Horizontal
 - eInk colors:
- - Black, light Gray, dark Gray, White
+  - Black, light Gray, dark Gray, White
 
 To this, we added these additional capabilities
 
@@ -66,8 +66,8 @@ then:
 
 On this Page:
 
-- Driver Features
-- How to contribute
+- [Driver Features](https://github.com/ironsheep/P2-Click-eInk#features)
+- [How to contribute](#how-to-contribute)
 
 Additional pages:
 
