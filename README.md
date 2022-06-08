@@ -46,6 +46,8 @@ Latest Changes:
 
 ```
 08 June 2022 
+- fixing font orientations
+07 June 2022 
 - display is working, full screen bitmaps work
 - font orientation is not correct
 05 June 2022 
