@@ -49,7 +49,7 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
 
     '  Click initialization.
     eInkDisplay.startConfig()
-    eInkDisplay.setDeviceLut(@EINK154_LUT_TABLE, 30)
+    eInkDisplay.setDeviceLut(@EINK213_BIG_LUT_TABLE, 70)
     waitms(1000)
 
     'text_demo()
@@ -69,10 +69,17 @@ DAT { demonstration data }
     demo_text1      BYTE  "Display", 0
     demo_text2      BYTE  "1.54inch", 0
 
-EINK154_LUT_TABLE   BYTE    $02, $02, $01, $11, $12, $12, $22, $22
-                    BYTE    $66, $69, $69, $59, $58, $99, $99, $88
-                    BYTE    $00, $00, $00, $00, $F8, $B4, $13, $51
-                    BYTE    $35, $51, $51, $19, $01, $00
+    EINK213_BIG_LUT_TABLE   BYTE    $A0,$90,$50,$00,$00,$00,$00
+                            BYTE    $50,$90,$A0,$00,$00,$00,$00
+                            BYTE    $A0,$90,$50,$00,$00,$00,$00
+                            BYTE    $50,$90,$A0,$00,$00,$00,$00
+                            BYTE    $00,$00,$00,$00,$00,$00,$00
+                            BYTE    $0F,$0F,$0F,$0F,$02,$10,$10
+                            BYTE    $0A,$0A,$03,$08,$08,$09,$43
+                            BYTE    $07,$00,$00,$00,$00,$00,$00
+                            BYTE    $00,$00,$00,$00,$00,$00,$00
+                            BYTE    $00,$00,$00,$00,$00,$00,$00
+
 
 PRI text_demo() | col, row, nChars
     ' demo display text on screen
