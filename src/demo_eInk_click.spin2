@@ -47,14 +47,10 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
         debug("* SPI started OK")
 
 
-    '  Click initialization.
-    eInkDisplay.startConfig()
-    eInkDisplay.setDeviceLut(@EINK213_BIG_LUT_TABLE, 70)
-    waitms(1000)
 
     'text_demo()
 
-    image_demo()
+    image_demo()    ' 43 * 2 seconds runtime!
 
     'repeat 10
     '    image_demo()
@@ -63,49 +59,50 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
 
 DAT { demonstration data }
 
-    eINK_Text       BYTE "eINK",0
-
     demo_text       BYTE  "eINK" , 0
     demo_text1      BYTE  "Display", 0
-    demo_text2      BYTE  "1.54inch", 0
-
-    EINK213_BIG_LUT_TABLE   BYTE    $A0,$90,$50,$00,$00,$00,$00
-                            BYTE    $50,$90,$A0,$00,$00,$00,$00
-                            BYTE    $A0,$90,$50,$00,$00,$00,$00
-                            BYTE    $50,$90,$A0,$00,$00,$00,$00
-                            BYTE    $00,$00,$00,$00,$00,$00,$00
-                            BYTE    $0F,$0F,$0F,$0F,$02,$10,$10
-                            BYTE    $0A,$0A,$03,$08,$08,$09,$43
-                            BYTE    $07,$00,$00,$00,$00,$00,$00
-                            BYTE    $00,$00,$00,$00,$00,$00,$00
-                            BYTE    $00,$00,$00,$00,$00,$00,$00
+    demo_text2      BYTE  "2.13inch", 0
+    demo_text3      BYTE  "Vert" , 0
+    demo_text4      BYTE  "vCol" , 0
 
 
-PRI text_demo() | col, row, nChars
+PRI text_demo()
     ' demo display text on screen
-    eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.SCREEN_COLOR_WHITE, eInkDisplay.FONT_Tahoma_18)
+    '   X: 0-71
+    '   Y: 0-171
 
-    col := 10
-    row := 50
-    eInkDisplay.showTextAtRC(row, col, @demo_text)
+    eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
 
-    col := 10
-    row := 90
-    eInkDisplay.showTextAtRC(row, col, @demo_text1)
+    eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_18)
+    eInkDisplay.showTextAtXY(5, 50, @demo_text)
+{
+    eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_10)
+    eInkDisplay.showTextAtXY(5, 90, @demo_text1)
 
-    col := 10
-    row := 130
-    eInkDisplay.showTextAtRC(row, col, @demo_text2)
+    eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+    eInkDisplay.showTextAtXY(5, 120, @demo_text2)
+'}
+    eInkDisplay.setFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+    eInkDisplay.showTextAtXY(20, 60, @demo_text3)
+'}
+    eInkDisplay.setFont(eInkDisplay.FO_VERTICAL_COLUMN, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+    eInkDisplay.showTextAtXY(5, 80, @demo_text4)
 
     waitms(5000)
 
 
 PRI image_demo()
     ' draw our two images to display
-    eInkDisplay.displayImage(eInkImages.imageAddress(eInkImages.IMAGE_light))
+    eInkDisplay.showImage(eInkImages.imageAddress(eInkImages.IMAGE_light))
     waitms(1000)
 
-    eInkDisplay.displayImage(eInkImages.imageAddress(eInkImages.IMAGE_dark))
+    eInkDisplay.showImage(eInkImages.imageAddress(eInkImages.IMAGE_dark))
+    waitms(1000)
+
+    eInkDisplay.showImage(eInkImages.imageAddress(eInkImages.IMAGE_light_180))
+    waitms(1000)
+
+    eInkDisplay.showImage(eInkImages.imageAddress(eInkImages.IMAGE_dark_180))
     waitms(1000)
 
 

@@ -52,16 +52,36 @@ PUB fontAddress(eFont) : fontAddr
 
 DAT { FONT data }
 
+' Ea. Font is couple of tables:
+'   (T1) 8 byte header
+'     0 -
+'     1 -
+'     2 - LSB offset to first char
+'     3 - MSB offset to first char
+'     4 - LSB offset to last char
+'     5 - MSB offset to last char
+'     6 - font height
+'     7 - ???
+'   (T2) char descriptors (for each char)
+'     0 - char width
+'     1 - LSB char offset
+'     2 - MID char offset
+'     3 - MSB char offset
+'   (T3) bitmap table
+
+
 ' const uint8_t fntTahoma_7[1459] = {
+    ' header
     fntTahoma_7 BYTE    $00
                 BYTE    $00
                 BYTE    $20,$00
                 BYTE    $7F,$00
                 BYTE    $0B
                 BYTE    $10
-                BYTE    $03,$88,$01,$00
-                BYTE    $01,$93,$01,$00
-                BYTE    $03,$9E,$01,$00
+    ' descriptors
+                BYTE    $03,$88,$01,$00     ' $20
+                BYTE    $01,$93,$01,$00     ' $21
+                BYTE    $03,$9E,$01,$00     '  etc...
                 BYTE    $07,$A9,$01,$00
                 BYTE    $05,$B4,$01,$00
                 BYTE    $09,$BF,$01,$00
@@ -154,7 +174,8 @@ DAT { FONT data }
                 BYTE    $02,$87,$05,$00
                 BYTE    $03,$92,$05,$00
                 BYTE    $06,$9D,$05,$00
-                BYTE    $02,$A8,$05,$00
+                BYTE    $02,$A8,$05,$00     ' $7f
+                ' bitmaps for each descriptor
                 BYTE    $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00                           ' Code for char num 32
                 BYTE    $00,$00,$01,$01,$01,$01,$01,$00,$01,$00,$00                           ' Code for char num 33
                 BYTE    $00,$05,$05,$05,$00,$00,$00,$00,$00,$00,$00                           ' Code for char num 34

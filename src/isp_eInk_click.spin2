@@ -7,18 +7,19 @@
 ''               -- see below for terms of use
 ''   E-mail..... stephen@ironsheep.biz
 ''   Started.... Jun 2022
-''   Updated.... 05 Jun 2022
+''   Updated.... 08 Jun 2022
 ''
 '' =================================================================================================
 
 CON { Public Interface Constants }
 
-    '  ID where the P2 Eval Motor Board is plugged in(Enum)
+    '  ID where the P2 Eval Click Adapter for eInk Click is plugged in (Enum)
     ' (Names of supported PinGroups)
     #0[16], PINS_P0_P15, PINS_P16_P31, PINS_P32_P47
     ' return value when user makes bad choice
     INVALID_PIN_BASE = -1
 
+    ' forward the font constants so user can select an internal font
     FONT_Tahoma_6 = eInkFonts.FONT_Tahoma_6
     FONT_Tahoma_7 = eInkFonts.FONT_Tahoma_7
     FONT_Tahoma_8 = eInkFonts.FONT_Tahoma_8
@@ -39,8 +40,6 @@ OBJ { Objects / constants included by this object }
     eInkFonts   : "isp_eInk_fonts"              ' eInt ported font set
     spi         : "jm_ez_spi"                   '   smart pin mode 0 spi coms
 
-
-CON { Test PINs for LA measurement }
 
 CON { Click Module offsets }
  {
@@ -89,9 +88,9 @@ CON { eInk Constants }
     EINK_INIT_ERROR             =   $FF
 
 ' display_resolution Display resolution
-    DISPLAY_WIDTH               =   128
-    DISPLAY_HEIGHT              =   250
-    DISPLAY_RESOLUTION          =   4000
+    DISPLAY_WIDTH               =   128     ' phys width 172?
+    DISPLAY_HEIGHT              =   250     ' phys height 72?
+    FRAME_SIZE_IN_BYTES         =   4000    ' 3096? (DISPLAY_WIDTH * DISPLAY_HEIGHT * 2) / 8
 
 ' display_communication Display Communication
     COMMUNICATION_SPI           =   0
@@ -99,10 +98,10 @@ CON { eInk Constants }
 
 ' fillScreen_color Fill screen color
     ' $FF=white, $00=black, $55=gray 1, $AA=gray 2
-    SCREEN_COLOR_WHITE          =   $FF
-    SCREEN_COLOR_BLACK          =   $00
-    SCREEN_COLOR_LIGHT_GREY     =   $AA
-    SCREEN_COLOR_DARK_GREY      =   $55
+    EINK_COLOR_WHITE          =   $FF
+    EINK_COLOR_BLACK          =   $00
+    EINK_COLOR_LIGHT_GREY     =   $AA
+    EINK_COLOR_DARK_GREY      =   $55
 
     FO_HORIZONTAL               =   $00
     FO_VERTICAL                 =   $01
@@ -137,16 +136,9 @@ CON { eInk Constants }
     ' SPI Communication Freq w/EINK Board
     EINK_SPI_CLK_MHZ = 20_000
 
-DAT { EINK Device Config }
-
-
 PUB null()
 
 '' This is not a top-level object
-
-DAT { object class data }
-
-    pinbase long    0
 
 
 PUB start(eClickBasePin) : ok | legalBase
@@ -170,11 +162,16 @@ PUB start(eClickBasePin) : ok | legalBase
         'pinfloat(pinbase + CLICK_OFST_MOSI)
         ' assert reset while starting up
         pinlow(pinbase + CLICK_OFST_RST)
-        spi_master_deselect_device()
+        ' Deselect the click SPI device
+        pinhigh(pinbase + CLICK_OFST_CS)
+        ' start the smart pins                            ' deselect EINK Click
         ok := spi.start(pinbase + CLICK_OFST_MISO, pinbase + CLICK_OFST_MOSI, pinbase + CLICK_OFST_SCK, EINK_SPI_CLK_MHZ)                     ' spi to EINK @ 3MHz(can run at 20MHz)
         ' reset device
         resetDevice()
-
+        '  Click initialization.
+        startConfig()
+        setDeviceLut(@EINK213_BIG_LUT_TABLE, 70)
+        waitms(1000)
 
 PUB stop()
 '' Stop the EINK Click SPI Object
@@ -196,57 +193,124 @@ PUB resetDevice()
     pinhigh(pinbase + CLICK_OFST_RST)
     waitms(3)
 
-PRI spi_master_deselect_device()
-    ' Deselect the click SPI device
-    pinhigh(pinbase + CLICK_OFST_CS)                                ' deselect EINK Click
 
-PRI spi_master_select_device()
-    ' Select the click SPI device
-    pinlow(pinbase + CLICK_OFST_CS)                                 ' select EINK Click
-
-PRI spi_master_fill(nValue, nLen) | bytIdx
-    ' clock-out {nLen} bytes of {nValue}
-    debug("eInk: spi_master_fill() len=(", udec_(nLen), ") ", udec_(nValue))
-    repeat bytIdx from 0 to nLen - 1
-        spi.shiftout(spi.MSBFIRST, nValue, 8)
-
-PRI spi_master_write(pBffr, nBffrLen) | bytIdx
-    ' clock-out N bytes of data
-    debug("eInk: spi_master_write() len=(", udec_(nBffrLen), ") ", UHEX_BYTE_ARRAY(pBffr, nBffrLen))
-    repeat bytIdx from 0 to nBffrLen - 1
-        spi.shiftout(spi.MSBFIRST, BYTE[pBffr][bytIdx], 8)
-
-
-PRI reset()
-    pinlow(pinbase + CLICK_OFST_RST)
-    waitms(200)
-    pinhigh(pinbase + CLICK_OFST_RST)
-    waitms(200)
-
-PRI waitForDeviceIdle() | state
-    ' wait until BUSY is de-asserted
-    repeat
-        state := pinread(pinbase + CLICK_OFST_BSY)
-        if state
-            waitms(100)
-    until state == 0
+CON ' ---- PUBLIC interface Methods ----
 
 
 PUB enterSleepMode()
-'' tell device to sleep
+'' Tell device to sleep
     writeCmd(CMD_DEEP_SLEEP_MODE)
     waitForDeviceIdle()
 
+PUB setFont(orientation, color, eFont) | pFont
+'' Set font configuration
 
-PUB setDeviceLut(pLut, nBytes) | nIdx
-'' write the device LUT data
-    writeCmd(CMD_WRITE_LUT_REGISTER)
-    repeat nIdx from 0 to nBytes - 1
-        writeData(BYTE [pLut][nIdx])
+    pFont := eInkFonts.fontAddress(eFont)
+    if pFont == FONT_UNKNOWN
+        return
+
+    fontAddr        := pFont
+    first_char      := BYTE [pFont][ 2 ] + (BYTE [pFont][ 3 ] << 8)
+    last_char       := BYTE [pFont][ 4 ] + (BYTE [pFont][ 5 ] << 8)
+    fontHeight      := BYTE [pFont][ 6 ]
+    fontColor       := color
+    fontOrientation := orientation
+    debug("ft: fontAddr ", uhex_Long_(first_char))
+    debug("ft: first_char ", udec_(first_char))
+    debug("ft: last_char ", udec_(last_char))
+    debug("ft: fontHeight ", udec_(fontHeight))
+    debug("ft: fontColor ", uhex_(fontColor))
 
 
-PUB startConfig()
-'' configure our display
+PUB fillScreen(color) | colCtr, rowCtr, validColor
+'' Fill display with {color}
+    validColor := color
+
+    ' override color if it is not one of the supported four!
+    case color
+        EINK_COLOR_WHITE:
+        EINK_COLOR_BLACK:
+        EINK_COLOR_LIGHT_GREY:
+        EINK_COLOR_DARK_GREY:
+        other:
+            validColor := EINK_COLOR_WHITE    ' default
+
+    setMemoryArea(0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1)
+    ' for each display line...
+    repeat rowCtr from 0 to DISPLAY_HEIGHT - 1
+        setMemoryPointer(0, rowCtr)
+        ' write contents for this line
+        writeCmd(CMD_WRITE_RAM)
+        repeat colCtr from 0 to 16 - 1
+            writeData(validColor)
+
+    displayDelay()
+    updateDisplay()
+
+PUB setBackground(color) | validColor
+'' Fill display with {color}
+    validColor := color
+
+    ' override color if it is not one of the supported four!
+    case color
+        EINK_COLOR_WHITE:
+        EINK_COLOR_BLACK:
+        EINK_COLOR_LIGHT_GREY:
+        EINK_COLOR_DARK_GREY:
+        other:
+            validColor := EINK_COLOR_WHITE    ' default
+
+    bkgndColor := validColor
+    ' preset background color
+    bytefill(@deviceFrame, bkgndColor, FRAME_SIZE_IN_BYTES)
+
+
+PUB showImage(pImageBffr) | colCtr, rowCtr, imgIdx
+'' Write image bitmap to display
+    setMemoryArea(0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1)
+    ' for each display line...
+    repeat rowCtr from 0 to DISPLAY_HEIGHT - 1
+        setMemoryPointer(0, rowCtr)
+        ' write contents for this line
+        writeCmd(CMD_WRITE_RAM)
+        repeat colCtr from 0 to 16 - 1
+            imgIdx := colCtr +(rowCtr * 16)
+            writeData(BYTE [pImageBffr][imgIdx])
+    ' flush content to display
+    updateDisplay()
+
+
+PUB showTextAtXY(X, Y, pText) | colCtr, rowCtr, pos, strIdx, nChar
+'' Place zstr on display at device row, column
+    if((Y >= DISPLAY_WIDTH) ||(X >= DISPLAY_HEIGHT))
+        return
+
+    nChar := strsize(pText)
+
+    deviceX := X
+    deviceY := Y
+
+    repeat strIdx from 0 to nChar - 1
+        char_wr(BYTE [pText][strIdx])
+
+    setMemoryArea(0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1)
+    ' for each display line...
+    repeat rowCtr from 0 to DISPLAY_HEIGHT - 1
+        setMemoryPointer(0, rowCtr)
+        ' write contents for this line
+        writeCmd(CMD_WRITE_RAM)
+        repeat colCtr from 0 to 16 - 1          ' wtf did this 16 come from? (why not width related?)
+            pos := colCtr + (rowCtr * 16)
+            writeData(BYTE [@deviceFrame][ pos ])
+
+    ' flush content to display
+    displayDelay()
+    updateDisplay()
+
+CON ' ---- PRIVATE Utility Methods ----
+
+PRI startConfig()
+' configure our display
     writeCmd(CMD_DRIVER_OUTPUT_CTRL)
     writeData(((DISPLAY_HEIGHT - 1) & $FF))
     writeData((((DISPLAY_HEIGHT - 1) >> 8) & $FF))
@@ -275,9 +339,17 @@ PUB startConfig()
     displayDelay()
 
 
+PRI setDeviceLut(pLut, nBytes) | nIdx
+' write the device LUT data
+    writeCmd(CMD_WRITE_LUT_REGISTER)
+    repeat nIdx from 0 to nBytes - 1
+        writeData(BYTE [pLut][nIdx])
+
+
 PRI displayDelay()
 ' wait for settle time
     waitms(2)
+
 
 PRI setMemoryPointer(x, y)
 ' set pointer to RAM
@@ -309,142 +381,100 @@ PRI updateDisplay()
     writeCmd(CMD_TERMINATE_FRAME_READ_WRITE)
     waitForDeviceIdle()
 
-PUB fillScreen(color) | cntX, cntY
-'' Fill display with {color}
-    setMemoryArea(0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1)
-    ' for each display line...
-    repeat cntY from 0 to DISPLAY_HEIGHT - 1
-        setMemoryPointer(0, cntY)
-        ' write contents for this line
-        writeCmd(CMD_WRITE_RAM)
-        repeat cntX from 0 to 16 - 1
-            writeData(color)
 
-    displayDelay()
-    updateDisplay()
+PRI reset()
+    pinlow(pinbase + CLICK_OFST_RST)
+    waitms(200)
+    pinhigh(pinbase + CLICK_OFST_RST)
+    waitms(200)
 
-
-PUB displayImage(pImageBffr) | cntX, cntY, imgIdx
-'' Write image bitmap to display
-    setMemoryArea(0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1)
-    ' for each display line...
-    repeat cntY from 0 to DISPLAY_HEIGHT - 1
-        setMemoryPointer(0, cntY)
-        ' write contents for this line
-        writeCmd(CMD_WRITE_RAM)
-        repeat cntX from 0 to 16 - 1
-            imgIdx := cntX +(cntY * 16)
-            writeData(BYTE [pImageBffr][imgIdx])
-    ' flush content to display
-    updateDisplay()
+PRI waitForDeviceIdle() | state
+    ' wait until BUSY is de-asserted
+    repeat
+        state := pinread(pinbase + CLICK_OFST_BSY)
+        if state
+            waitms(100)
+    until state == 0
 
 
-PUB showTextAtRC(row, col, pText) | cntX, cntY, pos, cnt, nChar
-'' Place zstr on display at device row, column
-    if((col >= DISPLAY_WIDTH) ||(row >= DISPLAY_HEIGHT))
-        return
+DAT { object class data }
 
-    nChar := strsize(pText)
+    pinbase         LONG    0
 
-    deviceX := col
-    deviceY := row
-
-    repeat cnt from 0 to nChar - 1
-        char_wr(BYTE [pText][ cnt ])
-
-    setMemoryArea(0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1)
-    ' for each display line...
-    repeat cntY from 0 to DISPLAY_HEIGHT - 1
-        setMemoryPointer(0, cntY)
-        ' write contents for this line
-        writeCmd(CMD_WRITE_RAM)
-        repeat cntX from 0 to 16 - 1
-            pos := cntX + (cntY * 16)
-            writeData(BYTE [@deviceFrame][ pos ])
-
-    ' flush content to display
-    displayDelay()
-    updateDisplay()
-
-DAT
     fontAddr        LONG    0
     first_char      LONG    0
     last_char       LONG    0
     fontHeight      LONG    0
     fontColor       LONG    0
+    bkgndColor      LONG    0
     fontOrientation LONG    0
     deviceX         LONG    0
     deviceY         LONG    0
-    deviceFrame     BYTE    0[DISPLAY_RESOLUTION]
+    deviceFrame     BYTE    0[FRAME_SIZE_IN_BYTES]
 
-PUB setFont(orientation, color, eFont) | pFont
-'' set font configuration
+    EINK213_BIG_LUT_TABLE   BYTE    $A0,$90,$50,$00,$00,$00,$00     ' 70 bytes long!
+                            BYTE    $50,$90,$A0,$00,$00,$00,$00
+                            BYTE    $A0,$90,$50,$00,$00,$00,$00
+                            BYTE    $50,$90,$A0,$00,$00,$00,$00
+                            BYTE    $00,$00,$00,$00,$00,$00,$00
+                            BYTE    $0F,$0F,$0F,$0F,$02,$10,$10
+                            BYTE    $0A,$0A,$03,$08,$08,$09,$43
+                            BYTE    $07,$00,$00,$00,$00,$00,$00
+                            BYTE    $00,$00,$00,$00,$00,$00,$00
+                            BYTE    $00,$00,$00,$00,$00,$00,$00
 
-    pFont := eInkFonts.fontAddress(eFont)
-    if pFont == FONT_UNKNOWN
-        return
 
-    fontAddr        := pFont
-    first_char      := BYTE [pFont][ 2 ] + (BYTE [pFont][ 3 ] << 8)
-    last_char       := BYTE [pFont][ 4 ] + (BYTE [pFont][ 5 ] << 8)
-    fontHeight      := BYTE [pFont][ 6 ]
-    fontColor       := color
-    fontOrientation := orientation
-    debug("ft: fontAddr ", uhex_Long_(first_char))
-    debug("ft: first_char ", udec_(first_char))
-    debug("ft: last_char ", udec_(last_char))
-    debug("ft: fontHeight ", udec_(fontHeight))
-    debug("ft: fontColor ", uhex_(fontColor))
-
-PRI frame_px(x, y, font_col) | offset, byteIdx
+PRI frame_px(x, y, fntColor) | bitmapOffset, byteIdx
 ' place font pixel in device frame for later display
-    byteIdx := (y * (DISPLAY_WIDTH / 8 ) ) + (x / 4 )
-    offset := (3 - (x // 4 ) ) * 2
+    byteIdx := (y * (DISPLAY_WIDTH / 8)) + (x / 4)
+    bitmapOffset := (3 - (x +// 4)) * 2
 
-    BYTE [@deviceFrame][byteIdx] &= !($03 << offset )
-    BYTE [@deviceFrame][byteIdx] |=((font_col & $03 ) << offset )
+    BYTE [@deviceFrame][byteIdx] &= !($03 << bitmapOffset)
+    BYTE [@deviceFrame][byteIdx] |= ((fntColor & $03) << bitmapOffset)
 
 
-PRI char_wr(ch_idx) | tmp, chrWidth, x_cnt, y_cnt, x, y, temp, mask, offset, pChrTable, pChrBitmap
+PRI char_wr(chrCode) | descriptorOffset, chrWidth, x_cnt, y_cnt, x, y, rowBits, mask, bitmapOffset, pChrDescriptor, pChrBitmap
 ' place font character in device frame for later display
-    chrWidth := 0
-    x := 0
-    y := 0
-    temp := 0
-    mask := 0
 
-    if(ch_idx < first_char )
+    ' exit if FONT doesn't have this character
+    if(chrCode < first_char)
         return
 
-    if(ch_idx > last_char )
+    if(chrCode > last_char)
         return
 
-    offset := 0
-    tmp :=(ch_idx - first_char ) << 2
-    pChrTable := fontAddr +(8 + tmp )
-    chrWidth := BYTE [pChrTable][0]
 
-    offset :=  BYTE [pChrTable][ 1 ] +(BYTE [pChrTable][ 2 ] << 8) +(BYTE [pChrTable][ 3 ] << 16)
+    ' locate descriptor for this character
+    descriptorOffset := (chrCode - first_char) << 2      ' NOTE: "<< 2" - descriptors are 4 bytes ea.
+    pChrDescriptor := fontAddr + (8 + descriptorOffset) ' NOTE font header is 8 bytes
 
-    pChrBitmap := fontAddr + offset
+    ' load values from descriptor of this charactor
+    chrWidth := BYTE [pChrDescriptor][0]
+    bitmapOffset :=  BYTE [pChrDescriptor][1] + (BYTE [pChrDescriptor][2] << 8) + (BYTE [pChrDescriptor][3] << 16)
 
+    ' addr of bits to write
+    pChrBitmap := fontAddr + bitmapOffset
+
+    ' now place bits in display buffer at specific location (deviceX, deviceY)
     if((fontOrientation == FO_HORIZONTAL) || (fontOrientation == FO_VERTICAL_COLUMN))
+        ' place horizontal letter or horizontal letter (of vertical column)
         y := deviceY
         repeat y_cnt from 0 to fontHeight - 1
             x := deviceX
             mask := 0
             repeat x_cnt from 0 to chrWidth - 1
-                if(!mask )
-                    temp := BYTE [pChrBitmap]
+                if mask == 0
+                    rowBits := BYTE [pChrBitmap]
                     pChrBitmap++
                     mask := $01
 
-                if(temp & mask )
+                if(rowBits & mask)
                     frame_px(x, y, fontColor)
-                    waitms(1)   ' PROXY for Delay_80us()
+                    'waitms(1)   ' PROXY for Delay_80us()
 
                 x++
                 mask <<= 1
+                mask &= $ff
 
             y++
 
@@ -454,88 +484,34 @@ PRI char_wr(ch_idx) | tmp, chrWidth, x_cnt, y_cnt, x, y, temp, mask, offset, pCh
             deviceY := y
 
     else
+        ' place vertical letter
         y := deviceX
         repeat y_cnt from 0 to fontHeight - 1
             x := deviceY
             mask := 0
             repeat x_cnt from 0 to chrWidth - 1
                 if mask == 0
-                    temp := BYTE [pChrBitmap]
+                    rowBits := BYTE [pChrBitmap]
                     pChrBitmap++
                     mask := $01
 
-                if temp & mask
+                if rowBits & mask
                     frame_px(x, y, fontColor)
-                    waitms(1)   ' PROXY for Delay_80us()
+                    'waitms(1)   ' PROXY for Delay_80us()
 
                 x--
                 mask <<= 1
+                mask &= $ff
 
             y++
 
         deviceY := x - 1
 
-
-DAT
-    lut_data    BYTE    $82,$00,$00,$00,$AA,$00,$00,$00,$AA
-                BYTE    $AA,$00,$00,$AA,$AA,$AA,$00,$55,$AA
-                BYTE    $AA,$00,$55,$55,$55,$55,$AA,$AA,$AA
-                BYTE    $AA,$55,$55,$55,$55,$AA,$AA,$AA,$AA
-                BYTE    $15,$15,$15,$15,$05,$05,$05,$05,$01
-                BYTE    $01,$01,$01,$00,$00,$00,$00,$00,$00
-                BYTE    $00,$00,$00,$00,$00,$00,$00,$00,$00
-                BYTE    $00,$00,$00,$00,$00,$00,$00,$00,$00
-                BYTE    $00,$00,$00,$00,$00,$00,$00,$00,$41
-                BYTE    $45,$F1,$FF,$5F,$55,$01,$00,$00,$00
-
-PUB baseTest() | i
-    debug("* baseTest() ENTRY")
-    '  device is already reset
-
-    writeCmd(CMD_DEEP_SLEEP_MODE)  ' do not enter deep sleep mode
-    writeData($00)
-
-    writeCmd(CMD_DATA_ENTRY_MODE_SETTING) ' data entry mode setting $01: Y decrement,X increment
-    writeData($01)
-
-    writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS) ' set RAM X-address start/end position
-    writeData($00) ' RAM X -address start at 00H
-    writeData($11) ' RAM X-address end at 11H->(17D),that is(17+1*4=72)start/end position
-    writeData($AB) ' RAM Y-address start at ABH->(171D)
-    writeData($00) ' RAM Y-address end at 00H
-
-    writeCmd(CMD_SET_RAM_X_ADDR_CTR) ' set RAM x address count to 0
-    writeData($00)
-
-    writeCmd(CMD_SET_RAM_Y_ADDR_CTR) ' set RAM Y address count to 172->0
-    writeData($AB)
-
-    writeCmd($F0) ' booster feedback selection,$1F->internal feedback is used
-    writeData($1F) ' $83
-
-    writeCmd(CMD_DISPLAY_UPDATE_CTRL_1) ' bypass the RAM data into the display, enable pass
-    writeData($03)
-
-    writeCmd(CMD_WRITE_VCOM_REGISTER) ' write VCOM register
-    writeData($A0)
-
-    writeCmd(CMD_BORDER_WAVEFORM_CTRL) ' board waveform, board voltage
-    writeData($63)
-
-    writeCmd(CMD_DISPLAY_UPDATE_CTRL_2) ' enable sequence, CLK->CP->
-    writeData($C4)
-
-    writeCmd(CMD_WRITE_LUT_REGISTER) ' write LUT register
-    repeat i from 0 to 90 - 1
-        writeData(byte [@lut_data][i])
-
-    debug("* baseTest() EXIT")
-
-PRI fill_display(fileByte) | i
+PRI fill_display(fillByte) | i
 ' $FF=white, $00=black, $55=gray 1, $AA=gray 2
     writeCmd(CMD_WRITE_RAM) ' data write into RAM after this command
     repeat i from 0 to 3096 - 1 ' 3096 = 172x72 / 8x2,(2-Bit per dot)
-        writeData(fileByte)
+        writeData(fillByte)
     writeCmd(CMD_MASTER_ACTIVATION)
 
     ' Booster disable
