@@ -27,9 +27,9 @@ Initial ported capabilties:
 - Font orientations:
   - Vertical, Vertical-Column, Horizontal
 - eInk colors:
-  - Black, light Gray, dark Gray, White
+  - Black, light Gray, dark Gray, and White
 
-To this, we added these additional capabilities
+To this, we added these additional capabilities:
 
 - Set background color
 - Invert font
