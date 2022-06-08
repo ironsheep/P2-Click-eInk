@@ -10,6 +10,10 @@ Driving the Mikroe eInk Click with our P2
 
 [eINK click](https://www.mikroe.com/eink-click) is an adapter Click board™ from [Mikroe.com](https://www.mikroe.com/), used to interface a [compatible eINK display](https://www.mikroe.com/accessories/e-paper-displays) with the host MCU. The most distinctive feature of the eINK displays is their very low power consumption and the **ability to retain the information, even after disconnecting from the power source**. The power is consumed only when the display content is changing. [The Click board™ as delivered from Parallax.com](https://www.parallax.com/product/eink-click-e-paper-bundle-2/) comes shipped with the 172x72 eINK display, driven by the integrated SSD1606 controller and it can display 4 shades: black, dark gray, light gray and white. The same type of display is used on the popular Kindle E-readers. 
 
+<p align="center">
+  <img src="Images/eink_click_bundle213inch.png" width="300">
+</p>
+
 ## P2 Driver for the eInk Click Module
 
 This project provides a working driver for the P2 developed in spin2.  It started as a port of the C example code for the 2.13" eInk display which Parallax ships.  It has been extended to add capabilities to create more creative displays. 
