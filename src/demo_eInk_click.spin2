@@ -48,9 +48,9 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
 
 
 
-    'text_demo()
+    text_demo()
 
-    image_demo()    ' 43 * 2 seconds runtime!
+    'image_demo()    ' 43 * 2 seconds runtime!
 
     'repeat 10
     '    image_demo()
@@ -59,16 +59,23 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
 
 DAT { demonstration data }
 
-    demo_text       BYTE  "eINK" , 0
-    demo_text1      BYTE  "Display", 0
-    demo_text2      BYTE  "2.13inch", 0
-    demo_text3      BYTE  "Vert" , 0
-    demo_text4      BYTE  "vCol" , 0
+    demo_text       BYTE    "eINK" , 0
+    demo_text1      BYTE    "Display", 0
+    demo_text2      BYTE    "2.13inch", 0
+    demo_text3      BYTE    "Vert" , 0
+    demo_text4      BYTE    "vCol" , 0
 
-    demo_text00_000    BYTE  "0,0hz" , 0
-    demo_text10_050    BYTE  "10,50hz" , 0
-    demo_text20_100    BYTE  "20,100hz" , 0
-    demo_text30_200    BYTE  "30,200hz" , 0
+    demo_text00_000 BYTE    "0,0hz" , 0
+    demo_text10_050 BYTE    "10,50hz" , 0
+    demo_text20_100 BYTE    "20,100hz" , 0
+    demo_text30_200 BYTE    "30,200hz" , 0
+
+    ' recreating the document display
+    recr_text1      BYTE    "EA EPA20-A",0
+    recr_text2      BYTE    "* E-Paper",0
+    recr_text3      BYTE    "* 2,4..3,3V",0
+    recr_text4      BYTE    "* 4 Grey Levels",0
+    recr_text5      BYTE    "* SPI Interface",0
 
 PRI text_demo()
     ' demo display text on screen
@@ -76,7 +83,26 @@ PRI text_demo()
     '   Y: 0-171
 
     eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
+{
+    eInkDisplay.lineAtXY(50, 5, 65, 5, eInkDisplay.EINK_COLOR_BLACK)
+    eInkDisplay.lineAtXY(50, 10, 65, 10, eInkDisplay.EINK_COLOR_LIGHT_GREY)
+    eInkDisplay.lineAtXY(50, 15, 65, 15, eInkDisplay.EINK_COLOR_DARK_GREY)
 
+    eInkDisplay.lineAtXY(20, 5, 20, 15, eInkDisplay.EINK_COLOR_BLACK)
+    eInkDisplay.lineAtXY(25, 5, 25, 15, eInkDisplay.EINK_COLOR_LIGHT_GREY)
+    eInkDisplay.lineAtXY(30, 5, 30, 15, eInkDisplay.EINK_COLOR_DARK_GREY)
+'}
+    ' borderAtXY(X,Y, color, thickness, width, height)
+    eInkDisplay.borderAtXY(0, 0, eInkDisplay.EINK_COLOR_LIGHT_GREY, 1, 61, 250)
+    eInkDisplay.borderAtXY(0+2, 0+4, eInkDisplay.EINK_COLOR_BLACK, 1, 61-4, 250-8)
+
+    'eInkDisplay.lineAtXY(0, 0, 0, 100, eInkDisplay.EINK_COLOR_BLACK)        ' left
+    'eInkDisplay.lineAtXY(0, 0, 60, 0, eInkDisplay.EINK_COLOR_BLACK)         ' top
+
+    'eInkDisplay.lineAtXY(60, 4, 60, 100, eInkDisplay.EINK_COLOR_BLACK)      ' right
+    'eInkDisplay.lineAtXY(0, 249, 60, 249, eInkDisplay.EINK_COLOR_BLACK)         ' bottom
+
+{
     eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
     eInkDisplay.showTextAtXY(0, 0, @demo_text00_000)
 
@@ -88,21 +114,25 @@ PRI text_demo()
 
     eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
     eInkDisplay.showTextAtXY(30, 200, @demo_text30_200)
-
-{
-    eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_10)
-    eInkDisplay.showTextAtXY(5, 90, @demo_text1)
-
-    eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
-    eInkDisplay.showTextAtXY(5, 120, @demo_text2)
 '}
-{
+
+'{
+    eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_18)
+    eInkDisplay.showTextAtXY(5, 70, @demo_text)
+
+    'eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+    'eInkDisplay.showTextAtXY(5, 120, @demo_text2)
+'}
+'{
     eInkDisplay.setFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
     eInkDisplay.showTextAtXY(20, 60, @demo_text3)
 '}
-{
+    eInkDisplay.setFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_18)
+    eInkDisplay.showTextAtXY(30, 240, @demo_text)
+
+'{
     eInkDisplay.setFont(eInkDisplay.FO_VERTICAL_COLUMN, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
-    eInkDisplay.showTextAtXY(5, 80, @demo_text4)
+    eInkDisplay.showTextAtXY(5, 140, @demo_text4)
 '}
     waitms(5000)
 

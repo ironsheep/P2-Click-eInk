@@ -272,18 +272,10 @@ PUB setFont(orientation, color, eFont) | pFont
     debug("ft: fontColor ", uhex_(fontColor))
 
 
-PUB fillScreen(color) | xCtr, yCtr, validColor, byteCtr
+PUB fillScreen(color) | xCtr, yCtr, fillColor, byteCtr
 '' Fill display with {color}
-    validColor := color
-
     ' override color if it is not one of the supported four!
-    case color
-        EINK_COLOR_WHITE:
-        EINK_COLOR_BLACK:
-        EINK_COLOR_LIGHT_GREY:
-        EINK_COLOR_DARK_GREY:
-        other:
-            validColor := EINK_COLOR_WHITE    ' default
+    fillColor := validColor(color)
 
     setMemoryArea(0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1)
 
@@ -292,7 +284,7 @@ PUB fillScreen(color) | xCtr, yCtr, validColor, byteCtr
         setMemoryPointer(0, 0)
         writeCmd(CMD_WRITE_RAM)
         repeat byteCtr from 0 to FRAME_SIZE_IN_BYTES - 1
-            writeData(validColor)
+            writeData(fillColor)
 
     else
         ' old? 2.13 means of doing this...
@@ -302,25 +294,14 @@ PUB fillScreen(color) | xCtr, yCtr, validColor, byteCtr
             ' write contents for this line
             writeCmd(CMD_WRITE_RAM)
             repeat xCtr from 0 to 16 - 1
-                writeData(validColor)
+                writeData(fillColor)
 
     displayDelay()
     updateDisplay(DISPLAY_TYPE)
 
-PUB setBackground(color) | validColor
+PUB setBackground(color)
 '' Fill display with {color}
-    validColor := color
-
-    ' override color if it is not one of the supported four!
-    case color
-        EINK_COLOR_WHITE:
-        EINK_COLOR_BLACK:
-        EINK_COLOR_LIGHT_GREY:
-        EINK_COLOR_DARK_GREY:
-        other:
-            validColor := EINK_COLOR_WHITE    ' default
-
-    bkgndColor := validColor
+    bkgndColor := validColor(color)
     ' preset background color
     bytefill(@deviceFrame, bkgndColor, FRAME_SIZE_IN_BYTES)
 
@@ -387,6 +368,49 @@ PUB showTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
     ' flush content to display
     displayDelay()
     updateDisplay(DISPLAY_TYPE)
+
+PUB borderAtXY(X,Y, color, thickness, width, height) | lineCt, topRow, botRow, ltCol, rtCol
+    topRow := Y
+    botRow := Y + height - 1
+    ltCol := X
+    rtCol := X + width - 1
+    ' now draw lines (1 px thickness)
+    lineAtXY(ltCol, topRow, rtCol, topRow, color) ' top horiz
+    lineAtXY(ltCol, botRow, rtCol, botRow, color) ' bottom horiz
+    lineAtXY(ltCol, topRow, ltCol, botRow, color) ' left vert
+    lineAtXY(rtCol, topRow, rtCol, botRow, color) ' right vert
+    if thickness > 1
+        repeat lineCt from 0 to thickness - 2
+            topRow++
+            botRow--
+            ltCol++
+            rtCol--
+            if botRow >= topRow or ltCol >= rtCol
+                quit
+            lineAtXY(ltCol, topRow, rtCol, topRow, color) ' top horiz
+            lineAtXY(ltCol, botRow, rtCol, botRow, color) ' bottom horiz
+            lineAtXY(ltCol, topRow, ltCol, botRow, color) ' left vert
+            lineAtXY(rtCol, topRow, rtCol, botRow, color) ' right vert
+
+
+PUB lineAtXY(fmX, fmY, toX, toY, color) | vFmX, vFmY, vToX, vToY, xOffset, yOffset, lineColor
+' draw line into device buffer
+    vFmX := 0 #> fmX <# DISPLAY_WIDTH
+    vFmY := 0 #> fmY <# DISPLAY_HEIGHT
+    vToX := 0 #> toX <# DISPLAY_WIDTH
+    vToY := 0 #> toY <# DISPLAY_HEIGHT
+
+    lineColor := validColor(color)
+    ' Draw Line - start co-ords, end co-ords, color
+    'plot incrementing x axis
+    repeat xOffset from 0 to vToX - vFmX
+        yOffset := (vToY - vFmY) * xOffset / (vToX - vFmX)
+        frame_px(vFmX + xOffset, vFmY + yOffset, lineColor)
+    'plot incrementing y axis
+    repeat yOffset from 0 to vToY-vFmY
+        xOffset := (vToX - vFmX) * yOffset / (vToY - vFmY)
+        frame_px(vFmX + xOffset, vFmY + yOffset, lineColor)
+
 
 CON ' ---- PRIVATE Utility Methods ----
 
@@ -584,6 +608,18 @@ PRI waitForDeviceIdle() | state
             waitms(100)
     until state == 0
 
+PRI validColor(rawColor) : retColor
+    retColor := rawColor
+
+    ' override color if it is not one of the supported four!
+    case rawColor
+        EINK_COLOR_WHITE:
+        EINK_COLOR_BLACK:
+        EINK_COLOR_LIGHT_GREY:
+        EINK_COLOR_DARK_GREY:
+        other:
+            retColor := EINK_COLOR_WHITE    ' default
+
 
 DAT { object class data }
 
@@ -641,7 +677,7 @@ DAT { object class data }
                             BYTE    $00, $00, $00, $00, $00, $00, $00
 
 PRI frame_px(x, y, fntColor) | bitmapOffset, byteIdx
-' place font pixel in device frame for later display
+' place font pivToXl in device frame for later display
     byteIdx := (y * (DISPLAY_WIDTH / 8)) + (x / 4)
     bitmapOffset := (3 - (x +// 4)) * 2
 
@@ -649,7 +685,7 @@ PRI frame_px(x, y, fntColor) | bitmapOffset, byteIdx
     BYTE [@deviceFrame][byteIdx] |= ((fntColor & $03) << bitmapOffset)
 
 
-PRI char_wr(chrCode) | descriptorOffset, chrWidth, xCtr, yCtr, x, y, rowBits, mask, bitmapOffset, pChrDescriptor, pChrBitmap
+PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY, dblX, dblY, rowBits, mask, bitmapOffset, pChrDescriptor, pChrBitmap
 ' place font character in device frame for later display
 
     ' exit if FONT doesn't have this character
@@ -674,54 +710,62 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, xCtr, yCtr, x, y, rowBits, ma
     ' now place bits in display buffer at specific location (deviceX, deviceY)
     if((fontOrientation == FO_HORIZONTAL) || (fontOrientation == FO_VERTICAL_COLUMN))
         ' place horizontal letter or horizontal letter (within vertical column)
-        y := deviceY
-        repeat yCtr from 0 to fontHeight - 1
-            x := deviceX
+        frmY := deviceY
+        repeat fntIdxY from 0 to fontHeight - 1
+            frmX := deviceX
             mask := 0
-            repeat xCtr from 0 to chrWidth - 1
+            repeat fntIdxX from 0 to chrWidth - 1
                 if mask == 0
                     rowBits := BYTE [pChrBitmap]
                     pChrBitmap++
                     mask := $01
 
                 if rowBits & mask
-                    frame_px(x, y, fontColor)
-                    'waitms(1)   ' PROXY for Delay_80us()
+                    'frame_px(frmX, frmY, fontColor)
+                    dblY := deviceY + fntIdxY * 2
+                    frame_px(frmX, dblY, fontColor)
+                    frame_px(frmX, dblY+1, fontColor)
+                   'waitms(1)   ' PROXY for Delay_80us()
 
-                x++
+                frmX++
                 mask <<= 1
                 mask &= $ff
 
-            y++
+            frmY++
 
         if fontOrientation == FO_HORIZONTAL
-            deviceX := x + 1    ' move to next char position HORIZONTAL
+            deviceX := frmX + 1    ' move to next char position HORIZONTAL
         else
-            deviceY := y        ' move to next char position VERTICAL
+            'deviceY := frmY        ' move to next char position VERTICAL
+            deviceY := deviceY + (fontHeight * 2) - 1
 
     else
         ' place vertical letter
-        y := deviceX
-        repeat yCtr from 0 to fontHeight - 1
-            x := deviceY
+        frmY := deviceX
+        repeat fntIdxY from 0 to fontHeight - 1
+            frmX := deviceY
             mask := 0
-            repeat xCtr from 0 to chrWidth - 1
+            repeat fntIdxX from 0 to chrWidth - 1
                 if mask == 0
                     rowBits := BYTE [pChrBitmap]
                     pChrBitmap++
                     mask := $01
 
                 if rowBits & mask
-                    frame_px(x, y, fontColor)
+                    'frame_px(frmY, frmX, fontColor)
+                    dblX := deviceY - fntIdxX * 2
+                    frame_px(frmY, dblX, fontColor)
+                    frame_px(frmY, dblX+1, fontColor)
                     'waitms(1)   ' PROXY for Delay_80us()
 
-                x--
+                frmX--
                 mask <<= 1
                 mask &= $ff
 
-            y++
+            frmY++
 
-        deviceY := x - 1    ' move to next char position vertically
+        'deviceY := frmX - 1    ' move to next char position vertically
+        deviceY := deviceY - (chrWidth * 2) - 1    ' move to next char position vertically
 
 PRI writeCmd(data)
 ' write command byte(DC low = command)

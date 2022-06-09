@@ -54,8 +54,8 @@ DAT { FONT data }
 
 ' Ea. Font is couple of tables:
 '   (T1) 8 byte header
-'     0 -
-'     1 -
+'     0 - Unused
+'     1 - Unused
 '     2 - LSB offset to first char
 '     3 - MSB offset to first char
 '     4 - LSB offset to last char
