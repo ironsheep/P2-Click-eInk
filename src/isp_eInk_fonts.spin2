@@ -76,16 +76,16 @@ DAT { FONT data }
                 BYTE    $00
                 BYTE    $20,$00
                 BYTE    $7F,$00
-                BYTE    $0B
+                BYTE    $0B         ' bytes per entry
                 BYTE    $10
     ' descriptors
-                BYTE    $03,$88,$01,$00     ' $20
-                BYTE    $01,$93,$01,$00     ' $21
-                BYTE    $03,$9E,$01,$00     '  etc...
-                BYTE    $07,$A9,$01,$00
-                BYTE    $05,$B4,$01,$00
-                BYTE    $09,$BF,$01,$00
-                BYTE    $06,$D5,$01,$00
+                BYTE    $03,$88,$01,$00     ' 32 $20
+                BYTE    $01,$93,$01,$00     ' 33 $21
+                BYTE    $03,$9E,$01,$00     ' 34 $22 etc...
+                BYTE    $07,$A9,$01,$00     ' 35 $23
+                BYTE    $05,$B4,$01,$00     ' 36 $24
+                BYTE    $09,$BF,$01,$00     ' 37 $25
+                BYTE    $06,$D5,$01,$00     ' 33 $26
                 BYTE    $01,$E0,$01,$00
                 BYTE    $03,$EB,$01,$00
                 BYTE    $02,$F6,$01,$00
@@ -176,7 +176,7 @@ DAT { FONT data }
                 BYTE    $06,$9D,$05,$00
                 BYTE    $02,$A8,$05,$00     ' $7f
                 ' bitmaps for each descriptor
-                BYTE    $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00                           ' Code for char num 32
+                BYTE    $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00                           ' Code for char num 32 (0x20)
                 BYTE    $00,$00,$01,$01,$01,$01,$01,$00,$01,$00,$00                           ' Code for char num 33
                 BYTE    $00,$05,$05,$05,$00,$00,$00,$00,$00,$00,$00                           ' Code for char num 34
                 BYTE    $00,$00,$24,$24,$7E,$14,$3F,$12,$12,$00,$00                           ' Code for char num 35
@@ -271,7 +271,7 @@ DAT { FONT data }
                 BYTE    $00,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02                           ' Code for char num 124
                 BYTE    $00,$01,$02,$02,$02,$02,$04,$02,$02,$02,$01                           ' Code for char num 125
                 BYTE    $00,$00,$00,$00,$00,$26,$19,$00,$00,$00,$00                           ' Code for char num 126
-                BYTE    $00,$00,$00,$03,$03,$03,$03,$03,$00,$00,$00                           ' Code for char num 127
+                BYTE    $00,$00,$00,$03,$03,$03,$03,$03,$00,$00,$00                           ' Code for char num 127 (0x7f)
 
 
 ' const uint8_t  fntTahoma_6[1352] = {
@@ -476,7 +476,7 @@ DAT { FONT data }
 
 
 ' const uint8_t  fntTahoma_14[4049] = {
-    fntTahoma_14   BYTE    $00
+    fntTahoma_14    BYTE    $00
                     BYTE    $00
                     BYTE    $20,$00
                     BYTE    $7F,$00

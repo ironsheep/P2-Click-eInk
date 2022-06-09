@@ -19,6 +19,8 @@ CON { Public Interface Constants }
     ' return value when user makes bad choice
     INVALID_PIN_BASE = -1
 
+    #40, DS_eink154, DS_eink200, DS_eink213, DS_eink290
+
     ' forward the font constants so user can select an internal font
     FONT_Tahoma_6 = eInkFonts.FONT_Tahoma_6
     FONT_Tahoma_7 = eInkFonts.FONT_Tahoma_7
@@ -84,54 +86,94 @@ CON { Click Module offsets }
 CON { eInk Constants }
 
 ' error_code Error Code
-    EINK_OK                     =   $00
-    EINK_INIT_ERROR             =   $FF
+    EINK_OK                     = $00
+    EINK_INIT_ERROR             = $FF
 
+' ---------------------------------------
 ' display_resolution Display resolution
-    DISPLAY_WIDTH               =   128     ' phys width 172?
-    DISPLAY_HEIGHT              =   250     ' phys height 72?
-    FRAME_SIZE_IN_BYTES         =   4000    ' 3096? (DISPLAY_WIDTH * DISPLAY_HEIGHT * 2) / 8
+'
+' NOTE: uncomment one oof the following for your display size
+'
+{
+    DISPLAY_WIDTH = 200
+    DISPLAY_HEIGHT = 200
+    DISPLAY_RESOLUTIONS = 5000
 
-' display_communication Display Communication
-    COMMUNICATION_SPI           =   0
-    COMMUNICATION_I2C           =   1
+    DISPLAY_WIDTH               = DISPLAY_WIDTH
+    DISPLAY_HEIGHT              = DISPLAY_HEIGHT
+    FRAME_SIZE_IN_BYTES         = DISPLAY_RESOLUTIONS
+
+    DISPLAY_TYPE                = DS_eink154
+'}
+{
+    DISPLAY_WIDTH = 72
+    DISPLAY_HEIGHT = 172
+    DISPLAY_RESOLUTION = 3096
+
+    DISPLAY_WIDTH               = DISPLAY_WIDTH
+    DISPLAY_HEIGHT              = DISPLAY_HEIGHT
+    FRAME_SIZE_IN_BYTES         = DISPLAY_RESOLUTION
+
+    DISPLAY_TYPE                = DS_eink200
+'}
+'{
+    EINK213_DISPLAY_WIDTH = 128
+    EINK213_DISPLAY_HEIGHT = 250
+    EINK213_DISPLAY_RESOLUTIONS = 4000
+
+    DISPLAY_WIDTH               = EINK213_DISPLAY_WIDTH
+    DISPLAY_HEIGHT              = EINK213_DISPLAY_HEIGHT
+    FRAME_SIZE_IN_BYTES         = EINK213_DISPLAY_RESOLUTIONS
+
+    DISPLAY_TYPE                = DS_eink213
+'}
+{
+    EINK290_DISPLAY_WIDTH = 128
+    EINK290_DISPLAY_HEIGHT = 296
+    EINK290_DISPLAY_RESOLUTIONS = 4736
+
+    DISPLAY_WIDTH               = EINK290_DISPLAY_WIDTH
+    DISPLAY_HEIGHT              = EINK290_DISPLAY_HEIGHT
+    FRAME_SIZE_IN_BYTES         = EINK290_DISPLAY_RESOLUTIONS
+
+    DISPLAY_TYPE                = DS_eink290
+'}
 
 ' fillScreen_color Fill screen color
     ' $FF=white, $00=black, $55=gray 1, $AA=gray 2
-    EINK_COLOR_WHITE          =   $FF
-    EINK_COLOR_BLACK          =   $00
-    EINK_COLOR_LIGHT_GREY     =   $AA
-    EINK_COLOR_DARK_GREY      =   $55
+    EINK_COLOR_WHITE          = $FF
+    EINK_COLOR_BLACK          = $00
+    EINK_COLOR_LIGHT_GREY     = $AA
+    EINK_COLOR_DARK_GREY      = $55
 
-    FO_HORIZONTAL               =   $00
-    FO_VERTICAL                 =   $01
-    FO_VERTICAL_COLUMN          =   $02
+' character orientation on screen
+    FO_HORIZONTAL               = $00
+    FO_VERTICAL                 = $01
+    FO_VERTICAL_COLUMN          = $02
 
 ' display_commands Display Commands
-    CMD_DRIVER_OUTPUT_CTRL          =   $01
-    CMD_BOOSTER_SOFT_START_CTRL     =   $0C
-    CMD_GATE_SCAN_START_POSN        =   $0F
-    CMD_DEEP_SLEEP_MODE             =   $10
-    CMD_DATA_ENTRY_MODE_SETTING     =   $11
-    CMD_SW_RESET                    =   $12
-    CMD_TEMPERATURE_SENSOR_CTRL     =   $1A
-    CMD_MASTER_ACTIVATION           =   $20
-    CMD_DISPLAY_UPDATE_CTRL_1       =   $21
-    CMD_DISPLAY_UPDATE_CTRL_2       =   $22
-    CMD_WRITE_RAM                   =   $24
-    CMD_WRITE_VCOM_REGISTER         =   $2C
-    CMD_WRITE_LUT_REGISTER          =   $32
-    CMD_SET_DUMMY_LINE_PERIOD       =   $3A
-    CMD_SET_GATE_TIME               =   $3B
-    CMD_BORDER_WAVEFORM_CTRL        =   $3C
-    CMD_SET_RAM_X_ADDR_SRTEND_POS   =   $44
-    CMD_SET_RAM_Y_ADDR_SRTEND_POS   =   $45
-    CMD_SET_RAM_X_ADDR_CTR          =   $4E
-    CMD_SET_RAM_Y_ADDR_CTR          =   $4F
-    CMD_TERMINATE_FRAME_READ_WRITE  =   $FF
-
-    ' EINK Tx Buffer Size
-    EINK_BUFFER_SIZE_IN_BYTES = 1024
+    CMD_DRIVER_OUTPUT_CTRL          = $01
+    CMD_BOOSTER_SOFT_START_CTRL     = $0C
+    CMD_GATE_SCAN_START_POSN        = $0F
+    CMD_DEEP_SLEEP_MODE             = $10
+    CMD_DATA_ENTRY_MODE_SETTING     = $11
+    CMD_SW_RESET                    = $12
+    CMD_TEMPERATURE_SENSOR_CTRL     = $1A
+    CMD_MASTER_ACTIVATION           = $20
+    CMD_DISPLAY_UPDATE_CTRL_1       = $21
+    CMD_DISPLAY_UPDATE_CTRL_2       = $22
+    CMD_WRITE_RAM                   = $24
+    CMD_WRITE_VCOM_REGISTER         = $2C
+    CMD_WRITE_LUT_REGISTER          = $32
+    CMD_SET_DUMMY_LINE_PERIOD       = $3A
+    CMD_SET_GATE_TIME               = $3B
+    CMD_BORDER_WAVEFORM_CTRL        = $3C
+    CMD_SET_RAM_X_ADDR_SRTEND_POS   = $44
+    CMD_SET_RAM_Y_ADDR_SRTEND_POS   = $45
+    CMD_SET_RAM_X_ADDR_CTR          = $4E
+    CMD_SET_RAM_Y_ADDR_CTR          = $4F
+    CMD_BOOSTER_FEEDBACK_SELECTION  = $F0
+    CMD_TERMINATE_FRAME_READ_WRITE  = $FF
 
     ' SPI Communication Freq w/EINK Board
     EINK_SPI_CLK_MHZ = 20_000
@@ -166,16 +208,20 @@ PUB start(eClickBasePin) : ok | legalBase
         pinhigh(pinbase + CLICK_OFST_CS)
         ' start the smart pins                            ' deselect EINK Click
         ok := spi.start(pinbase + CLICK_OFST_MISO, pinbase + CLICK_OFST_MOSI, pinbase + CLICK_OFST_SCK, EINK_SPI_CLK_MHZ)                     ' spi to EINK @ 3MHz(can run at 20MHz)
+
         ' reset device
         resetDevice()
-        '  Click initialization.
-        startConfig()
-        setDeviceLut(@EINK213_BIG_LUT_TABLE, 70)
-        waitms(1000)
+
+        '  Click initialization based on display size
+        startConfig(DISPLAY_TYPE)
 
 PUB stop()
 '' Stop the EINK Click SPI Object
     spi.stop()
+
+
+CON ' ---- PUBLIC interface Methods ----
+
 
 PUB enableDevice()
 '' Enable the EINK Device(pull it out of reset)
@@ -193,9 +239,13 @@ PUB resetDevice()
     pinhigh(pinbase + CLICK_OFST_RST)
     waitms(3)
 
-
-CON ' ---- PUBLIC interface Methods ----
-
+{PRI reset()
+' from library source
+    pinlow(pinbase + CLICK_OFST_RST)
+    waitms(200)
+    pinhigh(pinbase + CLICK_OFST_RST)
+    waitms(200)
+}
 
 PUB enterSleepMode()
 '' Tell device to sleep
@@ -216,13 +266,13 @@ PUB setFont(orientation, color, eFont) | pFont
     fontColor       := color
     fontOrientation := orientation
     debug("ft: fontAddr ", uhex_Long_(first_char))
-    debug("ft: first_char ", udec_(first_char))
-    debug("ft: last_char ", udec_(last_char))
+    debug("ft: first_char ", udec_(first_char), ", ", uhex_byte_(first_char))
+    debug("ft: last_char ", udec_(last_char), ", ", uhex_byte_(last_char))
     debug("ft: fontHeight ", udec_(fontHeight))
     debug("ft: fontColor ", uhex_(fontColor))
 
 
-PUB fillScreen(color) | colCtr, rowCtr, validColor
+PUB fillScreen(color) | xCtr, yCtr, validColor, byteCtr
 '' Fill display with {color}
     validColor := color
 
@@ -236,16 +286,26 @@ PUB fillScreen(color) | colCtr, rowCtr, validColor
             validColor := EINK_COLOR_WHITE    ' default
 
     setMemoryArea(0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1)
-    ' for each display line...
-    repeat rowCtr from 0 to DISPLAY_HEIGHT - 1
-        setMemoryPointer(0, rowCtr)
-        ' write contents for this line
+
+    if DISPLAY_TYPE <> DS_eink213
+        ' new? non-2.13 means of doing this...
+        setMemoryPointer(0, 0)
         writeCmd(CMD_WRITE_RAM)
-        repeat colCtr from 0 to 16 - 1
+        repeat byteCtr from 0 to FRAME_SIZE_IN_BYTES - 1
             writeData(validColor)
 
+    else
+        ' old? 2.13 means of doing this...
+        ' for each display line...
+        repeat yCtr from 0 to DISPLAY_HEIGHT - 1
+            setMemoryPointer(0, yCtr)
+            ' write contents for this line
+            writeCmd(CMD_WRITE_RAM)
+            repeat xCtr from 0 to 16 - 1
+                writeData(validColor)
+
     displayDelay()
-    updateDisplay()
+    updateDisplay(DISPLAY_TYPE)
 
 PUB setBackground(color) | validColor
 '' Fill display with {color}
@@ -265,24 +325,35 @@ PUB setBackground(color) | validColor
     bytefill(@deviceFrame, bkgndColor, FRAME_SIZE_IN_BYTES)
 
 
-PUB showImage(pImageBffr) | colCtr, rowCtr, imgIdx
+PUB showImage(pImageBffr) | xCtr, yCtr, imgIdx
 '' Write image bitmap to display
     setMemoryArea(0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1)
-    ' for each display line...
-    repeat rowCtr from 0 to DISPLAY_HEIGHT - 1
-        setMemoryPointer(0, rowCtr)
-        ' write contents for this line
+
+    if DISPLAY_TYPE <> DS_eink213
+        ' new? non-2.13 means of doing this...
+        setMemoryPointer(0, 0)
         writeCmd(CMD_WRITE_RAM)
-        repeat colCtr from 0 to 16 - 1
-            imgIdx := colCtr +(rowCtr * 16)
-            writeData(BYTE [pImageBffr][imgIdx])
+        repeat imgIdx from 0 to FRAME_SIZE_IN_BYTES - 1
+            writeData(BYTE [@pImageBffr][ imgIdx ])
+
+    else
+        ' old? 2.13 means of doing this...
+        ' for each display line...
+        repeat yCtr from 0 to DISPLAY_HEIGHT - 1
+            setMemoryPointer(0, yCtr)
+            ' write contents for this line
+            writeCmd(CMD_WRITE_RAM)
+            repeat xCtr from 0 to 16 - 1
+                imgIdx := xCtr +(yCtr * 16)
+                writeData(BYTE [pImageBffr][imgIdx])
+
     ' flush content to display
-    updateDisplay()
+    updateDisplay(DISPLAY_TYPE)
 
 
-PUB showTextAtXY(X, Y, pText) | colCtr, rowCtr, pos, strIdx, nChar
+PUB showTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
 '' Place zstr on display at device row, column
-    if((Y >= DISPLAY_WIDTH) ||(X >= DISPLAY_HEIGHT))
+    if (X >= DISPLAY_WIDTH) || (Y >= DISPLAY_HEIGHT)
         return
 
     nChar := strsize(pText)
@@ -294,49 +365,152 @@ PUB showTextAtXY(X, Y, pText) | colCtr, rowCtr, pos, strIdx, nChar
         char_wr(BYTE [pText][strIdx])
 
     setMemoryArea(0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1)
-    ' for each display line...
-    repeat rowCtr from 0 to DISPLAY_HEIGHT - 1
-        setMemoryPointer(0, rowCtr)
-        ' write contents for this line
+
+    if DISPLAY_TYPE <> DS_eink213
+        ' new? non-2.13 means of doing this...
+        setMemoryPointer(0, 0)
         writeCmd(CMD_WRITE_RAM)
-        repeat colCtr from 0 to 16 - 1          ' wtf did this 16 come from? (why not width related?)
-            pos := colCtr + (rowCtr * 16)
-            writeData(BYTE [@deviceFrame][ pos ])
+        repeat byteCtr from 0 to FRAME_SIZE_IN_BYTES - 1
+            writeData(BYTE [@deviceFrame][ byteCtr ])
+
+    else
+        ' old? 2.13 means of doing this...
+        ' for each display line...
+        repeat yCtr from 0 to DISPLAY_HEIGHT - 1
+            setMemoryPointer(0, yCtr)
+            ' write contents for this line
+            writeCmd(CMD_WRITE_RAM)
+            repeat xCtr from 0 to 16 - 1          ' wtf did this 16 come from? (why not width related?)
+                byteCtr := xCtr + (yCtr * 16)
+                writeData(BYTE [@deviceFrame][ byteCtr ])
 
     ' flush content to display
     displayDelay()
-    updateDisplay()
+    updateDisplay(DISPLAY_TYPE)
 
 CON ' ---- PRIVATE Utility Methods ----
 
-PRI startConfig()
+PRI startConfig(eDisplaySize)
 ' configure our display
-    writeCmd(CMD_DRIVER_OUTPUT_CTRL)
-    writeData(((DISPLAY_HEIGHT - 1) & $FF))
-    writeData((((DISPLAY_HEIGHT - 1) >> 8) & $FF))
+    case eDisplaySize
+        DS_eink154:
+            writeCmd(CMD_DRIVER_OUTPUT_CTRL)
+            writeData(((DISPLAY_HEIGHT - 1) & $FF))
+            writeData((((DISPLAY_HEIGHT - 1) >> 8) & $FF))
+            writeData($00)
+            writeCmd(CMD_BOOSTER_SOFT_START_CTRL)
+            writeData($D7)
+            writeData($D6)
+            writeData($9D)
+            writeCmd(CMD_WRITE_VCOM_REGISTER)
+            writeData($A8)
+            writeCmd(CMD_SET_DUMMY_LINE_PERIOD)
+            writeData($1A)
+            writeCmd(CMD_SET_GATE_TIME)
+            writeData($08)
+            writeCmd(CMD_DATA_ENTRY_MODE_SETTING)
+            writeData($03)
 
-    writeCmd(CMD_SET_DUMMY_LINE_PERIOD)
-    writeData($06)
-    writeCmd(CMD_SET_GATE_TIME)
-    writeData($0B)
+            displayDelay()
+            setDeviceLut(@EINK154_LUT_TABLE, 30)
+        DS_eink200:
 
-    writeCmd(CMD_DATA_ENTRY_MODE_SETTING)
-    writeData($01)
+            writeCmd(CMD_DEEP_SLEEP_MODE)
+            writeData ($00)
+            writeCmd(CMD_DATA_ENTRY_MODE_SETTING)
+            writeData ($01)
 
-    writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
-    writeData($00)
-    writeData($0F)
-    writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
-    writeData($F9)
-    writeData($00)
+            writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
+            writeData ($00)
+            writeData ($11)
+            writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
+            writeData ($00)
+            writeData ($AB)
 
-    writeCmd(CMD_WRITE_VCOM_REGISTER)
-    writeData($4B)
+            writeCmd(CMD_SET_RAM_X_ADDR_CTR)
+            writeData ($00)
+            writeCmd(CMD_SET_RAM_Y_ADDR_CTR)
+            writeData ($00)
 
-    writeCmd(CMD_BORDER_WAVEFORM_CTRL)
-    writeData($33)
+            writeCmd(CMD_BOOSTER_FEEDBACK_SELECTION)
+            writeData($1F)
+            writeCmd(CMD_DISPLAY_UPDATE_CTRL_1)
+            writeData($03)
+            writeCmd(CMD_WRITE_VCOM_REGISTER)
+            writeData($A0)
+            writeCmd(CMD_BORDER_WAVEFORM_CTRL)
+            writeData($63)
+            writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)
+            writeData($C4)
 
-    displayDelay()
+            displayDelay()
+            setDeviceLut(@EINK200_LUT_TABLE, 90)
+
+        DS_eink213:
+            writeCmd(CMD_DRIVER_OUTPUT_CTRL)
+            writeData((DISPLAY_HEIGHT - 1) & $FF)
+            writeData(((DISPLAY_HEIGHT - 1) >> 8) & $FF)
+
+            writeCmd(CMD_SET_DUMMY_LINE_PERIOD)
+            writeData($06)
+            writeCmd(CMD_SET_GATE_TIME)
+            writeData($0B)
+
+            writeCmd(CMD_DATA_ENTRY_MODE_SETTING)
+            writeData($01)
+
+            writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
+            writeData($00)
+            writeData($0F)
+            writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
+            writeData($F9)
+            writeData($00)
+
+            writeCmd(CMD_WRITE_VCOM_REGISTER)
+            writeData($4B)
+
+            writeCmd(CMD_BORDER_WAVEFORM_CTRL)
+            writeData($33)
+
+            displayDelay()
+            setDeviceLut(@EINK213_BIG_LUT_TABLE, 70)
+
+        DS_eink290:
+            writeCmd(CMD_DRIVER_OUTPUT_CTRL)
+            writeData(((DISPLAY_HEIGHT - 1) & $FF))
+            writeData((((DISPLAY_HEIGHT - 1) >> 8) & $FF))
+            writeData($00)
+
+            ' New eink display sttings
+            writeCmd(CMD_SET_DUMMY_LINE_PERIOD)
+            writeData($1A)
+            writeCmd(CMD_SET_GATE_TIME)
+            writeData($08)
+
+            writeCmd(CMD_DATA_ENTRY_MODE_SETTING)
+            writeData($01)
+            writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
+            writeData($00)
+            writeData($0f)
+            writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
+            writeData($27)
+            writeData($01)
+            writeData($00)
+            writeData($00)
+
+            writeCmd(CMD_WRITE_VCOM_REGISTER)
+            writeData($6E)
+            writeCmd(CMD_BORDER_WAVEFORM_CTRL)
+            writeData($33)
+            writeCmd(CMD_DATA_ENTRY_MODE_SETTING)
+            writeData($03)
+
+            displayDelay()
+            setDeviceLut(@EINK290_LUT_TABLE, 70)
+        other:
+            debug("sc() ERROR unknown display size")
+
+    waitms(1000)    ' let device settle
 
 
 PRI setDeviceLut(pLut, nBytes) | nIdx
@@ -372,21 +546,35 @@ PRI setMemoryArea(xStart, yStart, xEnd, yEnd)
     writeData((yEnd >> 8) & $FF)
 
 
-PRI updateDisplay()
+PRI updateDisplay(eDisplaySize)
 '' Tell display to show updates
     waitms(100)
-    writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)
-    writeData($C7)
-    writeCmd(CMD_MASTER_ACTIVATION)
-    writeCmd(CMD_TERMINATE_FRAME_READ_WRITE)
+
+    case eDisplaySize
+        DS_eink154:
+            writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)
+            writeData($C4)
+            writeCmd(CMD_MASTER_ACTIVATION)
+            writeCmd(CMD_TERMINATE_FRAME_READ_WRITE)
+        DS_eink200:
+            writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)
+            writeData($02)
+            writeCmd(CMD_MASTER_ACTIVATION)
+        DS_eink213:
+            writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)
+            writeData($C7)
+            writeCmd(CMD_MASTER_ACTIVATION)
+            writeCmd(CMD_TERMINATE_FRAME_READ_WRITE)
+        DS_eink290:
+            writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)
+            writeData($C7)
+            writeCmd(CMD_MASTER_ACTIVATION)
+            writeCmd(CMD_TERMINATE_FRAME_READ_WRITE)
+        other:
+            debug("ud() ERROR unknown display size")
+
     waitForDeviceIdle()
 
-
-PRI reset()
-    pinlow(pinbase + CLICK_OFST_RST)
-    waitms(200)
-    pinhigh(pinbase + CLICK_OFST_RST)
-    waitms(200)
 
 PRI waitForDeviceIdle() | state
     ' wait until BUSY is de-asserted
@@ -412,17 +600,45 @@ DAT { object class data }
     deviceY         LONG    0
     deviceFrame     BYTE    0[FRAME_SIZE_IN_BYTES]
 
-    EINK213_BIG_LUT_TABLE   BYTE    $A0,$90,$50,$00,$00,$00,$00     ' 70 bytes long!
-                            BYTE    $50,$90,$A0,$00,$00,$00,$00
-                            BYTE    $A0,$90,$50,$00,$00,$00,$00
-                            BYTE    $50,$90,$A0,$00,$00,$00,$00
-                            BYTE    $00,$00,$00,$00,$00,$00,$00
-                            BYTE    $0F,$0F,$0F,$0F,$02,$10,$10
-                            BYTE    $0A,$0A,$03,$08,$08,$09,$43
-                            BYTE    $07,$00,$00,$00,$00,$00,$00
-                            BYTE    $00,$00,$00,$00,$00,$00,$00
-                            BYTE    $00,$00,$00,$00,$00,$00,$00
+     EINK154_LUT_TABLE      BYTE    $02, $02, $01, $11, $12, $12, $22, $22      ' 30 bytes long!
+                            BYTE    $66, $69, $69, $59, $58, $99, $99, $88
+                            BYTE    $00, $00, $00, $00, $F8, $B4, $13, $51
+                            BYTE    $35, $51, $51, $19, $01, $00
 
+     EINK200_LUT_TABLE      BYTE    $82, $00, $00, $00, $AA, $00, $00, $00      ' 90 bytes long!
+                            BYTE    $AA, $AA, $00, $00, $AA, $AA, $AA, $00
+                            BYTE    $55, $AA, $AA, $00, $55, $55, $55, $55
+                            BYTE    $AA, $AA, $AA, $AA, $55, $55, $55, $55
+                            BYTE    $AA, $AA, $AA, $AA, $15, $15, $15, $15
+                            BYTE    $05, $05, $05, $05, $01, $01, $01, $01
+                            BYTE    $00, $00, $00, $00, $00, $00, $00, $00
+                            BYTE    $00, $00, $00, $00, $00, $00, $00, $00
+                            BYTE    $00, $00, $00, $00, $00, $00, $00, $00
+                            BYTE    $00, $00, $00, $00, $00, $00, $00, $00
+                            BYTE    $41, $45, $F1, $FF, $5F, $55, $01, $00
+                            BYTE    $00, $00
+
+    EINK213_BIG_LUT_TABLE   BYTE    $A0, $90, $50, $00, $00, $00, $00           ' 70 bytes long!
+                            BYTE    $50, $90, $A0, $00, $00, $00, $00
+                            BYTE    $A0, $90, $50, $00, $00, $00, $00
+                            BYTE    $50, $90, $A0, $00, $00, $00, $00
+                            BYTE    $00, $00, $00, $00, $00, $00, $00
+                            BYTE    $0F, $0F, $0F, $0F, $02, $10, $10
+                            BYTE    $0A, $0A, $03, $08, $08, $09, $43
+                            BYTE    $07, $00, $00, $00, $00, $00, $00
+                            BYTE    $00, $00, $00, $00, $00, $00, $00
+                            BYTE    $00, $00, $00, $00, $00, $00, $00
+
+    EINK290_LUT_TABLE       BYTE    $A0, $90, $50, $00, $00, $00, $00           ' 70 bytes long!
+                            BYTE    $50, $90, $A0, $00, $00, $00, $00
+                            BYTE    $A0, $90, $50, $00, $00, $00, $00
+                            BYTE    $50, $90, $A0, $00, $00, $00, $00
+                            BYTE    $00, $00, $00, $00, $00, $00, $00
+                            BYTE    $0F, $0F, $0F, $0F, $02, $10, $10
+                            BYTE    $0A, $0A, $03, $08, $08, $09, $43
+                            BYTE    $07, $00, $00, $00, $00, $00, $00
+                            BYTE    $00, $00, $00, $00, $00, $00, $00
+                            BYTE    $00, $00, $00, $00, $00, $00, $00
 
 PRI frame_px(x, y, fntColor) | bitmapOffset, byteIdx
 ' place font pixel in device frame for later display
@@ -433,7 +649,7 @@ PRI frame_px(x, y, fntColor) | bitmapOffset, byteIdx
     BYTE [@deviceFrame][byteIdx] |= ((fntColor & $03) << bitmapOffset)
 
 
-PRI char_wr(chrCode) | descriptorOffset, chrWidth, x_cnt, y_cnt, x, y, rowBits, mask, bitmapOffset, pChrDescriptor, pChrBitmap
+PRI char_wr(chrCode) | descriptorOffset, chrWidth, xCtr, yCtr, x, y, rowBits, mask, bitmapOffset, pChrDescriptor, pChrBitmap
 ' place font character in device frame for later display
 
     ' exit if FONT doesn't have this character
@@ -450,25 +666,25 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, x_cnt, y_cnt, x, y, rowBits, 
 
     ' load values from descriptor of this charactor
     chrWidth := BYTE [pChrDescriptor][0]
-    bitmapOffset :=  BYTE [pChrDescriptor][1] + (BYTE [pChrDescriptor][2] << 8) + (BYTE [pChrDescriptor][3] << 16)
+    bitmapOffset := BYTE [pChrDescriptor][1] + (BYTE [pChrDescriptor][2] << 8) + (BYTE [pChrDescriptor][3] << 16)
 
     ' addr of bits to write
     pChrBitmap := fontAddr + bitmapOffset
 
     ' now place bits in display buffer at specific location (deviceX, deviceY)
     if((fontOrientation == FO_HORIZONTAL) || (fontOrientation == FO_VERTICAL_COLUMN))
-        ' place horizontal letter or horizontal letter (of vertical column)
+        ' place horizontal letter or horizontal letter (within vertical column)
         y := deviceY
-        repeat y_cnt from 0 to fontHeight - 1
+        repeat yCtr from 0 to fontHeight - 1
             x := deviceX
             mask := 0
-            repeat x_cnt from 0 to chrWidth - 1
+            repeat xCtr from 0 to chrWidth - 1
                 if mask == 0
                     rowBits := BYTE [pChrBitmap]
                     pChrBitmap++
                     mask := $01
 
-                if(rowBits & mask)
+                if rowBits & mask
                     frame_px(x, y, fontColor)
                     'waitms(1)   ' PROXY for Delay_80us()
 
@@ -479,17 +695,17 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, x_cnt, y_cnt, x, y, rowBits, 
             y++
 
         if fontOrientation == FO_HORIZONTAL
-            deviceX := x + 1
+            deviceX := x + 1    ' move to next char position HORIZONTAL
         else
-            deviceY := y
+            deviceY := y        ' move to next char position VERTICAL
 
     else
         ' place vertical letter
         y := deviceX
-        repeat y_cnt from 0 to fontHeight - 1
+        repeat yCtr from 0 to fontHeight - 1
             x := deviceY
             mask := 0
-            repeat x_cnt from 0 to chrWidth - 1
+            repeat xCtr from 0 to chrWidth - 1
                 if mask == 0
                     rowBits := BYTE [pChrBitmap]
                     pChrBitmap++
@@ -505,34 +721,21 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, x_cnt, y_cnt, x, y, rowBits, 
 
             y++
 
-        deviceY := x - 1
-
-PRI fill_display(fillByte) | i
-' $FF=white, $00=black, $55=gray 1, $AA=gray 2
-    writeCmd(CMD_WRITE_RAM) ' data write into RAM after this command
-    repeat i from 0 to 3096 - 1 ' 3096 = 172x72 / 8x2,(2-Bit per dot)
-        writeData(fillByte)
-    writeCmd(CMD_MASTER_ACTIVATION)
-
-    ' Booster disable
-    writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)  ' display updata sequence option, in page 33
-    writeData($02)
-    writeCmd(CMD_MASTER_ACTIVATION)
-
+        deviceY := x - 1    ' move to next char position vertically
 
 PRI writeCmd(data)
 ' write command byte(DC low = command)
     pinlow(pinbase + CLICK_OFST_DC)
-    SPI_out(data)
+    selectNWrite(data)
 
 
 PRI writeData(data)
 ' write data byte(DC high = data)
     pinhigh(pinbase + CLICK_OFST_DC)
-    SPI_out(data)
+    selectNWrite(data)
 
 
-PRI SPI_out(dataByte) | count
+PRI selectNWrite(dataByte) | count
 ' write byte to SPI
     ' select device
     pinlow(pinbase + CLICK_OFST_CS)

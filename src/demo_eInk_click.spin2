@@ -65,6 +65,10 @@ DAT { demonstration data }
     demo_text3      BYTE  "Vert" , 0
     demo_text4      BYTE  "vCol" , 0
 
+    demo_text00_000    BYTE  "0,0hz" , 0
+    demo_text10_050    BYTE  "10,50hz" , 0
+    demo_text20_100    BYTE  "20,100hz" , 0
+    demo_text30_200    BYTE  "30,200hz" , 0
 
 PRI text_demo()
     ' demo display text on screen
@@ -73,8 +77,18 @@ PRI text_demo()
 
     eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
 
-    eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_18)
-    eInkDisplay.showTextAtXY(5, 50, @demo_text)
+    eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+    eInkDisplay.showTextAtXY(0, 0, @demo_text00_000)
+
+    eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+    eInkDisplay.showTextAtXY(10, 50, @demo_text10_050)
+
+    eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+    eInkDisplay.showTextAtXY(20, 100, @demo_text20_100)
+
+    eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+    eInkDisplay.showTextAtXY(30, 200, @demo_text30_200)
+
 {
     eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_10)
     eInkDisplay.showTextAtXY(5, 90, @demo_text1)
@@ -82,12 +96,14 @@ PRI text_demo()
     eInkDisplay.setFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
     eInkDisplay.showTextAtXY(5, 120, @demo_text2)
 '}
+{
     eInkDisplay.setFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
     eInkDisplay.showTextAtXY(20, 60, @demo_text3)
 '}
+{
     eInkDisplay.setFont(eInkDisplay.FO_VERTICAL_COLUMN, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
     eInkDisplay.showTextAtXY(5, 80, @demo_text4)
-
+'}
     waitms(5000)
 
 
