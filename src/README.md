@@ -1,5 +1,5 @@
 # P2 eInk Driver source code
-The P2 driver for Mikroe eInk Click board driver source code
+The source code of the P2 driver for the Mikroe eInk adapter Click board™
 
 ![Project Maintenance][maintenance-shield]
 
@@ -21,12 +21,12 @@ The following files comprise our demo and driver source code:
 | --- | --- | --- |
 | **Driver FILEs**
 | [isp\_eInk_click.spin2](isp_eInk_click.spin2) | DRIVER | the eInk Driver
-| isp\_eInk_fonts.spin2 | DRIVER | the eInk FONTs for driver
-| jm\_ez_spi.spin2 | DRIVER | SPI smart-pin comms
+| [isp\_eInk_fonts.spin2](isp_eInk_fonts.spin2) | DRIVER | the eInk FONTs for driver
+| [jm\_ez_spi.spin2](jm_ez_spi.spin2) | DRIVER | SPI smart-pin comms
 | **Demo FILEs**
-| demo\_eInk_click.spin2 | demo | DEMO top-level file
-| isp\_eInk\_demo_images.spin2 | demo | images shown by demo
-| isp\_image_coffee.spin2 | demo | demo and sample converted bitmap
+| [demo\_eInk_click.spin2](demo_eInk_click.spin2) | demo | DEMO top-level file
+| [isp\_eInk\_demo_images.spin2](isp_eInk_demo_images.spin2) | demo | images shown by demo
+| [isp\_image_coffee.spin2](isp_image_coffee.spin2) | demo | demo and sample converted bitmap
 
 
 Additional pages:
