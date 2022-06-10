@@ -1,5 +1,5 @@
-# P2 eInk Driver source code
-Tool for creating bitmap .spin2 files for use with P2 driver for Mikroe eInk Click
+# P2 eInk Hardware Documents
+Hardware documents for the Mikroe eInk Click board
 
 ![Project Maintenance][maintenance-shield]
 
@@ -8,7 +8,7 @@ Tool for creating bitmap .spin2 files for use with P2 driver for Mikroe eInk Cli
 
 ## The hardware
 
-These source files demonstrate the use of the eInk display as shipped from Parallax.com. 
+These documents serve as additional reference for the eInk display as shipped from Parallax.com. 
 <p align="center">
   <img src="../Images/eink_click_bundle213inch.png" width="300">
 </p>

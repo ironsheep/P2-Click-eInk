@@ -1,5 +1,5 @@
 # P2 eInk Driver source code
-Tool for creating bitmap .spin2 files for use with P2 driver for Mikroe eInk Click
+The P2 driver for Mikroe eInk Click board driver source code
 
 ![Project Maintenance][maintenance-shield]
 
@@ -20,7 +20,7 @@ The following files comprise our demo and driver source code:
 | Filename | Purpose | Description |
 | --- | --- | --- |
 | **Driver FILEs**
-| isp\_eInk_click.spin2 | DRIVER | the eInk Driver
+| [isp\_eInk_click.spin2](isp_eInk_click.spin2) | DRIVER | the eInk Driver
 | isp\_eInk_fonts.spin2 | DRIVER | the eInk FONTs for driver
 | jm\_ez_spi.spin2 | DRIVER | SPI smart-pin comms
 | **Demo FILEs**
