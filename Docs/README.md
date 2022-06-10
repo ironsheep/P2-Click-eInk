@@ -10,7 +10,7 @@ Hardware documents for the Mikroe eInk adapter Click board™
 
 These documents serve as additional reference for the eInk display as shipped from Parallax.com. 
 <p align="center">
-  <img src="../Images/eink_click_bundle213inch.png" width="300">
+  <img src="../Images/eink_213inch.png" width="300">
 </p>
 
 ## Hardware Documents

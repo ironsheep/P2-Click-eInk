@@ -13,7 +13,7 @@ Driving the Mikroe eInk Click with our P2
 [The Click board™ as delivered from Parallax.com](https://www.parallax.com/product/eink-click-e-paper-bundle-2/) comes shipped with the 250x122 eINK display, driven by the integrated SSD1606 controller and it can display 4 shades: black, dark gray, light gray and white. The same type of display is used on the popular Kindle E-readers. 
 
 <p align="center">
-  <img src="Images/eink_click_bundle213inch.png" width="300">
+  <img src="Images/eink_213inch.png" width="300">
 </p>
 
 ## P2 Driver for the eInk Click Module
@@ -47,6 +47,13 @@ To this, we added these additional capabilities:
 Latest Changes:
 
 ```
+09 June 2022 
+- Font orientations now correct
+- Font sizes now correct for rectangular pixels, sigh.
+- Line drawing working
+- Box drawing working (rectangular outlines)
+- Working on region fill
+- Working on placing overlay bitmaps
 08 June 2022 
 - fixing font orientations
 07 June 2022 
