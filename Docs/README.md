@@ -19,9 +19,9 @@ The following documents are found in this repo:
 
 | Filename | Purpose | Description |
 | --- | --- | --- |
-| epa20-ae.pdf | eInk display | Older display data sheet
-| LM75A.pdf | controller chip | **Product data sheet** - Digital temperature sensor and thermal watchdog, Rev 04 - 10 July 2007
-| ssd1606_1_1.pdf | controller chip | Solomon Systech SSD1606 4GS Active Matrix EPD 128x180 Display Driver with Controller - Oct 2011
+| [epa20-ae.pdf](epa20-ae.pdf) | eInk display | Older display data sheet
+| [LM75A.pdf](LM75A.pdf) | controller chip | **Product data sheet** - Digital temperature sensor and thermal watchdog, Rev 04 - 10 July 2007
+| [ssd1606_1_1.pdf](ssd1606_1_1.pdf) | controller chip | Solomon Systech SSD1606 4GS Active Matrix EPD 128x180 Display Driver with Controller - Oct 2011
 
 
 Additional pages:
