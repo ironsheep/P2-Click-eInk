@@ -10,7 +10,7 @@ Tool for creating bitmap .spin2 files for use with P2 driver for Mikroe eInk Cli
 
 When using our eInk display we want to place images on it. 
 <p align="center">
-  <img src="../Images/eink_click_bundle213inch.png" width="300">
+  <img src="../Images/eink_213inch.png" width="300">
 </p>
 
 ## Utility *create*
