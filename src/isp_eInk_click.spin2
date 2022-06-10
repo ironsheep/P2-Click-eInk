@@ -95,51 +95,51 @@ CON { eInk Constants }
 ' NOTE: uncomment one oof the following for your display size
 '
 {
-    DISPLAY_WIDTH = 200
-    DISPLAY_HEIGHT = 200
-    DISPLAY_RESOLUTIONS = 5000
+    EINK154_DISPLAY_WIDTH = 200
+    EINK154_DISPLAY_HEIGHT = 200
+    EINK154_DISPLAY_RESOLUTION = 5000   ' 200 * 200 / 8  ???
 
-    DISPLAY_WIDTH               = DISPLAY_WIDTH
-    DISPLAY_HEIGHT              = DISPLAY_HEIGHT
-    FRAME_SIZE_IN_BYTES         = DISPLAY_RESOLUTIONS
+    DISPLAY_WIDTH               = EINK154_DISPLAY_WIDTH
+    DISPLAY_HEIGHT              = EINK154_DISPLAY_HEIGHT
+    FRAME_SIZE_IN_BYTES         = EINK154_DISPLAY_RESOLUTION
 
     DISPLAY_TYPE                = DS_eink154
 '}
 {
-    DISPLAY_WIDTH = 72
-    DISPLAY_HEIGHT = 172
-    DISPLAY_RESOLUTION = 3096
+    EINK200_DISPLAY_WIDTH = 72
+    EINK200_DISPLAY_HEIGHT = 172
+    EINK200_DISPLAY_RESOLUTION = 3096   ' 72 * 172 * 2 / 8  !!!
 
-    DISPLAY_WIDTH               = DISPLAY_WIDTH
-    DISPLAY_HEIGHT              = DISPLAY_HEIGHT
-    FRAME_SIZE_IN_BYTES         = DISPLAY_RESOLUTION
+    DISPLAY_WIDTH               = EINK200_DISPLAY_WIDTH
+    DISPLAY_HEIGHT              = EINK200_DISPLAY_HEIGHT
+    FRAME_SIZE_IN_BYTES         = EINK200_DISPLAY_RESOLUTION
 
     DISPLAY_TYPE                = DS_eink200
 '}
 '{
     EINK213_DISPLAY_WIDTH = 128
     EINK213_DISPLAY_HEIGHT = 250
-    EINK213_DISPLAY_RESOLUTIONS = 4000
+    EINK213_DISPLAY_RESOLUTION = 4000   ' 72 * 172 / 8  ???
 
     DISPLAY_WIDTH               = EINK213_DISPLAY_WIDTH
     DISPLAY_HEIGHT              = EINK213_DISPLAY_HEIGHT
-    FRAME_SIZE_IN_BYTES         = EINK213_DISPLAY_RESOLUTIONS
+    FRAME_SIZE_IN_BYTES         = EINK213_DISPLAY_RESOLUTION
 
     DISPLAY_TYPE                = DS_eink213
 '}
 {
     EINK290_DISPLAY_WIDTH = 128
     EINK290_DISPLAY_HEIGHT = 296
-    EINK290_DISPLAY_RESOLUTIONS = 4736
+    EINK290_DISPLAY_RESOLUTION = 4736   ' 128 * 296 / 8  ???
 
     DISPLAY_WIDTH               = EINK290_DISPLAY_WIDTH
     DISPLAY_HEIGHT              = EINK290_DISPLAY_HEIGHT
-    FRAME_SIZE_IN_BYTES         = EINK290_DISPLAY_RESOLUTIONS
+    FRAME_SIZE_IN_BYTES         = EINK290_DISPLAY_RESOLUTION
 
     DISPLAY_TYPE                = DS_eink290
 '}
 
-' fillScreen_color Fill screen color
+' screen_color screen color
     ' $FF=white, $00=black, $55=gray 1, $AA=gray 2
     EINK_COLOR_WHITE          = $FF
     EINK_COLOR_BLACK          = $00
@@ -272,7 +272,7 @@ PUB setFont(orientation, color, eFont) | pFont
     debug("ft: fontColor ", uhex_(fontColor))
 
 
-PUB fillScreen(color) | xCtr, yCtr, fillColor, byteCtr
+PUB clearScreenToColor(color) | xCtr, yCtr, fillColor, byteCtr
 '' Fill display with {color}
     ' override color if it is not one of the supported four!
     fillColor := validColor(color)
@@ -365,11 +365,15 @@ PUB showTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
                 byteCtr := xCtr + (yCtr * 16)
                 writeData(BYTE [@deviceFrame][ byteCtr ])
 
-    ' flush content to display
-    displayDelay()
-    updateDisplay(DISPLAY_TYPE)
+PUB fillRegionAt(X, Y, color, width, height) | xCoord, yCoord, fillColor
+    fillColor := validColor(color)
 
-PUB borderAtXY(X,Y, color, thickness, width, height) | lineCt, topRow, botRow, ltCol, rtCol
+    repeat yCoord from Y to Y + height - 1
+        repeat xCoord from X to X + width - 1
+            frame_px(xCoord, yCoord, fillColor)
+
+
+PUB borderAtXY(X, Y, color, thickness, width, height) | lineCt, topRow, botRow, ltCol, rtCol
     topRow := Y
     botRow := Y + height - 1
     ltCol := X
@@ -410,6 +414,48 @@ PUB lineAtXY(fmX, fmY, toX, toY, color) | vFmX, vFmY, vToX, vToY, xOffset, yOffs
     repeat yOffset from 0 to vToY-vFmY
         xOffset := (vToX - vFmX) * yOffset / (vToY - vFmY)
         frame_px(vFmX + xOffset, vFmY + yOffset, lineColor)
+
+PUB placeSmallImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, dstX, dstY, imageIdx, ltBits, rtBits
+'' Overlay image bits of color onto
+    debug("* placeSmallImageAtXY() ", udec_byte(X), udec_byte(Y), uhex_long(pImgBits), udec(imgWidth), udec(imgHeight), udec_byte(rotation))
+    if rotation == 0
+        ' for each column... (2-px values/byte)
+        repeat srcX from 0 to imgWidth - 1
+            dstX := X + (srcX << 1)
+            ' for each row...
+            repeat srcY from 0 to imgHeight - 1
+                dstY := Y + srcY
+                imageIdx := (srcY * imgWidth) + srcX
+                ' isolate our two px values
+                ltBits := (BYTE [pImgBits][imageIdx] & $f0) >> 4
+                rtBits := (BYTE [pImgBits][imageIdx] & $0f)
+                ' place our two px values only if colored
+                if ltBits <> $07
+                    frame_px(dstX + 0, dstY, ltBits & $03)
+                if rtBits <> $07
+                    frame_px(dstX + 1, dstY, rtBits & $03)
+
+    elseif rotation == 90
+        ' for each column... (2-px values/byte)
+        repeat srcX from 0 to imgWidth - 1
+            dstY := X + (srcX << 1)
+            ' for each row...
+            repeat srcY from 0 to imgHeight - 1
+                dstX := Y + srcY
+                ' isolate our two px values
+                imageIdx := (srcY * imgWidth) + srcX
+                ltBits := (BYTE [pImgBits][imageIdx] & $f0) >> 4
+                rtBits := (BYTE [pImgBits][imageIdx] & $0f)
+                ' place our two px values only if colored
+                if ltBits <> $07
+                    frame_px(dstX, dstY + 0, ltBits & $03)
+                if rtBits <> $07
+                    frame_px(dstX, dstY + 1, rtBits & $03)
+
+PUB flushToDisplay()
+'' Flush buffer content to display
+    displayDelay()
+    updateDisplay(DISPLAY_TYPE)
 
 
 CON ' ---- PRIVATE Utility Methods ----
@@ -677,7 +723,7 @@ DAT { object class data }
                             BYTE    $00, $00, $00, $00, $00, $00, $00
 
 PRI frame_px(x, y, fntColor) | bitmapOffset, byteIdx
-' place font pivToXl in device frame for later display
+' place colored font pixel in device frame for later display
     byteIdx := (y * (DISPLAY_WIDTH / 8)) + (x / 4)
     bitmapOffset := (3 - (x +// 4)) * 2
 
@@ -687,16 +733,17 @@ PRI frame_px(x, y, fntColor) | bitmapOffset, byteIdx
 
 PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY, dblX, dblY, rowBits, mask, bitmapOffset, pChrDescriptor, pChrBitmap
 ' place font character in device frame for later display
+' NOTE: font color and device X,Y set externally
+'       adjusts external device X,Y to value for next character
 
-    ' exit if FONT doesn't have this character
+    ' exit if FONT doesn't have this chrCode
     if(chrCode < first_char)
         return
 
     if(chrCode > last_char)
         return
 
-
-    ' locate descriptor for this character
+    ' locate descriptor for this chrCode
     descriptorOffset := (chrCode - first_char) << 2      ' NOTE: "<< 2" - descriptors are 4 bytes ea.
     pChrDescriptor := fontAddr + (8 + descriptorOffset) ' NOTE font header is 8 bytes
 
@@ -765,7 +812,7 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY,
             frmY++
 
         'deviceY := frmX - 1    ' move to next char position vertically
-        deviceY := deviceY - (chrWidth * 2) - 1    ' move to next char position vertically
+        deviceY := deviceY - ((chrWidth * 2) + 2)    ' move to next char position vertically
 
 PRI writeCmd(data)
 ' write command byte(DC low = command)
