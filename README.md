@@ -85,7 +85,7 @@ On this Page:
 
 Additional pages:
 
-- [Start your project using this object](Develop.md) - Walks thru configuration and setup of your own project using this object
+- [Start your project using this object](DEVELOP.md) - Walks thru configuration and setup of your own project using this object
 - [Create bitmaps for display on your eInk device](./C-src)
 - There are a small number of .PDFs in the [Docs](./Docs) directory providing  detailed information on the display and controller chips
 
