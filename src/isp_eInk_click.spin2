@@ -89,55 +89,79 @@ CON { eInk Constants }
     EINK_OK                     = $00
     EINK_INIT_ERROR             = $FF
 
-' ---------------------------------------
+' =======================================
 ' display_resolution Display resolution
 '
 ' NOTE: uncomment one oof the following for your display size
 '
+' ---------------------------------------
+' 1.54" square eInk display 200x200 (27.6mm x 27.6mm) - SSD1608
+' resolution 200-gate, 200-source
 {
     EINK154_DISPLAY_WIDTH = 200
     EINK154_DISPLAY_HEIGHT = 200
-    EINK154_DISPLAY_RESOLUTION = 5000   ' 200 * 200 / 8  ???
+    EINK154_DISPLAY_RESOLUTION = 5000   ' = 200 * 200 / 8  ???
 
     DISPLAY_WIDTH               = EINK154_DISPLAY_WIDTH
     DISPLAY_HEIGHT              = EINK154_DISPLAY_HEIGHT
     FRAME_SIZE_IN_BYTES         = EINK154_DISPLAY_RESOLUTION
 
+    DISPLAY_WIDTH_PIX           = EINK154_DISPLAY_WIDTH
+    DISPLAY_HEIGHT_PIX          = EINK154_DISPLAY_HEIGHT
+
     DISPLAY_TYPE                = DS_eink154
 '}
+' ---------------------------------------
+' 2.00" rectangular eInk display 72x172 (??mm x ??mm)
+' resolution 172-gate, 72-source
 {
     EINK200_DISPLAY_WIDTH = 72
     EINK200_DISPLAY_HEIGHT = 172
-    EINK200_DISPLAY_RESOLUTION = 3096   ' 72 * 172 * 2 / 8  !!!
+    EINK200_DISPLAY_RESOLUTION = 3096   '=  72 * 172 * 2 / 8  !!!
 
     DISPLAY_WIDTH               = EINK200_DISPLAY_WIDTH
     DISPLAY_HEIGHT              = EINK200_DISPLAY_HEIGHT
     FRAME_SIZE_IN_BYTES         = EINK200_DISPLAY_RESOLUTION
 
+    DISPLAY_WIDTH_PIX           = EINK200_DISPLAY_WIDTH
+    DISPLAY_HEIGHT_PIX          = EINK200_DISPLAY_HEIGHT
+
     DISPLAY_TYPE                = DS_eink200
 '}
+' ---------------------------------------
+' 2.13" rectangular eInk display 122x250 (2.37mm x 48.44mm) - SSD1675
+' resolution 250-gate, 122-source
 '{
-    EINK213_DISPLAY_WIDTH = 128
+    EINK213_DISPLAY_WIDTH = 128         ' should be 122 !!!???
     EINK213_DISPLAY_HEIGHT = 250
-    EINK213_DISPLAY_RESOLUTION = 4000   ' 72 * 172 / 8  ???
+    EINK213_DISPLAY_RESOLUTION = 4000   ' = 128 * 250 / 8  ???
 
     DISPLAY_WIDTH               = EINK213_DISPLAY_WIDTH
     DISPLAY_HEIGHT              = EINK213_DISPLAY_HEIGHT
     FRAME_SIZE_IN_BYTES         = EINK213_DISPLAY_RESOLUTION
 
+    DISPLAY_WIDTH_PIX           = EINK213_DISPLAY_WIDTH - 6
+    DISPLAY_HEIGHT_PIX          = EINK213_DISPLAY_HEIGHT
+
     DISPLAY_TYPE                = DS_eink213
 '}
+' ---------------------------------------
+' 2.9" rectangular eInk display 128x296 (29.06mm x 66.90mm) - SSD1675
 {
     EINK290_DISPLAY_WIDTH = 128
     EINK290_DISPLAY_HEIGHT = 296
-    EINK290_DISPLAY_RESOLUTION = 4736   ' 128 * 296 / 8  ???
+    EINK290_DISPLAY_RESOLUTION = 4736   ' = 128 * 296 / 8  ???
 
     DISPLAY_WIDTH               = EINK290_DISPLAY_WIDTH
     DISPLAY_HEIGHT              = EINK290_DISPLAY_HEIGHT
     FRAME_SIZE_IN_BYTES         = EINK290_DISPLAY_RESOLUTION
 
+    DISPLAY_WIDTH_PIX           = EINK290_DISPLAY_WIDTH
+    DISPLAY_HEIGHT_PIX          = EINK290_DISPLAY_HEIGHT
+
     DISPLAY_TYPE                = DS_eink290
 '}
+' =======================================
 
 ' screen_color screen color
     ' $FF=white, $00=black, $55=gray 1, $AA=gray 2
@@ -271,9 +295,10 @@ PUB setFont(orientation, color, eFont) | pFont
     debug("ft: fontHeight ", udec_(fontHeight))
     debug("ft: fontColor ", uhex_(fontColor))
 
+CON ' --- PUBLIC write to Display methods ---
 
-PUB clearScreenToColor(color) | xCtr, yCtr, fillColor, byteCtr
-'' Fill display with {color}
+PUB fillScreen(color) | xCtr, yCtr, fillColor, byteCtr
+'' Fill Display with {color}
     ' override color if it is not one of the supported four!
     fillColor := validColor(color)
 
@@ -281,60 +306,66 @@ PUB clearScreenToColor(color) | xCtr, yCtr, fillColor, byteCtr
 
     if DISPLAY_TYPE <> DS_eink213
         ' new? non-2.13 means of doing this...
-        setMemoryPointer(0, 0)
+        if DISPLAY_TYPE == DS_eink200
+            setMemoryPointer(0, $AB)
+        else
+             setMemoryPointer(0, 0)
         writeCmd(CMD_WRITE_RAM)
         repeat byteCtr from 0 to FRAME_SIZE_IN_BYTES - 1
             writeData(fillColor)
 
     else
-        ' old? 2.13 means of doing this...
+        ' 2.13" means of doing this... we have 6 extra bits at end of ea row!
         ' for each display line...
         repeat yCtr from 0 to DISPLAY_HEIGHT - 1
             setMemoryPointer(0, yCtr)
             ' write contents for this line
             writeCmd(CMD_WRITE_RAM)
-            repeat xCtr from 0 to 16 - 1
+            repeat xCtr from 0 to (DISPLAY_WIDTH / 8) - 1   ' our 122 width is really 128 bits with last 6 ignored!
                 writeData(fillColor)
 
-    displayDelay()
-    updateDisplay(DISPLAY_TYPE)
+    if DISPLAY_TYPE == DS_eink200
+        writeCmd(CMD_MASTER_ACTIVATION)
 
-PUB setBackground(color)
-'' Fill display with {color}
-    bkgndColor := validColor(color)
-    ' preset background color
-    bytefill(@deviceFrame, bkgndColor, FRAME_SIZE_IN_BYTES)
+    ' memory lodaed update display hardware
+    forceUpdateDisplay()
 
 
-PUB showImage(pImageBffr) | xCtr, yCtr, imgIdx
-'' Write image bitmap to display
+PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
+'' Write image bitmap to Display
     setMemoryArea(0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1)
 
     if DISPLAY_TYPE <> DS_eink213
         ' new? non-2.13 means of doing this...
-        setMemoryPointer(0, 0)
+        if DISPLAY_TYPE == DS_eink200
+            setMemoryPointer(0, $AB)
+        else
+             setMemoryPointer(0, 0)
         writeCmd(CMD_WRITE_RAM)
         repeat imgIdx from 0 to FRAME_SIZE_IN_BYTES - 1
             writeData(BYTE [@pImageBffr][ imgIdx ])
 
     else
-        ' old? 2.13 means of doing this...
+        ' 2.13" means of doing this... we have 6 extra bits at end of ea row!
         ' for each display line...
         repeat yCtr from 0 to DISPLAY_HEIGHT - 1
             setMemoryPointer(0, yCtr)
             ' write contents for this line
             writeCmd(CMD_WRITE_RAM)
-            repeat xCtr from 0 to 16 - 1
-                imgIdx := xCtr +(yCtr * 16)
+            repeat xCtr from 0 to (DISPLAY_WIDTH / 8) - 1   ' our 122 width is really 128 bits with last 6 ignored!
+                imgIdx := xCtr +(yCtr * (DISPLAY_WIDTH / 8))
                 writeData(BYTE [pImageBffr][imgIdx])
 
-    ' flush content to display
-    updateDisplay(DISPLAY_TYPE)
+    if DISPLAY_TYPE == DS_eink200
+        writeCmd(CMD_MASTER_ACTIVATION)
 
 
-PUB showTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
-'' Place zstr on display at device row, column
-    if (X >= DISPLAY_WIDTH) || (Y >= DISPLAY_HEIGHT)
+    ' memory lodaed update display hardware
+    forceUpdateDisplay()
+
+PUB displayTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
+'' write zstr to Display at device row, column
+    if (X >= DISPLAY_WIDTH_PIX) || (Y >= DISPLAY_HEIGHT_PIX)
         return
 
     nChar := strsize(pText)
@@ -343,41 +374,59 @@ PUB showTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
     deviceY := Y
 
     repeat strIdx from 0 to nChar - 1
-        char_wr(BYTE [pText][strIdx])
+        char_wr(BYTE [pText][strIdx])   ' place chars in Frame Buffer
 
-    setMemoryArea(0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1)
+    flushToDisplay()
 
-    if DISPLAY_TYPE <> DS_eink213
-        ' new? non-2.13 means of doing this...
-        setMemoryPointer(0, 0)
-        writeCmd(CMD_WRITE_RAM)
-        repeat byteCtr from 0 to FRAME_SIZE_IN_BYTES - 1
-            writeData(BYTE [@deviceFrame][ byteCtr ])
+CON ' --- PUBLIC write to Frame Buffer methods ---
 
-    else
-        ' old? 2.13 means of doing this...
-        ' for each display line...
-        repeat yCtr from 0 to DISPLAY_HEIGHT - 1
-            setMemoryPointer(0, yCtr)
-            ' write contents for this line
-            writeCmd(CMD_WRITE_RAM)
-            repeat xCtr from 0 to 16 - 1          ' wtf did this 16 come from? (why not width related?)
-                byteCtr := xCtr + (yCtr * 16)
-                writeData(BYTE [@deviceFrame][ byteCtr ])
+PUB setBackground(color)
+'' Fill Frame Buffer with {color}
+    bkgndColor := validColor(color)
+    ' preset background color
+    bytefill(@deviceFrame, bkgndColor, FRAME_SIZE_IN_BYTES)
 
-PUB fillRegionAt(X, Y, color, width, height) | xCoord, yCoord, fillColor
+PUB setTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
+'' write zstr to Frame Buffer at device row, column
+    if (X >= DISPLAY_WIDTH_PIX) || (Y >= DISPLAY_HEIGHT_PIX)
+        return
+
+    nChar := strsize(pText)
+
+    deviceX := X
+    deviceY := Y
+
+    repeat strIdx from 0 to nChar - 1
+        char_wr(BYTE [pText][strIdx])   ' place chars in Frame Buffer
+
+
+PUB fillRegionAt(X, Y, color, width, height) | xCoord, yCoord, fillColor, vX, vY, vWidth, vHeight
+'' Fill region of Frame Buffer with color
+
+    ' bail if region doesn't exist
+    if width <= 0 or height <= 0
+        return
+
+    ' ensure we have a valid color
     fillColor := validColor(color)
 
-    repeat yCoord from Y to Y + height - 1
-        repeat xCoord from X to X + width - 1
-            frame_px(xCoord, yCoord, fillColor)
+    ' limit region to displayable area
+    vX, vY, vWidth, vHeight := validXYWidthHeight(X, Y, width, height)
 
+    ' fill the limited area
+    repeat yCoord from vY to vY + vHeight - 1
+        repeat xCoord from vX to vX + vWidth - 1
+            frame_px(xCoord, yCoord, fillColor)   ' place color bits in Frame Buffer
 
-PUB borderAtXY(X, Y, color, thickness, width, height) | lineCt, topRow, botRow, ltCol, rtCol
-    topRow := Y
-    botRow := Y + height - 1
-    ltCol := X
-    rtCol := X + width - 1
+PUB borderAtXY(X, Y, color, thickness, width, height) | lineCt, topRow, botRow, ltCol, rtCol, vX, vY, vWidth, vHeight
+'' Draw border of thinkness into Frame Buffer
+    ' limit region to displayable area
+    vX, vY, vWidth, vHeight := validXYWidthHeight(X, Y, width, height)
+
+    topRow := vY
+    botRow := vY + vHeight - 1
+    ltCol := vX
+    rtCol := vX + vWidth - 1
     ' now draw lines (1 px thickness)
     lineAtXY(ltCol, topRow, rtCol, topRow, color) ' top horiz
     lineAtXY(ltCol, botRow, rtCol, botRow, color) ' bottom horiz
@@ -398,13 +447,15 @@ PUB borderAtXY(X, Y, color, thickness, width, height) | lineCt, topRow, botRow, 
 
 
 PUB lineAtXY(fmX, fmY, toX, toY, color) | vFmX, vFmY, vToX, vToY, xOffset, yOffset, lineColor
-' draw line into device buffer
-    vFmX := 0 #> fmX <# DISPLAY_WIDTH
-    vFmY := 0 #> fmY <# DISPLAY_HEIGHT
-    vToX := 0 #> toX <# DISPLAY_WIDTH
-    vToY := 0 #> toY <# DISPLAY_HEIGHT
+'' Draw line into Frame Buffer
 
+    ' limit locations to displayable area
+    vFmX, vFmY := validXY(fmX, fmY)
+    vToX, vToY := validXY(toX, toY)
+
+    ' ensure we have a valid color
     lineColor := validColor(color)
+
     ' Draw Line - start co-ords, end co-ords, color
     'plot incrementing x axis
     repeat xOffset from 0 to vToX - vFmX
@@ -415,9 +466,9 @@ PUB lineAtXY(fmX, fmY, toX, toY, color) | vFmX, vFmY, vToX, vToY, xOffset, yOffs
         xOffset := (vToX - vFmX) * yOffset / (vToY - vFmY)
         frame_px(vFmX + xOffset, vFmY + yOffset, lineColor)
 
-PUB placeSmallImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, dstX, dstY, imageIdx, ltBits, rtBits
+PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, dstX, dstY, imageIdx, ltBits, rtBits
 '' Overlay image bits of color onto
-    debug("* placeSmallImageAtXY() ", udec_byte(X), udec_byte(Y), uhex_long(pImgBits), udec(imgWidth), udec(imgHeight), udec_byte(rotation))
+    debug("* placeImageAtXY() ", udec_byte(X), udec_byte(Y), uhex_long(pImgBits), udec(imgWidth), udec(imgHeight), udec_byte(rotation))
     if rotation == 0
         ' for each column... (2-px values/byte)
         repeat srcX from 0 to imgWidth - 1
@@ -451,11 +502,38 @@ PUB placeSmallImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, s
                     frame_px(dstX, dstY + 0, ltBits & $03)
                 if rtBits <> $07
                     frame_px(dstX, dstY + 1, rtBits & $03)
+    else
+        debug("* ERROR unsupported rotation: ", udec_(rotation))
 
-PUB flushToDisplay()
-'' Flush buffer content to display
-    displayDelay()
-    updateDisplay(DISPLAY_TYPE)
+PUB flushToDisplay() | byteCtr, yCtr, xCtr
+'' Flush Frame Buffer content to Display
+    setMemoryArea(0, 0, DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1)
+
+    if DISPLAY_TYPE <> DS_eink213
+        ' new? non-2.13 means of doing this...
+        if DISPLAY_TYPE == DS_eink200
+            setMemoryPointer(0, $AB)
+        else
+             setMemoryPointer(0, 0)
+        writeCmd(CMD_WRITE_RAM)
+        repeat byteCtr from 0 to FRAME_SIZE_IN_BYTES - 1
+            writeData(BYTE [@deviceFrame][ byteCtr ])
+
+    else
+        ' 2.13" means of doing this... we have 6 extra bits at end of ea row!
+        ' for each display line...
+        repeat yCtr from 0 to DISPLAY_HEIGHT - 1
+            setMemoryPointer(0, yCtr)
+            ' write contents for this line
+            writeCmd(CMD_WRITE_RAM)
+            repeat xCtr from 0 to (DISPLAY_WIDTH / 8) - 1   ' our 122 width is really 128 bits with last 6 ignored!
+                byteCtr := xCtr + (yCtr * (DISPLAY_WIDTH / 8))
+                writeData(BYTE [@deviceFrame][ byteCtr ])
+
+    if DISPLAY_TYPE == DS_eink200
+        writeCmd(CMD_MASTER_ACTIVATION)
+
+    forceUpdateDisplay()
 
 
 CON ' ---- PRIVATE Utility Methods ----
@@ -482,9 +560,9 @@ PRI startConfig(eDisplaySize)
             writeData($03)
 
             displayDelay()
-            setDeviceLut(@EINK154_LUT_TABLE, 30)
-        DS_eink200:
+            setDeviceLut(@EINK154_LUT_TABLE, 30)    ' waits for 1sec at end
 
+        DS_eink200:
             writeCmd(CMD_DEEP_SLEEP_MODE)
             writeData ($00)
             writeCmd(CMD_DATA_ENTRY_MODE_SETTING)
@@ -514,36 +592,36 @@ PRI startConfig(eDisplaySize)
             writeData($C4)
 
             displayDelay()
-            setDeviceLut(@EINK200_LUT_TABLE, 90)
+            setDeviceLut(@EINK200_LUT_TABLE, 90)    ' waits for 1sec at end
 
         DS_eink213:
-            writeCmd(CMD_DRIVER_OUTPUT_CTRL)
+            writeCmd(CMD_DRIVER_OUTPUT_CTRL)                ' 0x01
             writeData((DISPLAY_HEIGHT - 1) & $FF)
             writeData(((DISPLAY_HEIGHT - 1) >> 8) & $FF)
 
-            writeCmd(CMD_SET_DUMMY_LINE_PERIOD)
-            writeData($06)
-            writeCmd(CMD_SET_GATE_TIME)
-            writeData($0B)
+            writeCmd(CMD_SET_DUMMY_LINE_PERIOD)             ' 0x3A
+            writeData($06)  ' doc 0x0F
+            writeCmd(CMD_SET_GATE_TIME)                     ' 0x3B
+            writeData($0B)  ' doc 0x0C
 
-            writeCmd(CMD_DATA_ENTRY_MODE_SETTING)
-            writeData($01)
+            writeCmd(CMD_DATA_ENTRY_MODE_SETTING)           ' 0x11
+            writeData($01)  ' AM=0, ID=01 -  addr ctr incr in X direction: -y decr, x incr
 
-            writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
+            writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)         ' 0x44
             writeData($00)
-            writeData($0F)
-            writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
-            writeData($F9)
+            writeData($0F)  ' 16 -1
+            writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)         ' 0x45
+            writeData($F9)  ' 250 - 1
             writeData($00)
 
-            writeCmd(CMD_WRITE_VCOM_REGISTER)
-            writeData($4B)
+            writeCmd(CMD_WRITE_VCOM_REGISTER)               ' 0x2C
+            writeData($4B)  ' VCOM -1.9v
 
-            writeCmd(CMD_BORDER_WAVEFORM_CTRL)
+            writeCmd(CMD_BORDER_WAVEFORM_CTRL)              ' 0x3C
             writeData($33)
 
             displayDelay()
-            setDeviceLut(@EINK213_BIG_LUT_TABLE, 70)
+            setDeviceLut(@EINK213_BIG_LUT_TABLE, 70)        ' doc: device LUT is 70 bytes!   waits for 1sec at end
 
         DS_eink290:
             writeCmd(CMD_DRIVER_OUTPUT_CTRL)
@@ -576,23 +654,19 @@ PRI startConfig(eDisplaySize)
             writeData($03)
 
             displayDelay()
-            setDeviceLut(@EINK290_LUT_TABLE, 70)
+            setDeviceLut(@EINK290_LUT_TABLE, 70)    ' waits for 1sec at end
         other:
             debug("sc() ERROR unknown display size")
 
-    waitms(1000)    ' let device settle
 
 
 PRI setDeviceLut(pLut, nBytes) | nIdx
-' write the device LUT data
+' write the device LUT data - waits for 1sec at end
     writeCmd(CMD_WRITE_LUT_REGISTER)
     repeat nIdx from 0 to nBytes - 1
         writeData(BYTE [pLut][nIdx])
 
-
-PRI displayDelay()
-' wait for settle time
-    waitms(2)
+    waitms(1000)    ' let device settle
 
 
 PRI setMemoryPointer(x, y)
@@ -601,47 +675,65 @@ PRI setMemoryPointer(x, y)
     writeData(((x >> 3) & $FF))
     writeCmd(CMD_SET_RAM_Y_ADDR_CTR)
     writeData((y & $FF))
-    writeData(((y >> 8) & $FF))
+    if DISPLAY_TYPE <> DS_eink200
+        writeData(((y >> 8) & $FF))
+    if DISPLAY_TYPE == DS_eink200 or DISPLAY_TYPE == DS_eink154
+        waitForDeviceIdle()
 
 
 PRI setMemoryArea(xStart, yStart, xEnd, yEnd)
 ' set region of RAM
-    writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
-    writeData((xStart >> 3) & $FF)
-    writeData((xEnd >> 3) & $FF)
-    writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
-    writeData(yStart & $FF)
-    writeData((yStart >> 8) & $FF)
-    writeData(yEnd & $FF)
-    writeData((yEnd >> 8) & $FF)
+    if DISPLAY_TYPE == DS_eink200
+        writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
+        writeData((xStart >> 3) & $FF)
+        writeData((((xEnd + 1) >> 2) - 1) & $FF)
+        writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
+        writeData(yStart & $FF)
+        writeData(yEnd & $FF)
+    else
+        writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
+        writeData((xStart >> 3) & $FF)
+        writeData((xEnd >> 3) & $FF)
+        writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
+        writeData(yStart & $FF)
+        writeData((yStart >> 8) & $FF)
+        writeData(yEnd & $FF)
+        writeData((yEnd >> 8) & $FF)
 
 
-PRI updateDisplay(eDisplaySize)
-'' Tell display to show updates
-    waitms(100)
+PRI forceUpdateDisplay()
+' tell display heardware to update
+    displayDelay()
+    updateDisplay(DISPLAY_TYPE) ' waits for busy to end...
 
+
+PRI displayDelay()
+' wait for settle time
+    waitms(2)
+
+
+PRI updateDisplay(eDisplaySize) | cmdValue
+' Tell display to show updates
     case eDisplaySize
         DS_eink154:
-            writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)
-            writeData($C4)
-            writeCmd(CMD_MASTER_ACTIVATION)
-            writeCmd(CMD_TERMINATE_FRAME_READ_WRITE)
+            cmdValue := $C4
         DS_eink200:
-            writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)
-            writeData($02)
-            writeCmd(CMD_MASTER_ACTIVATION)
+            cmdValue := $02
         DS_eink213:
-            writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)
-            writeData($C7)
-            writeCmd(CMD_MASTER_ACTIVATION)
-            writeCmd(CMD_TERMINATE_FRAME_READ_WRITE)
+            cmdValue := $C7
         DS_eink290:
-            writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)
-            writeData($C7)
-            writeCmd(CMD_MASTER_ACTIVATION)
-            writeCmd(CMD_TERMINATE_FRAME_READ_WRITE)
+            cmdValue := $C7
         other:
+            cmdValue := $C7 ' just some random value since unknown display
             debug("ud() ERROR unknown display size")
+
+    waitms(100)
+    writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)
+    writeData(cmdValue)
+    writeCmd(CMD_MASTER_ACTIVATION) ' raises BUSY must wait for end!
+
+    if eDisplaySize <> DS_eink200
+        writeCmd(CMD_TERMINATE_FRAME_READ_WRITE)
 
     waitForDeviceIdle()
 
@@ -666,6 +758,17 @@ PRI validColor(rawColor) : retColor
         other:
             retColor := EINK_COLOR_WHITE    ' default
 
+PRI validXY(X, Y) : vX, vY
+    ' limit region to displayable area
+    vX := 0 #> X <# DISPLAY_WIDTH_PIX - 1
+    vY := 0 #> Y <# DISPLAY_HEIGHT_PIX - 1
+
+PRI validXYWidthHeight(X, Y, width, height) : vX, vY, vWidth, vHeight
+    ' limit region to displayable area
+    vX := 0 #> X <# DISPLAY_WIDTH_PIX - width - 1
+    vY := 0 #> Y <# DISPLAY_HEIGHT_PIX - height - 1
+    vWidth := 1 #> width <# DISPLAY_WIDTH_PIX - X
+    vHeight := 1 #> height <# DISPLAY_HEIGHT_PIX - Y
 
 DAT { object class data }
 
@@ -724,7 +827,10 @@ DAT { object class data }
 
 PRI frame_px(x, y, fntColor) | bitmapOffset, byteIdx
 ' place colored font pixel in device frame for later display
-    byteIdx := (y * (DISPLAY_WIDTH / 8)) + (x / 4)
+    if DISPLAY_TYPE == DS_eink200
+        byteIdx := (y * (DISPLAY_WIDTH / 4)) + (x / 4)
+    else
+        byteIdx := (y * (DISPLAY_WIDTH / 8)) + (x / 4)
     bitmapOffset := (3 - (x +// 4)) * 2
 
     BYTE [@deviceFrame][byteIdx] &= !($03 << bitmapOffset)

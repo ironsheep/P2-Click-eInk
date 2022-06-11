@@ -60,8 +60,8 @@ DAT { FONT data }
 '     3 - MSB offset to first char
 '     4 - LSB offset to last char
 '     5 - MSB offset to last char
-'     6 - font height
-'     7 - ???
+'     6 - char height (also bytes per entry)
+'     7 - max char width?
 '   (T2) char descriptors (for each char)
 '     0 - char width
 '     1 - LSB char offset
@@ -74,10 +74,10 @@ DAT { FONT data }
     ' header
     fntTahoma_7 BYTE    $00
                 BYTE    $00
-                BYTE    $20,$00
-                BYTE    $7F,$00
-                BYTE    $0B         ' bytes per entry
-                BYTE    $10
+                BYTE    $20,$00             ' 1st Char in font
+                BYTE    $7F,$00             ' last Char in font
+                BYTE    $0B                 ' height - bytes per entry
+                BYTE    $10                 ' max width?
     ' descriptors
                 BYTE    $03,$88,$01,$00     ' 32 $20
                 BYTE    $01,$93,$01,$00     ' 33 $21
@@ -1427,8 +1427,8 @@ DAT { FONT data }
                                     BYTE    $00
                                     BYTE    $20,$00
                                     BYTE    $7F,$00
-                                    BYTE    $17
-                                    BYTE    $10
+                                    BYTE    $17         ' height
+                                    BYTE    $10         ' max width?
                                     BYTE    $01,$88,$01,$00
                                     BYTE    $03,$9F,$01,$00
                                     BYTE    $04,$B6,$01,$00
