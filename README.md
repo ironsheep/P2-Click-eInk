@@ -47,6 +47,10 @@ To this, we added these additional capabilities:
 Latest Changes:
 
 ```
+10 June 2022
+- Region Fill working
+- Placing bitmap onto screen working (missing 180 adn 270 rotations yet)
+- General cleanup ensuring all the eInk display sized from Mikroe should work (still need to test them)
 09 June 2022 
 - Font orientations now correct
 - Font sizes now correct for rectangular pixels, sigh.
@@ -61,7 +65,6 @@ Latest Changes:
 - font orientation is not correct
 05 June 2022 
 - Project Started
-
 ```
 
 ## Known Issues
@@ -69,11 +72,7 @@ Latest Changes:
 Things we know about that still need attention:
 
 ```
-We're getting the font display working
-then:
-- adding region coloring
-- adding small bitmap placement
-- adding font inversion
+- we still want to support all display orientations (only two are supported currently.)
 ```
 
 
@@ -81,13 +80,14 @@ then:
 
 On this Page:
 
-- [Driver Features](https://github.com/ironsheep/P2-Click-eInk#features)
+- [Driver Features](#features)
 - [How to contribute](#how-to-contribute)
 
 Additional pages:
 
 - [Start your project using this object](Develop.md) - Walks thru configuration and setup of your own project using this object
-- There are a small number of .PDFs in the [Docs](Docs) directory providing  detailed information on the display and controller chips
+- [Create bitmaps for display on your eInk device](./C-src)
+- There are a small number of .PDFs in the [Docs](./Docs) directory providing  detailed information on the display and controller chips
 
 ## How to Contribute
 
