@@ -8,7 +8,7 @@ Hardware documents for the Mikroe eInk adapter Click board™
 
 ## The hardware
 
-These documents serve as additional reference for the eInk display as shipped from Parallax.com. 
+These documents serve as additional reference for the eInk display as shipped from Parallax.com and Mikroe.com. 
 
 **1.54" iInk hardware** (avail from [Mikroe.com](https://www.mikroe.com/e-paper-bundle-1))
 <p align="center">
@@ -27,7 +27,7 @@ These documents serve as additional reference for the eInk display as shipped fr
 
 ## Hardware Documents
 
-The following documents are found in this repo:
+The following documents are found in this repo (this driver is inteded to support all of these displays):
 
 | Filename | Purpose | Description | eInk Display
 | --- | --- | --- | --- |
