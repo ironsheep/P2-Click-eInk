@@ -33,12 +33,12 @@ Latest Changes:
 
 On this Page:
 
-- Test your ability to make the convert utility
-- Create your image at website
-- Download your image as .c file
-- Build your image into convert
-- Generate your image .spin2 file
-- Include your .spin file and pace your image on screen
+- [Test your ability to make the convert utility](#test-your-ability-to-make-the-convert-utility)
+- [Create your image at website](#create-your-image-at-website)
+- [Download your image as .c file](#download-your-image-as-c-file)
+- [Build your image into convert](#build-your-image-into-convert)
+- [Generate your image .spin2 file](#generate-your-image-spin2-file)
+- [Include your .spin file and pace your image on screen](#include-your-spin-file-and-pace-your-image-on-screen)
 
 Additional pages:
 
@@ -190,7 +190,7 @@ DAT { Overlay Bitmap Data }
 
 ```
 
-## Include your .spin file and pace your image on screen
+## Include your .spin file and place your image on screen
 
 Now that you have your .spin2 file you can include it into your project.
  
