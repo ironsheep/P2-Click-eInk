@@ -1,17 +1,19 @@
 CC=gcc
 CFLAGS=-I.
-DEPS = convert.h
-OBJ = convert.o
+TARGET=convert
+DEPS = $(TARGET).h
+OBJ = $(TARGET).o argparse.o
+
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-convert: $(OBJ)
+$(TARGET): $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
 
 .PHONY: clean
 
-all: convert
+all: $(TARGET)
 
 clean:
-	rm -f *.o *~ core convert image_coffee.spin2
+	rm -f *.o *~ core $(TARGET) *.spin2
