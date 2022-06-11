@@ -132,7 +132,7 @@ CON { eInk Constants }
 ' 2.13" rectangular eInk display 122x250 (2.37mm x 48.44mm) - SSD1675
 ' resolution 250-gate, 122-source
 '{
-    EINK213_DISPLAY_WIDTH = 128         ' should be 122 !!!???
+    EINK213_DISPLAY_WIDTH = 128         ' 122 rounded up to 8-bit multiple (128)
     EINK213_DISPLAY_HEIGHT = 250
     EINK213_DISPLAY_RESOLUTION = 4000   ' = 128 * 250 / 8  ???
 
@@ -364,7 +364,7 @@ PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
     forceUpdateDisplay()
 
 PUB displayTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
-'' write zstr to Display at device row, column
+'' Write zstr to Display at device row, column
     if (X >= DISPLAY_WIDTH_PIX) || (Y >= DISPLAY_HEIGHT_PIX)
         return
 
@@ -387,7 +387,7 @@ PUB setBackground(color)
     bytefill(@deviceFrame, bkgndColor, FRAME_SIZE_IN_BYTES)
 
 PUB setTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
-'' write zstr to Frame Buffer at device row, column
+'' Write zstr to Frame Buffer at row, column
     if (X >= DISPLAY_WIDTH_PIX) || (Y >= DISPLAY_HEIGHT_PIX)
         return
 
@@ -467,7 +467,7 @@ PUB lineAtXY(fmX, fmY, toX, toY, color) | vFmX, vFmY, vToX, vToY, xOffset, yOffs
         frame_px(vFmX + xOffset, vFmY + yOffset, lineColor)
 
 PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, dstX, dstY, imageIdx, ltBits, rtBits
-'' Overlay image bits of color onto
+'' Overlay image bits of color into Frame Buffer
     debug("* placeImageAtXY() ", udec_byte(X), udec_byte(Y), uhex_long(pImgBits), udec(imgWidth), udec(imgHeight), udec_byte(rotation))
     if rotation == 0
         ' for each column... (2-px values/byte)
@@ -595,33 +595,33 @@ PRI startConfig(eDisplaySize)
             setDeviceLut(@EINK200_LUT_TABLE, 90)    ' waits for 1sec at end
 
         DS_eink213:
-            writeCmd(CMD_DRIVER_OUTPUT_CTRL)                ' 0x01
-            writeData((DISPLAY_HEIGHT - 1) & $FF)
-            writeData(((DISPLAY_HEIGHT - 1) >> 8) & $FF)
+            writeCmd(CMD_DRIVER_OUTPUT_CTRL)            ' 0x01
+            writeData((DISPLAY_HEIGHT - 1) & $FF)           ' $f9 (249)
+            writeData(((DISPLAY_HEIGHT - 1) >> 8) & $FF)    ' $00 (0)
 
-            writeCmd(CMD_SET_DUMMY_LINE_PERIOD)             ' 0x3A
-            writeData($06)  ' doc 0x0F
-            writeCmd(CMD_SET_GATE_TIME)                     ' 0x3B
-            writeData($0B)  ' doc 0x0C
+            writeCmd(CMD_SET_DUMMY_LINE_PERIOD)         ' 0x3A
+            writeData($06)                                  ' doc 0x0F vs. 0x06
+            writeCmd(CMD_SET_GATE_TIME)                 ' 0x3B
+            writeData($0B)                                  ' doc 0x0C vs. 0x0B
 
-            writeCmd(CMD_DATA_ENTRY_MODE_SETTING)           ' 0x11
-            writeData($01)  ' AM=0, ID=01 -  addr ctr incr in X direction: -y decr, x incr
+            writeCmd(CMD_DATA_ENTRY_MODE_SETTING)       ' 0x11
+            writeData($01)                                  ' AM=0, ID=01 -  addr ctr incr in X direction: -y decr, x incr
 
-            writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)         ' 0x44
-            writeData($00)
-            writeData($0F)  ' 16 -1
-            writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)         ' 0x45
-            writeData($F9)  ' 250 - 1
-            writeData($00)
+            writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)     ' 0x44
+            writeData($00)                                  ' start
+            writeData((DISPLAY_WIDTH / 8) - 1)              ' end   16 -1   NOTE: X is normal indexed  $00 -> $0F
+            writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)     ' 0x45
+            writeData(DISPLAY_HEIGHT - 1)                   ' start 250 - 1 NOTE: Y is reverse indexed  $f9 -> $00
+            writeData($00)                                  ' end
 
-            writeCmd(CMD_WRITE_VCOM_REGISTER)               ' 0x2C
-            writeData($4B)  ' VCOM -1.9v
+            writeCmd(CMD_WRITE_VCOM_REGISTER)           ' 0x2C
+            writeData($4B)                                  ' VCOM -1.9v
 
-            writeCmd(CMD_BORDER_WAVEFORM_CTRL)              ' 0x3C
-            writeData($33)
+            writeCmd(CMD_BORDER_WAVEFORM_CTRL)          ' 0x3C
+            writeData($33)                                  ' 7,6 = POR, 5,4 = VSH2, 1,0 = LUT3
 
             displayDelay()
-            setDeviceLut(@EINK213_BIG_LUT_TABLE, 70)        ' doc: device LUT is 70 bytes!   waits for 1sec at end
+            setDeviceLut(@EINK213_BIG_LUT_TABLE, 70)    ' doc: device LUT is 70 bytes!   waits for 1sec at end
 
         DS_eink290:
             writeCmd(CMD_DRIVER_OUTPUT_CTRL)
