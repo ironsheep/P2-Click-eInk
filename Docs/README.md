@@ -19,7 +19,7 @@ The following documents are found in this repo:
 
 | Filename | Purpose | Description | eInk Display
 | --- | --- | --- | --- |
-| [epa20-ae.pdf](epa20-ae.pdf) | eInk display | Older display data sheet
+| [epa20-ae.pdf](epa20-ae.pdf) | eInk display | Older display data sheet | 2.00"
 | [LM75A.pdf](LM75A.pdf) | controller chip | **Product data sheet** - Digital temperature sensor and thermal watchdog, Rev 04 - 10 July 2007 | 1.54", 2.00", 2.13", and 2.9"
 | [ssd1606.pdf](ssd1606.pdf) | controller chip | **Solomon Systech SSD1606** 4GS Active Matrix EPD 128 x 180 Display Driver with Controller - Oct 2011 | 2.00"
 | [ssd1608.pdf](ssd1608.pdf) | controller chip | **Solomon Systech SSD1608** Active Matrix EPD 240 x 320 Display Driver with Controller - Jan 2015 | 1.54"
