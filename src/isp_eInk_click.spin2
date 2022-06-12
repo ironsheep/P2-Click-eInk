@@ -468,40 +468,93 @@ PUB lineAtXY(fmX, fmY, toX, toY, color) | vFmX, vFmY, vToX, vToY, xOffset, yOffs
 
 PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, dstX, dstY, imageIdx, ltBits, rtBits
 '' Overlay image bits of color into Frame Buffer
+' NOTE image left-right must be flipped
     debug("* placeImageAtXY() ", udec_byte(X), udec_byte(Y), uhex_long(pImgBits), udec(imgWidth), udec(imgHeight), udec_byte(rotation))
     if rotation == 0
         ' for each column... (2-px values/byte)
+        '  NOTE: lay down 2x Y pixels for proper shape
         repeat srcX from 0 to imgWidth - 1
             dstX := X + (srcX << 1)
             ' for each row...
             repeat srcY from 0 to imgHeight - 1
-                dstY := Y + srcY
+                dstY := Y + (srcY << 1)
                 imageIdx := (srcY * imgWidth) + srcX
                 ' isolate our two px values
                 ltBits := (BYTE [pImgBits][imageIdx] & $f0) >> 4
                 rtBits := (BYTE [pImgBits][imageIdx] & $0f)
                 ' place our two px values only if colored
                 if ltBits <> $07
-                    frame_px(dstX + 0, dstY, ltBits & $03)
+                    frame_px(dstX + 0, dstY+0, ltBits & $03)
+                    frame_px(dstX + 0, dstY+1, ltBits & $03)
                 if rtBits <> $07
-                    frame_px(dstX + 1, dstY, rtBits & $03)
+                    frame_px(dstX + 1, dstY+0, rtBits & $03)
+                    frame_px(dstX + 1, dstY+1, rtBits & $03)
 
     elseif rotation == 90
         ' for each column... (2-px values/byte)
+        '  NOTE: lay down 2x Y pixels for proper shape
         repeat srcX from 0 to imgWidth - 1
-            dstY := X + (srcX << 1)
+            dstY := X + (srcX << 2)
             ' for each row...
             repeat srcY from 0 to imgHeight - 1
                 dstX := Y + srcY
                 ' isolate our two px values
-                imageIdx := (srcY * imgWidth) + srcX
+                ' imvert image left to right
+                imageIdx := (srcY * imgWidth) + (imgWidth - 1) - srcX
                 ltBits := (BYTE [pImgBits][imageIdx] & $f0) >> 4
                 rtBits := (BYTE [pImgBits][imageIdx] & $0f)
                 ' place our two px values only if colored
                 if ltBits <> $07
-                    frame_px(dstX, dstY + 0, ltBits & $03)
+                    frame_px(dstX, dstY + 2, ltBits & $03)
+                    frame_px(dstX, dstY + 3, ltBits & $03)
                 if rtBits <> $07
+                    frame_px(dstX, dstY + 0, rtBits & $03)
                     frame_px(dstX, dstY + 1, rtBits & $03)
+
+    elseif rotation == 180
+        ' for each column... (2-px values/byte)
+        '  NOTE: lay down 2x Y pixels for proper shape
+        ' 180 degrees: invert image top to bottom
+        repeat srcX from 0 to imgWidth - 1
+            dstX := X + (srcX << 1)
+            ' for each row...
+            repeat srcY from 0 to imgHeight - 1
+                dstY := Y + (srcY << 1)
+                imageIdx := (((imgHeight - 1) - srcY) * imgWidth) + srcX
+                ' isolate our two px values
+                ltBits := (BYTE [pImgBits][imageIdx] & $f0) >> 4
+                rtBits := (BYTE [pImgBits][imageIdx] & $0f)
+                ' place our two px values only if colored
+                if ltBits <> $07
+                    frame_px(dstX + 0, dstY+0, ltBits & $03)
+                    frame_px(dstX + 0, dstY+1, ltBits & $03)
+                if rtBits <> $07
+                    frame_px(dstX + 1, dstY+0, rtBits & $03)
+                    frame_px(dstX + 1, dstY+1, rtBits & $03)
+
+    elseif rotation == 270
+        ' for each column... (2-px values/byte)
+        '  NOTE: lay down 2x Y pixels for proper shape
+        ' 270 degrees: invert image top to bottom
+        repeat srcX from 0 to imgWidth - 1
+            dstY := X + (srcX << 2)
+            ' for each row...
+            repeat srcY from 0 to imgHeight - 1
+                dstX := Y + srcY
+                ' isolate our two px values
+                ' imvert image left to right
+                imageIdx := (((imgHeight - 1) - srcY) * imgWidth) + (imgWidth - 1) - srcX
+                ltBits := (BYTE [pImgBits][imageIdx] & $f0) >> 4
+                rtBits := (BYTE [pImgBits][imageIdx] & $0f)
+                ' place our two px values only if colored
+                if ltBits <> $07
+                    frame_px(dstX, dstY + 2, ltBits & $03)
+                    frame_px(dstX, dstY + 3, ltBits & $03)
+                if rtBits <> $07
+                    frame_px(dstX, dstY + 0, rtBits & $03)
+                    frame_px(dstX, dstY + 1, rtBits & $03)
+
+
     else
         debug("* ERROR unsupported rotation: ", udec_(rotation))
 
@@ -825,18 +878,6 @@ DAT { object class data }
                             BYTE    $00, $00, $00, $00, $00, $00, $00
                             BYTE    $00, $00, $00, $00, $00, $00, $00
 
-PRI frame_px(x, y, fntColor) | bitmapOffset, byteIdx
-' place colored font pixel in device frame for later display
-    if DISPLAY_TYPE == DS_eink200
-        byteIdx := (y * (DISPLAY_WIDTH / 4)) + (x / 4)
-    else
-        byteIdx := (y * (DISPLAY_WIDTH / 8)) + (x / 4)
-    bitmapOffset := (3 - (x +// 4)) * 2
-
-    BYTE [@deviceFrame][byteIdx] &= !($03 << bitmapOffset)
-    BYTE [@deviceFrame][byteIdx] |= ((fntColor & $03) << bitmapOffset)
-
-
 PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY, dblX, dblY, rowBits, mask, bitmapOffset, pChrDescriptor, pChrBitmap
 ' place font character in device frame for later display
 ' NOTE: font color and device X,Y set externally
@@ -919,6 +960,19 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY,
 
         'deviceY := frmX - 1    ' move to next char position vertically
         deviceY := deviceY - ((chrWidth * 2) + 2)    ' move to next char position vertically
+
+PRI frame_px(x, y, fntColor) | bitmapOffset, byteIdx
+' place colored font pixel in device frame for later display
+    if DISPLAY_TYPE == DS_eink200
+        byteIdx := (y * (DISPLAY_WIDTH / 4)) + (x / 4)
+    else
+        byteIdx := (y * (DISPLAY_WIDTH / 8)) + (x / 4)
+    bitmapOffset := (3 - (x +// 4)) * 2
+
+    BYTE [@deviceFrame][byteIdx] &= !($03 << bitmapOffset)
+    BYTE [@deviceFrame][byteIdx] |= ((fntColor & $03) << bitmapOffset)
+
+
 
 PRI writeCmd(data)
 ' write command byte(DC low = command)

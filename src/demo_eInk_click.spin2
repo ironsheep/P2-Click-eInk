@@ -51,9 +51,9 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
 
 
     'image_demo()            ' WORKS  43 * 2 seconds runtime!
-    text_demoRecreate()     ' WORKS
+    'text_demoRecreate()     ' WORKS
     'text_demo()             ' WORKS
-    'text_demoRegionImage()  ' WORKS!!
+    text_demoRegionImage()  ' WORKS!!
 
     'repeat 10
     '    image_demo()
@@ -87,6 +87,7 @@ PRI eraseDisplay()
     eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_WHITE)
     waitms(5000)
 
+
 PRI text_demoRegionImage() | pImageBits, imgWidth, imgHeight
     debug("* write border, filled region, and place small cup")
 
@@ -103,7 +104,7 @@ PRI text_demoRegionImage() | pImageBits, imgWidth, imgHeight
 '{
     pImageBits, imgWidth, imgHeight := coffeeImage.imageAddress(coffeeImage.IMAGE_Coffee)
     if pImageBits <> coffeeImage.IMAGE_UNKNOWN
-        eInkDisplay.placeImageAtXY(10, 10, pImageBits, imgWidth, imgHeight, 90)
+        eInkDisplay.placeImageAtXY(14, 10, pImageBits, imgWidth, imgHeight, 270)
 '}
 
     eInkDisplay.flushToDisplay()
@@ -135,7 +136,7 @@ PRI text_demoRecreate() | leftEdge, firstLine, lineSpacing, pImageBits, imgWidth
 '{
     pImageBits, imgWidth, imgHeight := coffeeImage.imageAddress(coffeeImage.IMAGE_Coffee)
     if pImageBits <> coffeeImage.IMAGE_UNKNOWN
-        eInkDisplay.placeImageAtXY(10, 10, pImageBits, imgWidth, imgHeight, 90)
+        eInkDisplay.placeImageAtXY(14, 10, pImageBits, imgWidth, imgHeight, 90)
 '}
 
     eInkDisplay.flushToDisplay()
