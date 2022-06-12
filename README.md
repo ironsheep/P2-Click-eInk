@@ -38,11 +38,10 @@ Initial ported capabilties:
 To this, we added these additional capabilities:
 
 - Set background color
-- Invert font
 - Set region background color
 - Show bitmap in region as color w/rotation
-- draw line, box
-- Support 1.54", 2.00" (older), 2.13" and 2.90" eInk displays
+- Draw line, box, circle
+- Support for 1.54", 2.00" (older), 2.13" and 2.90" eInk displays
 
 ## Current status
 
