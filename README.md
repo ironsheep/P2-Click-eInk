@@ -40,13 +40,17 @@ To this, we added these additional capabilities:
 - Set background color
 - Invert font
 - Set region background color
-- Show bitmap in region as color
+- Show bitmap in region as color w/rotation
+- draw line, box
+- Support 1.54", 2.00" (older), 2.13" and 2.90" eInk displays
 
 ## Current status
 
 Latest Changes:
 
 ```
+11 June 2022
+- Placing rotated [0, 90, 180, and 270 degr] bitmap now working
 10 June 2022
 - Region Fill working
 - Placing bitmap onto screen working (missing 180 adn 270 rotations yet)
@@ -61,7 +65,7 @@ Latest Changes:
 08 June 2022 
 - fixing font orientations
 07 June 2022 
-- display is working, full screen bitmaps work
+- Display 2.13" is working, full screen bitmaps work
 - font orientation is not correct
 05 June 2022 
 - Project Started
@@ -72,7 +76,11 @@ Latest Changes:
 Things we know about that still need attention:
 
 ```
-- we still want to support all display orientations (only two are supported currently.)
+- Only 2.13" tested and working so far...
+  - seems to be monochrome, not 4 color
+  - seems to respond as 61x250 not 122x250 trying to figure this out 
+- We still want to support all display orientations (only two are supported currently.)
+- We want to test against the click supported displays [1.54", 2.00", 2.13" and 2.90"]
 ```
 
 
