@@ -93,10 +93,12 @@ From here on, just use any of the Public Methods found in the interface descript
 | PUB  fillRegionAt(X, Y, color, width, height) | Fill region of Frame Buffer with color
 | PUB  borderAtXY(X, Y, color, thickness, width, height) | Draw border of thinkness* into Frame Buffer
 | PUB  lineAtXY(fmX, fmY, toX, toY, color) | Draw line into Frame Buffer
-| PUB  placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | Overlay image bits of color onto
+| PUB  circleAtXY(X, Y, diameter, color) | Draw circle into Frame Buffer
+| PUB  placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | Overlay image bits* of color into Frame Buffer
 | PUB  flushToDisplay() | Flush Frame Buffer content to Display
 
 * *thickness - of the `borderAtXY()` method may not yet be working...*
+* See [Create bitmaps for display on your eInk device](../C-src) for creating bitmaps to use with `placeImageAtXY()`.
 
 
 Have Fun!
