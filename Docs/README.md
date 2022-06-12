@@ -15,6 +15,10 @@ These documents serve as additional reference for the eInk display as shipped fr
   <img src="../Images/eink_154inch.png" width="265">
 </p>
 
+**2.00" iInk hardware** (avail from [Mouser.com](https://www.mouser.com/ProductDetail/Display-Visions/EA-EPA20-A?qs=EU6FO9ffTwdcD%252BcseurWVQ%3D%3D)
+
+*-image coming soon-*
+
 **2.13" iInk hardware** (avail from [Parallax.com](https://www.parallax.com/product/eink-click-e-paper-bundle-2/))
 <p align="center">
   <img src="../Images/eink_213inch.png" width="327">
