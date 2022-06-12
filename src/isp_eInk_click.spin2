@@ -421,17 +421,23 @@ PUB fillRegionAt(X, Y, color, width, height) | xCoord, yCoord, fillColor, vX, vY
 PUB borderAtXY(X, Y, color, thickness, width, height) | lineCt, topRow, botRow, ltCol, rtCol, vX, vY, vWidth, vHeight
 '' Draw border of thinkness into Frame Buffer
     ' limit region to displayable area
+    ' NOTE y axis needs to be doubled for rectangular pixels
+    if thickness <= 0
+        return  ' nothing to do...
+
     vX, vY, vWidth, vHeight := validXYWidthHeight(X, Y, width, height)
+    ' color validated by underlying code
 
     topRow := vY
-    botRow := vY + vHeight - 1
+    botRow := vY + (vHeight * 2) - 1    ' double our height here!
     ltCol := vX
     rtCol := vX + vWidth - 1
     ' now draw lines (1 px thickness)
-    lineAtXY(ltCol, topRow, rtCol, topRow, color) ' top horiz
-    lineAtXY(ltCol, botRow, rtCol, botRow, color) ' bottom horiz
-    lineAtXY(ltCol, topRow, ltCol, botRow, color) ' left vert
-    lineAtXY(rtCol, topRow, rtCol, botRow, color) ' right vert
+    ' +1's clean up line drawing artifacts
+    lineAtXY(ltCol+1, topRow, rtCol, topRow, color) ' top horiz
+    lineAtXY(ltCol+1, botRow, rtCol, botRow, color) ' bottom horiz
+    lineAtXY(ltCol, topRow+1, ltCol, botRow, color) ' left vert
+    lineAtXY(rtCol, topRow+1, rtCol, botRow, color) ' right vert
     if thickness > 1
         repeat lineCt from 0 to thickness - 2
             topRow++
@@ -440,10 +446,10 @@ PUB borderAtXY(X, Y, color, thickness, width, height) | lineCt, topRow, botRow, 
             rtCol--
             if botRow >= topRow or ltCol >= rtCol
                 quit
-            lineAtXY(ltCol, topRow, rtCol, topRow, color) ' top horiz
-            lineAtXY(ltCol, botRow, rtCol, botRow, color) ' bottom horiz
-            lineAtXY(ltCol, topRow, ltCol, botRow, color) ' left vert
-            lineAtXY(rtCol, topRow, rtCol, botRow, color) ' right vert
+            lineAtXY(ltCol+1, topRow, rtCol, topRow, color) ' top horiz
+            lineAtXY(ltCol+1, botRow, rtCol, botRow, color) ' bottom horiz
+            lineAtXY(ltCol, topRow+1, ltCol, botRow, color) ' left vert
+            lineAtXY(rtCol, topRow+1, rtCol, botRow, color) ' right vert
 
 
 PUB lineAtXY(fmX, fmY, toX, toY, color) | vFmX, vFmY, vToX, vToY, xOffset, yOffset, lineColor
@@ -465,6 +471,41 @@ PUB lineAtXY(fmX, fmY, toX, toY, color) | vFmX, vFmY, vToX, vToY, xOffset, yOffs
     repeat yOffset from 0 to vToY-vFmY
         xOffset := (vToX - vFmX) * yOffset / (vToY - vFmY)
         frame_px(vFmX + xOffset, vFmY + yOffset, lineColor)
+
+PUB circleAtXY(xc, yc, diameter, color) | x, y, vXc, vYc, lineColor, dblY
+'' Draw circle into Frame Buffer
+' Draw Circle d^2 = x^2 + y^2; y = SQRT(d^2 - x^2) (Pythagoras theorum)
+' NOTE y axis needs to be doubled due to rectangular pixels
+
+    ' BUG in code not sure how best to double the height and get these calc correct.
+
+    ' limit locations to displayable area
+    vXc, vYc := validXY(xc, yc)
+
+    ' ensure we have a valid color
+    lineColor := validColor(color)
+
+    repeat x from 0 to diameter
+        y := SQRT((diameter * diameter) - (x * x))
+        dblY := y << 1
+        'plot 4 quadrants for incrementing x axis
+        frame_px(vXc + x, vYc + dblY, lineColor)
+        frame_px(vXc - x, vYc + dblY + 1, lineColor)
+        frame_px(vXc + x, vYc - dblY, lineColor)
+        frame_px(vXc - x, vYc - (dblY + 1), lineColor)
+        frame_px(vXc + x, vYc + dblY, lineColor)
+        frame_px(vXc - x, vYc + dblY + 1, lineColor)
+        frame_px(vXc + x, vYc - dblY, lineColor)
+        frame_px(vXc - x, vYc - (dblY + 1), lineColor)
+        'plot 4 quadrants for incrementing y axis (fills in more dots on circle)
+        frame_px(vXc + x, vYc + dblY, lineColor)
+        frame_px(vXc - x, vYc + dblY + 1, lineColor)
+        frame_px(vXc + x, vYc - dblY, lineColor)
+        frame_px(vXc - x, vYc - (dblY + 1), lineColor)
+        frame_px(vXc + x, vYc + dblY, lineColor)
+        frame_px(vXc - x, vYc + dblY + 1, lineColor)
+        frame_px(vXc + x, vYc - dblY, lineColor)
+        frame_px(vXc - x, vYc - (dblY + 1), lineColor)
 
 PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, dstX, dstY, imageIdx, ltBits, rtBits
 '' Overlay image bits of color into Frame Buffer

@@ -94,18 +94,28 @@ PRI text_demoRegionImage() | pImageBits, imgWidth, imgHeight
     eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
 
     ' borderAtXY(X,Y, color, thickness, width, height)
-    eInkDisplay.borderAtXY(0, 0, eInkDisplay.EINK_COLOR_BLACK, 1, 61, 250)
-    eInkDisplay.borderAtXY(0+2, 0+4, eInkDisplay.EINK_COLOR_DARK_GREY, 1, 61-4, 250-8)
+    'eInkDisplay.borderAtXY(0, 0, eInkDisplay.EINK_COLOR_BLACK, 1, 61, 248)
+
+    eInkDisplay.borderAtXY(2, 4, eInkDisplay.EINK_COLOR_DARK_GREY, 1, 57, 240)
+
+    'eInkDisplay.borderAtXY(4, 8, eInkDisplay.EINK_COLOR_LIGHT_GREY, 1, 53, 232)
 
         ' fillRegionAt(X, Y, color, width, height)
-    eInkDisplay.fillRegionAt(5, 140, eInkDisplay.EINK_COLOR_DARK_GREY, 50, 50)
-    eInkDisplay.fillRegionAt(5, 192, eInkDisplay.EINK_COLOR_LIGHT_GREY, 50, 50)
+    'eInkDisplay.fillRegionAt(5, 140, eInkDisplay.EINK_COLOR_DARK_GREY, 50, 50)
+    'eInkDisplay.fillRegionAt(5, 192, eInkDisplay.EINK_COLOR_LIGHT_GREY, 50, 50)
 
-'{
+{
     pImageBits, imgWidth, imgHeight := coffeeImage.imageAddress(coffeeImage.IMAGE_Coffee)
     if pImageBits <> coffeeImage.IMAGE_UNKNOWN
         eInkDisplay.placeImageAtXY(14, 10, pImageBits, imgWidth, imgHeight, 270)
 '}
+
+    ' place a circle on our screen, too
+    ' circleAtXY(c, y, diameter, color)
+    eInkDisplay.circleAtXY(20, 50, 10, eInkDisplay.EINK_COLOR_BLACK)
+
+    ' borderAtXY(X,Y, color, thickness, width, height)
+    eInkDisplay.borderAtXY(20, 100, eInkDisplay.EINK_COLOR_BLACK, 1, 10, 10)
 
     eInkDisplay.flushToDisplay()
     waitms(5000)
