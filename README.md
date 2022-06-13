@@ -50,6 +50,7 @@ Latest Changes:
 ```
 13 June 2022
 - Both 2.13 " and 2.90" displays are now working well
+- 1.54" is not quite happy yet...
 - finished validation and final cleanup of "place image into region"
   - all images now rotated correctly and aligned properly within rotated field
 12 June 2022

@@ -170,7 +170,7 @@ PUB null()
 
 '' This is not a top-level object
 
-PUB start(eDeviceType, eClickBasePin) : ok | legalBase
+PUB start(eDisplayType, eClickBasePin) : ok | legalBase
 '' Specify the eval board connect location for the EINK click and start SPI
     ' REF https://www.mikroe.com/eink-click
 
@@ -185,8 +185,8 @@ PUB start(eDeviceType, eClickBasePin) : ok | legalBase
             legalBase := INVALID_PIN_BASE
             pinbase := INVALID_PIN_BASE
 
-    deviceType := eDeviceType
-    case eDeviceType
+    deviceType := eDisplayType
+    case eDisplayType
         DS_eink154:
             displayWidth        := EINK154_DISPLAY_WIDTH
             displayHeight       := EINK154_DISPLAY_HEIGHT
