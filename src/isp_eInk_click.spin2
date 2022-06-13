@@ -420,40 +420,46 @@ PUB fillRegionAt(X, Y, color, width, height) | xCoord, yCoord, fillColor, vX, vY
 
 PUB borderAtXY(X, Y, color, thickness, width, height) | lineCt, topRow, botRow, ltCol, rtCol, vX, vY, vWidth, vHeight
 '' Draw border of thinkness into Frame Buffer
-    ' limit region to displayable area
-    ' NOTE y axis needs to be doubled for rectangular pixels
-    if thickness <= 0
+    ' if object not visible (zero or neg. size) abort
+    if thickness <= 0 or width <= 0 or height <= 0
         return  ' nothing to do...
 
+    ' limit width to half of min dimension of object size
+    if thickness > width / 2
+        thickness := width / 2
+    if thickness > height / 2
+        thickness := height / 2
+
+    ' limit region to displayable object
     vX, vY, vWidth, vHeight := validXYWidthHeight(X, Y, width, height)
     ' color validated by underlying code
 
     topRow := vY
-    botRow := vY + (vHeight * 2) - 1    ' double our height here!
+    botRow := vY + vHeight - 1
     ltCol := vX
     rtCol := vX + vWidth - 1
-    ' now draw lines (1 px thickness)
-    ' +1's clean up line drawing artifacts
-    lineAtXY(ltCol+1, topRow, rtCol, topRow, color) ' top horiz
-    lineAtXY(ltCol+1, botRow, rtCol, botRow, color) ' bottom horiz
-    lineAtXY(ltCol, topRow+1, ltCol, botRow, color) ' left vert
-    lineAtXY(rtCol, topRow+1, rtCol, botRow, color) ' right vert
-    if thickness > 1
-        repeat lineCt from 0 to thickness - 2
-            topRow++
-            botRow--
-            ltCol++
-            rtCol--
-            if botRow >= topRow or ltCol >= rtCol
-                quit
-            lineAtXY(ltCol+1, topRow, rtCol, topRow, color) ' top horiz
-            lineAtXY(ltCol+1, botRow, rtCol, botRow, color) ' bottom horiz
-            lineAtXY(ltCol, topRow+1, ltCol, botRow, color) ' left vert
-            lineAtXY(rtCol, topRow+1, rtCol, botRow, color) ' right vert
+    ' now draw frame (1 px thickness)
+    ' +1's prevent drawing any pixel twice
+    repeat lineCt from 0 to thickness - 1
+        lineAtXY(ltCol, topRow, rtCol, topRow, color) ' top horiz
+        lineAtXY(ltCol, botRow, rtCol, botRow, color) ' bottom horiz
+        ' if remaining height > 2 then draw verticals
+        if botRow - topRow + 1 > 2
+            lineAtXY(ltCol, topRow+1, ltCol, botRow-1, color) ' left vert
+            lineAtXY(rtCol, topRow+1, rtCol, botRow-1, color) ' right vert
+        ' calc next outline
+        topRow++
+        botRow--
+        ltCol++
+        rtCol--
+        ' if overlaying, we're done abort
+        if botRow >= topRow or ltCol >= rtCol
+            quit
 
 
 PUB lineAtXY(fmX, fmY, toX, toY, color) | vFmX, vFmY, vToX, vToY, xOffset, yOffset, lineColor
 '' Draw line into Frame Buffer
+' Draw Line - start co-ords, end co-ords, color
 
     ' limit locations to displayable area
     vFmX, vFmY := validXY(fmX, fmY)
@@ -462,22 +468,29 @@ PUB lineAtXY(fmX, fmY, toX, toY, color) | vFmX, vFmY, vToX, vToY, xOffset, yOffs
     ' ensure we have a valid color
     lineColor := validColor(color)
 
-    ' Draw Line - start co-ords, end co-ords, color
-    'plot incrementing x axis
-    repeat xOffset from 0 to vToX - vFmX
-        yOffset := (vToY - vFmY) * xOffset / (vToX - vFmX)
-        frame_px(vFmX + xOffset, vFmY + yOffset, lineColor)
-    'plot incrementing y axis
-    repeat yOffset from 0 to vToY-vFmY
-        xOffset := (vToX - vFmX) * yOffset / (vToY - vFmY)
-        frame_px(vFmX + xOffset, vFmY + yOffset, lineColor)
+    if vFmX == vToX
+        ' simlple vertical
+        repeat yOffset from 0 to vToY - vFmY
+            frame_px(vFmX, vFmY + yOffset, lineColor)
 
-PUB circleAtXY(xc, yc, diameter, color) | x, y, vXc, vYc, lineColor, dblY
+    elseif vFmY == vToY
+        ' simple horizontal
+        repeat xOffset from 0 to vToX - vFmX
+            frame_px(vFmX + xOffset, vFmY, lineColor)
+    else
+        ' diagonal (maybe issues with endpoint lengths!)
+        '  plot incrementing x axis
+        repeat xOffset from 0 to vToX - vFmX
+            yOffset := (vToY - vFmY) * xOffset / (vToX - vFmX)
+            frame_px(vFmX + xOffset, vFmY + yOffset, lineColor)
+        '  plot incrementing y axis
+        repeat yOffset from 0 to vToY-vFmY
+            xOffset := (vToX - vFmX) * yOffset / (vToY - vFmY)
+            frame_px(vFmX + xOffset, vFmY + yOffset, lineColor)
+
+PUB circleAtXY(xc, yc, diameter, color) | x, y, vXc, vYc, lineColor
 '' Draw circle into Frame Buffer
 ' Draw Circle d^2 = x^2 + y^2; y = SQRT(d^2 - x^2) (Pythagoras theorum)
-' NOTE y axis needs to be doubled due to rectangular pixels
-
-    ' BUG in code not sure how best to double the height and get these calc correct.
 
     ' limit locations to displayable area
     vXc, vYc := validXY(xc, yc)
@@ -487,25 +500,17 @@ PUB circleAtXY(xc, yc, diameter, color) | x, y, vXc, vYc, lineColor, dblY
 
     repeat x from 0 to diameter
         y := SQRT((diameter * diameter) - (x * x))
-        dblY := y << 1
         'plot 4 quadrants for incrementing x axis
-        frame_px(vXc + x, vYc + dblY, lineColor)
-        frame_px(vXc - x, vYc + dblY + 1, lineColor)
-        frame_px(vXc + x, vYc - dblY, lineColor)
-        frame_px(vXc - x, vYc - (dblY + 1), lineColor)
-        frame_px(vXc + x, vYc + dblY, lineColor)
-        frame_px(vXc - x, vYc + dblY + 1, lineColor)
-        frame_px(vXc + x, vYc - dblY, lineColor)
-        frame_px(vXc - x, vYc - (dblY + 1), lineColor)
+        frame_px(vXc + x, vYc + y, lineColor)
+        frame_px(vXc - x, vYc + y, lineColor)
+        frame_px(vXc + x, vYc - y, lineColor)
+        frame_px(vXc - x, vYc - y, lineColor)
         'plot 4 quadrants for incrementing y axis (fills in more dots on circle)
-        frame_px(vXc + x, vYc + dblY, lineColor)
-        frame_px(vXc - x, vYc + dblY + 1, lineColor)
-        frame_px(vXc + x, vYc - dblY, lineColor)
-        frame_px(vXc - x, vYc - (dblY + 1), lineColor)
-        frame_px(vXc + x, vYc + dblY, lineColor)
-        frame_px(vXc - x, vYc + dblY + 1, lineColor)
-        frame_px(vXc + x, vYc - dblY, lineColor)
-        frame_px(vXc - x, vYc - (dblY + 1), lineColor)
+        frame_px(vXc + y, vYc + x, lineColor)
+        frame_px(vXc - y, vYc + x, lineColor)
+        frame_px(vXc + y, vYc - x, lineColor)
+        frame_px(vXc - y, vYc - x, lineColor)
+
 
 PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, dstX, dstY, imageIdx, ltBits, rtBits
 '' Overlay image bits of color into Frame Buffer
@@ -513,29 +518,25 @@ PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
     debug("* placeImageAtXY() ", udec_byte(X), udec_byte(Y), uhex_long(pImgBits), udec(imgWidth), udec(imgHeight), udec_byte(rotation))
     if rotation == 0
         ' for each column... (2-px values/byte)
-        '  NOTE: lay down 2x Y pixels for proper shape
         repeat srcX from 0 to imgWidth - 1
             dstX := X + (srcX << 1)
             ' for each row...
             repeat srcY from 0 to imgHeight - 1
-                dstY := Y + (srcY << 1)
+                dstY := Y + srcY
                 imageIdx := (srcY * imgWidth) + srcX
                 ' isolate our two px values
                 ltBits := (BYTE [pImgBits][imageIdx] & $f0) >> 4
                 rtBits := (BYTE [pImgBits][imageIdx] & $0f)
                 ' place our two px values only if colored
                 if ltBits <> $07
-                    frame_px(dstX + 0, dstY+0, ltBits & $03)
-                    frame_px(dstX + 0, dstY+1, ltBits & $03)
+                    frame_px(dstX + 0, dstY, ltBits & $03)
                 if rtBits <> $07
-                    frame_px(dstX + 1, dstY+0, rtBits & $03)
-                    frame_px(dstX + 1, dstY+1, rtBits & $03)
+                    frame_px(dstX + 1, dstY, rtBits & $03)
 
     elseif rotation == 90
         ' for each column... (2-px values/byte)
-        '  NOTE: lay down 2x Y pixels for proper shape
         repeat srcX from 0 to imgWidth - 1
-            dstY := X + (srcX << 2)
+            dstY := X + (srcX << 1)
             ' for each row...
             repeat srcY from 0 to imgHeight - 1
                 dstX := Y + srcY
@@ -546,39 +547,33 @@ PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
                 rtBits := (BYTE [pImgBits][imageIdx] & $0f)
                 ' place our two px values only if colored
                 if ltBits <> $07
-                    frame_px(dstX, dstY + 2, ltBits & $03)
-                    frame_px(dstX, dstY + 3, ltBits & $03)
+                    frame_px(dstX, dstY + 1, ltBits & $03)
                 if rtBits <> $07
                     frame_px(dstX, dstY + 0, rtBits & $03)
-                    frame_px(dstX, dstY + 1, rtBits & $03)
 
     elseif rotation == 180
         ' for each column... (2-px values/byte)
-        '  NOTE: lay down 2x Y pixels for proper shape
         ' 180 degrees: invert image top to bottom
         repeat srcX from 0 to imgWidth - 1
             dstX := X + (srcX << 1)
             ' for each row...
             repeat srcY from 0 to imgHeight - 1
-                dstY := Y + (srcY << 1)
+                dstY := Y + srcY
                 imageIdx := (((imgHeight - 1) - srcY) * imgWidth) + srcX
                 ' isolate our two px values
                 ltBits := (BYTE [pImgBits][imageIdx] & $f0) >> 4
                 rtBits := (BYTE [pImgBits][imageIdx] & $0f)
                 ' place our two px values only if colored
                 if ltBits <> $07
-                    frame_px(dstX + 0, dstY+0, ltBits & $03)
-                    frame_px(dstX + 0, dstY+1, ltBits & $03)
+                    frame_px(dstX + 0, dstY, ltBits & $03)
                 if rtBits <> $07
-                    frame_px(dstX + 1, dstY+0, rtBits & $03)
-                    frame_px(dstX + 1, dstY+1, rtBits & $03)
+                    frame_px(dstX + 1, dstY, rtBits & $03)
 
     elseif rotation == 270
         ' for each column... (2-px values/byte)
-        '  NOTE: lay down 2x Y pixels for proper shape
         ' 270 degrees: invert image top to bottom
         repeat srcX from 0 to imgWidth - 1
-            dstY := X + (srcX << 2)
+            dstY := X + (srcX << 1)
             ' for each row...
             repeat srcY from 0 to imgHeight - 1
                 dstX := Y + srcY
@@ -589,11 +584,9 @@ PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
                 rtBits := (BYTE [pImgBits][imageIdx] & $0f)
                 ' place our two px values only if colored
                 if ltBits <> $07
-                    frame_px(dstX, dstY + 2, ltBits & $03)
-                    frame_px(dstX, dstY + 3, ltBits & $03)
+                    frame_px(dstX, dstY + 1, ltBits & $03)
                 if rtBits <> $07
                     frame_px(dstX, dstY + 0, rtBits & $03)
-                    frame_px(dstX, dstY + 1, rtBits & $03)
 
 
     else
@@ -919,7 +912,7 @@ DAT { object class data }
                             BYTE    $00, $00, $00, $00, $00, $00, $00
                             BYTE    $00, $00, $00, $00, $00, $00, $00
 
-PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY, dblX, dblY, rowBits, mask, bitmapOffset, pChrDescriptor, pChrBitmap
+PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY, rowBits, mask, bitmapOffset, pChrDescriptor, pChrBitmap
 ' place font character in device frame for later display
 ' NOTE: font color and device X,Y set externally
 '       adjusts external device X,Y to value for next character
@@ -956,10 +949,7 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY,
                     mask := $01
 
                 if rowBits & mask
-                    'frame_px(frmX, frmY, fontColor)
-                    dblY := deviceY + fntIdxY * 2
-                    frame_px(frmX, dblY, fontColor)
-                    frame_px(frmX, dblY+1, fontColor)
+                    frame_px(frmX, frmY, fontColor)
                    'waitms(1)   ' PROXY for Delay_80us()
 
                 frmX++
@@ -971,8 +961,7 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY,
         if fontOrientation == FO_HORIZONTAL
             deviceX := frmX + 1    ' move to next char position HORIZONTAL
         else
-            'deviceY := frmY        ' move to next char position VERTICAL
-            deviceY := deviceY + (fontHeight * 2) - 1
+            deviceY := frmY        ' move to next char position VERTICAL
 
     else
         ' place vertical letter
@@ -987,10 +976,7 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY,
                     mask := $01
 
                 if rowBits & mask
-                    'frame_px(frmY, frmX, fontColor)
-                    dblX := deviceY - fntIdxX * 2
-                    frame_px(frmY, dblX, fontColor)
-                    frame_px(frmY, dblX+1, fontColor)
+                    frame_px(frmY, frmX, fontColor)
                     'waitms(1)   ' PROXY for Delay_80us()
 
                 frmX--
@@ -999,19 +985,26 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY,
 
             frmY++
 
-        'deviceY := frmX - 1    ' move to next char position vertically
-        deviceY := deviceY - ((chrWidth * 2) + 2)    ' move to next char position vertically
+        deviceY := frmX - 1    ' move to next char position vertically
 
-PRI frame_px(x, y, fntColor) | bitmapOffset, byteIdx
+PRI frame_px(x, y, fntColor) | bitInByte, byteIdx
 ' place colored font pixel in device frame for later display
-    if DISPLAY_TYPE == DS_eink200
-        byteIdx := (y * (DISPLAY_WIDTH / 4)) + (x / 4)
-    else
-        byteIdx := (y * (DISPLAY_WIDTH / 8)) + (x / 4)
-    bitmapOffset := (3 - (x +// 4)) * 2
+    if DISPLAY_TYPE == DS_eink213
+        ' monochrome (black/white) - 1 bit / pixel!
+        byteIdx := (y * (DISPLAY_WIDTH / 8)) + (x / 8)
+        bitInByte := 7 - (x +// 8)
 
-    BYTE [@deviceFrame][byteIdx] &= !($03 << bitmapOffset)
-    BYTE [@deviceFrame][byteIdx] |= ((fntColor & $03) << bitmapOffset)
+        BYTE [@deviceFrame][byteIdx] &= !($01 << bitInByte)
+        BYTE [@deviceFrame][byteIdx] |= ((fntColor & $01) << bitInByte)
+    else
+        if DISPLAY_TYPE == DS_eink200
+            byteIdx := (y * (DISPLAY_WIDTH / 4)) + (x / 4)
+        else
+            byteIdx := (y * (DISPLAY_WIDTH / 8)) + (x / 4)
+        bitInByte := (3 - (x +// 4)) * 2
+
+        BYTE [@deviceFrame][byteIdx] &= !($03 << bitInByte)
+        BYTE [@deviceFrame][byteIdx] |= ((fntColor & $03) << bitInByte)
 
 
 
