@@ -48,6 +48,10 @@ To this, we added these additional capabilities:
 Latest Changes:
 
 ```
+12 June 2022
+- Fixed 2.13" display logic 
+- Now is full 122x250 pixels
+- Is only displaying black and white (like it should have been!)
 11 June 2022
 - Placing rotated [0, 90, 180, and 270 degr] bitmap now working
 10 June 2022
