@@ -21,7 +21,7 @@ pub null()
 
 '' This is not a top object
 
-PUB imageAddress(eImage) : imageAddr
+PUB screenBitmapAddress(eImage) : imageAddr
 '' Return the address of the image bitmap associated with {eImage}
     case eImage
         IMAGE_light:

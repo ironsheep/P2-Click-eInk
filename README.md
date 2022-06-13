@@ -1,4 +1,4 @@
-# P2 driver for Mikroe eInk Click
+# P2 driver for Mikroe eINK adapter Click board™
 Driving the Mikroe eInk Click with our P2
 
 ![Project Maintenance][maintenance-shield]

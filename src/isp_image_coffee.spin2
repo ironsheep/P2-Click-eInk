@@ -21,13 +21,14 @@ pub null()
 
 '' This is not a top object
 
-PUB imageAddress(eImage) : imageAddr, imageWidth, imageHeight
+PUB imageInfo(eImage) : imageAddr, imageWidthBytes, imageHeightBytes
 '' Return the address of the image bitmap associated with {eImage}
+'' NOTE: widthInPix = imageWidthBytes * 2, while heightInPix = imageHeightBytes
     case eImage
         IMAGE_Coffee:
             imageAddr := @imgBits
-            imageWidth := imgWidth
-            imageHeight := imgHeight
+            imageWidthBytes := imgWidthBytes
+            imageHeightBytes := imgHeightBytes
         other:
             imageAddr := IMAGE_UNKNOWN
 
@@ -35,8 +36,8 @@ DAT { Overlay Bitmap Data }
 
 '  Image by Convert v1.0
 
-	imgWidth	WORD	16
-	imgHeight	WORD	49
+	imgWidthBytes	WORD	16
+	imgHeightBytes  WORD	49
 	imgBits
 		BYTE	$77, $77, $77, $77, $77, $77, $77, $77, $77, $77, $07, $77, $77, $77, $77, $77	' row 1 of 49
 		BYTE	$77, $77, $77, $77, $77, $77, $77, $77, $77, $77, $70, $77, $77, $77, $77, $77	' row 2 of 49
