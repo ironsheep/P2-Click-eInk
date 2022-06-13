@@ -79,10 +79,9 @@ Latest Changes:
 Things we know about that still need attention:
 
 ```
-- Only 2.13" tested and working so far...
-  - seems to be monochrome, not 4 color
-  - seems to respond as 61x250 not 122x250 trying to figure this out 
+- Bitmap rotation mech needs to be realigned now the 2.13 display is corrected
 - We still want to support all display orientations (only two are supported currently.)
+  - Landscape (connector to left) and portrait (connector at bottom)
 - We want to test against the click supported displays [1.54", 2.00", 2.13" and 2.90"]
 ```
 
