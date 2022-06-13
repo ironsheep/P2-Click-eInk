@@ -48,6 +48,10 @@ To this, we added these additional capabilities:
 Latest Changes:
 
 ```
+13 June 2022
+- Both 2.13 " and 2.90" displays are now working well
+- finished validation and final cleanup of "place image into region"
+  - all images now rotated correctly and aligned properly within rotated field
 12 June 2022
 - Fixed 2.13" display logic 
 - Now is full 122x250 pixels
@@ -79,7 +83,6 @@ Latest Changes:
 Things we know about that still need attention:
 
 ```
-- Bitmap rotation mech needs to be realigned now the 2.13 display is corrected
 - We still want to support all display orientations (only two are supported currently.)
   - Landscape (connector to left) and portrait (connector at bottom)
 - We want to test against the click supported displays [1.54", 2.00", 2.13" and 2.90"]

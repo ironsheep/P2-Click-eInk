@@ -305,7 +305,7 @@ PUB fillScreen(color) | xCtr, yCtr, fillColor, byteCtr
     setMemoryArea(0, 0, displayWidth - 1, displayHeight - 1)
 
     if deviceType <> DS_eink213
-        ' new? non-2.13 means of doing this...
+        ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
         if deviceType == DS_eink200
             setMemoryPointer(0, $AB)
         else
@@ -336,7 +336,7 @@ PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
     setMemoryArea(0, 0, displayWidth - 1, displayHeight - 1)
 
     if deviceType <> DS_eink213
-        ' new? non-2.13 means of doing this...
+        ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
         if deviceType == DS_eink200
             setMemoryPointer(0, $AB)
         else
@@ -646,7 +646,7 @@ PUB flushToDisplay() | byteCtr, yCtr, xCtr
     setMemoryArea(0, 0, displayWidth - 1, displayHeight - 1)
 
     if deviceType <> DS_eink213
-        ' new? non-2.13 means of doing this...
+        ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
         if deviceType == DS_eink200
             setMemoryPointer(0, $AB)
         else
@@ -869,7 +869,7 @@ PRI setMemoryArea(xStart, yStart, xEnd, yEnd)
 PRI forceUpdateDisplay()
 ' tell display heardware to update
     displayDelay()
-    updateDisplay(deviceType) ' waits for busy to end...
+    updateDisplay() ' waits for busy to end...
 
 
 PRI displayDelay()
@@ -877,9 +877,9 @@ PRI displayDelay()
     waitms(2)
 
 
-PRI updateDisplay(eDisplaySize) | cmdValue
+PRI updateDisplay() | cmdValue
 ' Tell display to show updates
-    case eDisplaySize
+    case deviceType
         DS_eink154:
             cmdValue := $C4
         DS_eink200:
@@ -897,7 +897,7 @@ PRI updateDisplay(eDisplaySize) | cmdValue
     writeData(cmdValue)
     writeCmd(CMD_MASTER_ACTIVATION) ' raises BUSY must wait for end!
 
-    if eDisplaySize <> DS_eink200
+    if deviceType <> DS_eink200
         writeCmd(CMD_TERMINATE_FRAME_READ_WRITE)
 
     waitForDeviceIdle()
@@ -1064,7 +1064,7 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY,
 
 PRI frame_px(x, y, fntColor) | bitInByte, byteIdx
 ' place colored font pixel in device frame for later display
-    if deviceType == DS_eink213
+    if deviceType == DS_eink213 or deviceType == DS_eink290
         ' monochrome (black/white) - 1 bit / pixel!
         byteIdx := (y * (displayWidth / 8)) + (x / 8)
         bitInByte := 7 - (x +// 8)
