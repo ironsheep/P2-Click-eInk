@@ -40,8 +40,8 @@ OBJ { the object being demo'd }
 PUB main() | ok, deviceID, uniqMSB, uniqLSB
 '' DEMO let's see what our radio hears!
 
-    ' tell object where the module is connected
-    ok := eInkDisplay.start(EINK_CLICK_PINGROUP)
+    ' tell object what display hardware we have and where the click board is connected
+    ok := eInkDisplay.start(eInkDisplay.DS_eink213, EINK_CLICK_PINGROUP)
     if not ok
         debug("* SPI FAILED to start")
     else
@@ -53,7 +53,8 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
     'image_demo()            ' WORKS  43 * 2 seconds runtime!
     'text_demoRecreate()     ' WORKS
     'text_demo()             ' WORKS
-    text_demoRegionImage()  ' WORKS!!
+    'text_demoRegionImage()  ' WORKS!!
+    region_image_demo()
 
     'repeat 10
     '    image_demo()
@@ -232,7 +233,56 @@ PRI text_demo()
     waitms(5000)
 
 
-PRI image_demo()
+PRI region_image_demo() | pImageBits, imgWidth, imgHeight
+    debug("* write border, place marker for image corner, place small cup, then border around image")
+
+    eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
+
+    ' borderAtXY(X,Y, color, thickness, width, height)
+    eInkDisplay.borderAtXY(0, 0, eInkDisplay.EINK_COLOR_BLACK, 1, 122, 250)
+
+    'eInkDisplay.borderAtXY(61, 125, eInkDisplay.EINK_COLOR_BLACK, 1, 2, 2)
+
+{
+    ' ROTATION 0 - GOOD
+    eInkDisplay.borderAtXY(17, 17, eInkDisplay.EINK_COLOR_BLACK, 1, 2, 2)
+    pImageBits, imgWidth, imgHeight := coffeeImage.imageAddress(coffeeImage.IMAGE_Coffee)
+    if pImageBits <> coffeeImage.IMAGE_UNKNOWN
+        eInkDisplay.placeImageAtXY(18, 18, pImageBits, imgWidth, imgHeight, 0)
+        eInkDisplay.borderAtXY(18, 18, eInkDisplay.EINK_COLOR_BLACK, 1, (imgWidth * 2) + 2, imgHeight + 2)
+
+'}
+{
+    ' ROTATION 180 - GOOD
+    eInkDisplay.borderAtXY(69, 17, eInkDisplay.EINK_COLOR_BLACK, 1, 2, 2)
+    pImageBits, imgWidth, imgHeight := coffeeImage.imageAddress(coffeeImage.IMAGE_Coffee)
+    if pImageBits <> coffeeImage.IMAGE_UNKNOWN
+        eInkDisplay.placeImageAtXY(70, 18, pImageBits, imgWidth, imgHeight, 180)
+        eInkDisplay.borderAtXY(70, 18, eInkDisplay.EINK_COLOR_BLACK, 1, (imgWidth * 2) + 2, imgHeight + 2)
+
+'}
+
+'{
+    ' ROTATION 90 - ????
+    eInkDisplay.borderAtXY(34, 105, eInkDisplay.EINK_COLOR_BLACK, 1, 2, 2)
+    pImageBits, imgWidth, imgHeight := coffeeImage.imageAddress(coffeeImage.IMAGE_Coffee)
+    if pImageBits <> coffeeImage.IMAGE_UNKNOWN
+        eInkDisplay.placeImageAtXY(35, 106, pImageBits, imgWidth, imgHeight, 90)
+        eInkDisplay.borderAtXY(35, 106, eInkDisplay.EINK_COLOR_BLACK, 1, imgHeight + 2, (imgWidth * 2) + 2)
+'}
+
+'{
+    ' ROTATION 270 - ????
+    eInkDisplay.borderAtXY(34, 157, eInkDisplay.EINK_COLOR_BLACK, 1, 2, 2)
+    pImageBits, imgWidth, imgHeight := coffeeImage.imageAddress(coffeeImage.IMAGE_Coffee)
+    if pImageBits <> coffeeImage.IMAGE_UNKNOWN
+        eInkDisplay.placeImageAtXY(35, 158, pImageBits, imgWidth, imgHeight, 270)
+        eInkDisplay.borderAtXY(35, 158, eInkDisplay.EINK_COLOR_BLACK, 1, imgHeight + 2, (imgWidth * 2) + 2)
+'}
+
+    eInkDisplay.flushToDisplay()
+
+PRI fullScreen_image_demo()
     ' draw our two images to display
     eInkDisplay.displayImage(eInkImages.imageAddress(eInkImages.IMAGE_light))
     waitms(1000)
