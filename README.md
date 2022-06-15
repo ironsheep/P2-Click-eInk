@@ -48,6 +48,9 @@ To this, we added these additional capabilities:
 Latest Changes:
 
 ```
+14 June 2022
+- Repaired 1.54" device handling
+- Now 1.54", 2.13 " and 2.90" displays are all working well
 13 June 2022
 - Both 2.13 " and 2.90" displays are now working well
 - 1.54" is not quite happy yet...

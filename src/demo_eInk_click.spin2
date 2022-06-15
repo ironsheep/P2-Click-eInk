@@ -41,7 +41,7 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
 '' DEMO let's see what our radio hears!
 
     ' tell object what display hardware we have and where the click board is connected
-    ok := eInkDisplay.start(eInkDisplay.DS_eink290, EINK_CLICK_PINGROUP)
+    ok := eInkDisplay.start(eInkDisplay.DS_eink154, EINK_CLICK_PINGROUP)
     if not ok
         debug("* SPI FAILED to start")
     else
@@ -273,7 +273,7 @@ PRI region_image_demo() | pImageBits, imgWidth, imgHeight, widthInPix, heightInP
                 placeRotatedImageAtXY(35, 106, 90, pImageBits, imgWidth, imgHeight, @"90 degr")
 
                 ' ROTATION 270 - ????
-                placeRotatedImageAtXY(35, 178, 270, pImageBits, imgWidth, imgHeight, @"270 degr")
+                placeRotatedImageAtXY(100, 106, 270, pImageBits, imgWidth, imgHeight, @"270 degr")
 
             eInkDisplay.DS_eink290:
                 ' ROTATION 0 - GOOD

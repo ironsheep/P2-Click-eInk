@@ -1064,7 +1064,7 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY,
 
 PRI frame_px(x, y, fntColor) | bitInByte, byteIdx
 ' place colored font pixel in device frame for later display
-    if deviceType == DS_eink213 or deviceType == DS_eink290
+    if deviceType == DS_eink213 or deviceType == DS_eink290 or deviceType == DS_eink154
         ' monochrome (black/white) - 1 bit / pixel!
         byteIdx := (y * (displayWidth / 8)) + (x / 8)
         bitInByte := 7 - (x +// 8)
