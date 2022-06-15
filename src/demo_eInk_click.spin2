@@ -39,6 +39,7 @@ OBJ { the object being demo'd }
     eInkDisplay : "isp_eInk_click"
     eInkImages  : "isp_eInk_demo_images"
     coffeeImage : "isp_image_coffee"
+    p2LogoImage : "isp_demo_P2logo_image"
 
 PUB main() | ok, deviceID, uniqMSB, uniqLSB
 '' DEMO let's see what our radio hears!
@@ -57,7 +58,8 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
     'text_demoRecreate()     ' WORKS
     'text_demo()             ' WORKS
     'text_demoRegionImage()  ' WORKS!!
-    region_image_demo()
+    'region_image_demo()     ' WORKS
+    p2_demoRegionImage()
 
     'repeat 10
     '    image_demo()
@@ -79,17 +81,24 @@ DAT { demonstration data }
     demo_text30_200 BYTE    "30,200hz" , 0
 
     ' recreating the document display
-    recr_text11      BYTE    "EA EPA20-A",34,0
-    recr_text12      BYTE    "* E-Paper",0
-    recr_text13      BYTE    "* 2,4..3,3V",0
-    recr_text14      BYTE    "* 4 Grey Levels",0
-    recr_text15      BYTE    "* SPI Interface",0
-
-    recr_text1      BYTE    "eInk Rect 2.13",34,0
+    recr_text1      BYTE    "eINK Square 1.54",34,0
     recr_text2      BYTE    "* E-Paper",0
-    recr_text3      BYTE    "* 2.4V ... 3.3V",0
+    recr_text3      BYTE    "* 200 x 200 pixels",0
     recr_text4      BYTE    "* Mono Black/White",0
     recr_text5      BYTE    "* SPI Interface",0
+
+    recr_text21      BYTE    "EA EPA20-A",34,0
+    recr_text22      BYTE    "* E-Paper",0
+    recr_text23      BYTE    "* 2,4..3,3V",0
+    recr_text24      BYTE    "* 4 Grey Levels",0
+    recr_text25      BYTE    "* SPI Interface",0
+
+    recr_text11      BYTE    "eInk Rect 2.13",34,0
+    recr_text12      BYTE    "* E-Paper",0
+    recr_text13      BYTE    "* 2.4V ... 3.3V",0
+    recr_text14      BYTE    "* Mono Black/White",0
+    recr_text15      BYTE    "* SPI Interface",0
+
 
 PRI eraseDisplay()
 
@@ -97,11 +106,66 @@ PRI eraseDisplay()
     eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_WHITE)
     waitms(5000)
 
+PRI p2_demoRegionImage() | widthInPix, heightInPix, pImageBits, imgWidth, imgHeight, imgWidthInPix, leftEdge, firstLine, lineSpacing
+    ' github pictures screen - make it look pretty
+    debug("* write border, place marker for image corner, place small cup, then border around image")
+
+    eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
+
+    widthInPix, heightInPix := eInkDisplay.displaySize()
+    debug("* getSize()  w,h=(", udec_(widthInPix), udec_(heightInPix), ")")
+    ' borderAtXY(X, Y, color, thickness, width, height)
+    eInkDisplay.borderAtXY(0, 0, eInkDisplay.EINK_COLOR_BLACK, 1, widthInPix, heightInPix)
+
+    ' select font for image labels
+    eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_14)
+
+    pImageBits, imgWidth, imgHeight := p2LogoImage.imageInfo(p2LogoImage.IMAGE_P2_logo)
+    imgWidthInPix := imgWidth * 2
+    debug("* imageInfo() ", uhex_long(pImageBits), ", w,h=(", udec_(imgWidth), udec_(imgHeight), ")")
+    if pImageBits <> p2LogoImage.IMAGE_UNKNOWN
+        case eInkDisplay.displayType()
+            eInkDisplay.DS_eink213:
+                ' ROTATION 0 - GOOD
+                placeRotatedImageAtXY(18, 18, 0, pImageBits, imgWidth, imgHeight, @"0 degr")
+
+            eInkDisplay.DS_eink154:
+                ' place image itself, rotated properly
+                eInkDisplay.placeImageAtXY(25, 10, pImageBits, imgWidth, imgHeight, 0)
+                eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_10)
+                eInkDisplay.setTextAtXY(129, 15, @"Spin2")
+                eInkDisplay.setTextAtXY(129, 30, @"Driver")
+
+                firstLine := 55
+                eInkDisplay.fillRegionAt(13, firstLine, eInkDisplay.EINK_COLOR_BLACK, 194, 25)
+
+                eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_WHITE, eInkDisplay.FONT_Tahoma_14)
+                eInkDisplay.setTextAtXY(20, firstLine, @recr_text1)
+
+                eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_14)
+                leftEdge := 10
+                firstLine := 84
+                lineSpacing := 14+7
+                eInkDisplay.setTextAtXY(leftEdge, firstLine + lineSpacing * 0, @recr_text2)
+                eInkDisplay.setTextAtXY(leftEdge, firstLine + lineSpacing * 1, @recr_text3)
+                eInkDisplay.setTextAtXY(leftEdge, firstLine + lineSpacing * 2, @recr_text4)
+                eInkDisplay.setTextAtXY(leftEdge, firstLine + lineSpacing * 3, @recr_text5)
+
+            eInkDisplay.DS_eink290:
+                ' ROTATION 0 - GOOD
+                placeRotatedImageAtXY(18, 18, 0, pImageBits, imgWidth, imgHeight, @"0 degr")
+
+
+
+    eInkDisplay.flushToDisplay()
+
 
 PRI text_demoRegionImage() | pImageBits, imgWidth, imgHeight
     debug("* write border, filled region, and place small cup")
 
     eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
+
+    ' --------- FORMAL --------
 
     ' borderAtXY(X,Y, color, thickness, width, height)
     'eInkDisplay.borderAtXY(0, 0, eInkDisplay.EINK_COLOR_BLACK, 1, 122, 250)

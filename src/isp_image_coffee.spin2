@@ -1,13 +1,13 @@
 '' =================================================================================================
 ''
-''   File....... isp_eInk_demo_images.spin2
-''   Purpose.... Interface to the Mikroe eInk Click module w/display
+''   File....... isp_image_coffee.spin2
+''   Purpose.... Coffee Cup image for use in Demos
 ''   Authors.... Stephen M Moraco
 ''               -- Copyright(c) 2022 Iron Sheep Productions, LLC
 ''               -- see below for terms of use
 ''   E-mail..... stephen@ironsheep.biz
 ''   Started.... Jun 2022
-''   Updated.... 07 Jun 2022
+''   Updated.... 15 Jun 2022
 ''
 '' =================================================================================================
 
