@@ -1,24 +1,24 @@
 # P2 driver for Mikroe eINK adapter Click board™
-Driving the Mikroe eInk Click with our P2
+Driving the Mikroe eINK Click with our P2
 
 ![Project Maintenance][maintenance-shield]
 
 [![License][license-shield]](LICENSE)
 
 
-## eInk CLICK board w/2.13" display
+## eINK CLICK board w/2.13" display (122x250 pixels)
 
-[eINK click](https://www.mikroe.com/eink-click) is an adapter Click board™ from [Mikroe.com](https://www.mikroe.com/), used to interface a [compatible eINK display](https://www.mikroe.com/accessories/e-paper-displays) with the host MCU. The most distinctive feature of the eINK displays is their very low power consumption and the **ability to retain the information, even after disconnecting from the power source**. The power is consumed only when the display content is changing. 
+[eINK click](https://www.mikroe.com/eINK-click) is an adapter Click board™ from [Mikroe.com](https://www.mikroe.com/), used to interface a [compatible eINK display](https://www.mikroe.com/accessories/e-paper-displays) with the host MCU. The most distinctive feature of the eINK displays is their very low power consumption and the **ability to retain the information, even after disconnecting from the power source**. The power is consumed only when the display content is changing. 
 
-[The Click board™ as delivered from Parallax.com](https://www.parallax.com/product/eink-click-e-paper-bundle-2/) comes shipped with the 250x122 eINK display, driven by the integrated SSD1606 controller and it can display 4 shades: black, dark gray, light gray and white. The same type of display is used on the popular Kindle E-readers. 
+[The Click board™ as delivered from Parallax.com](https://www.parallax.com/product/eINK-click-e-paper-bundle-2/) comes shipped with the 250x122 eINK display, driven by the integrated SSD1606 controller and it can display 4 shades: black, dark gray, light gray and white. The same type of display is used on the popular Kindle E-readers. 
 
 <p align="center">
-  <img src="Images/eink_213inch.png" width="300">
+  <img src="Images/eINK_213inch.png" width="300">
 </p>
 
-## P2 Driver for the eInk Click Module
+## P2 Driver for the eINK Click Module
 
-This project provides a working driver for the P2 developed in spin2.  It started as a port of the C example code for the 2.13" eInk display which Parallax ships.  It has been extended to add capabilities to create more creative displays. 
+This project provides a working driver for the P2 developed in spin2.  It started as a port of the C example code for the 2.13" eINK display which Parallax ships.  It has been extended to add capabilities to create more creative displays. 
 
 ### Features
 
@@ -32,8 +32,8 @@ Initial ported capabilties:
   - Roboto Mono [11x23]
 - Font orientations:
   - Vertical, Vertical-Column, Horizontal
-- eInk colors:
-  - Black, light Gray, dark Gray, and White
+- eINK colors:
+  - Black, and White *(2.00" display might be Black, Dark Grey, Light Grey and White)*
 
 To this, we added these additional capabilities:
 
@@ -41,7 +41,7 @@ To this, we added these additional capabilities:
 - Set region background color
 - Show bitmap in region as color w/rotation
 - Draw line, box, circle
-- Support for 1.54", 2.00" (older), 2.13" and 2.90" eInk displays
+- Support for 1.54", 2.00" (older), 2.13" and 2.90" eINK displays
 
 ## Current status
 
@@ -65,7 +65,7 @@ Latest Changes:
 10 June 2022
 - Region Fill working
 - Placing bitmap onto screen working (missing 180 adn 270 rotations yet)
-- General cleanup ensuring all the eInk display sized from Mikroe should work (still need to test them)
+- General cleanup ensuring all the eINK display sized from Mikroe should work (still need to test them)
 09 June 2022 
 - Font orientations now correct
 - Font sizes now correct for rectangular pixels, sigh.
@@ -103,7 +103,7 @@ On this Page:
 Additional pages:
 
 - [Start your project using this object](DEVELOP.md) - Walks thru configuration and setup of your own project using this object
-- [Create bitmaps for display on your eInk device](./C-src)
+- [Create bitmaps for display on your eINK device](./C-src)
 - There are a small number of .PDFs in the [Docs](./Docs) directory providing  detailed information on the display and controller chips
 
 ## How to Contribute

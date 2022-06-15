@@ -54,12 +54,15 @@ CON { click module io pins }
 
     ' our Click module is on 16-31!
     EINK_CLICK_PINGROUP = eInkDisplay.PINS_P16_P31
+    
+    ' we are using a 2.13" eInk display
+    EINK_DISPLAY_TYPE = eInkDisplay.DS_eink213
 
 PUB main() | ok
 '' DEMO let's see what our radio hears!
 
     ' tell object where the module is connected
-    ok := eInkDisplay.start(EINK_CLICK_PINGROUP)
+    ok := eInkDisplay.start(EINK_DISPLAY_TYPE, EINK_CLICK_PINGROUP)
     if not ok
         debug("* SPI FAILED to start")
     else
