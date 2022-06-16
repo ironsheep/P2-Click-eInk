@@ -48,6 +48,10 @@ To this, we added these additional capabilities:
 Latest Changes:
 
 ```
+15 June 2022
+- Updated demos to now produce P2 Logo'd display screen specific to device
+- Update images in repo documents to show P2 Logo'd eInk displays
+- Ver 0.9.1 Release
 14 June 2022
 - Repaired 1.54" device handling
 - Now 1.54", 2.13 " and 2.90" displays are all working well
@@ -88,8 +92,13 @@ Things we know about that still need attention:
 
 ```
 - We still want to support all display orientations (only two are supported currently.)
-  - Landscape (connector to left) and portrait (connector at bottom)
-- We want to test against the click supported displays [1.54", 2.00", 2.13" and 2.90"]
+  - Landscape (connector to left) and Portrait (connector at bottom)
+- We want to test against all click supported displays [1.54", 2.00", 2.13" and 2.90"]
+  - We still haven't finished the 2.00" 4-color display
+- Want to add utility methods like: 
+  - Calculate length of string in given font
+  - Calculate offset to center string of given font in region
+  - Invert/remap colors in bitmap (black to white, white to black, etc.)
 ```
 
 

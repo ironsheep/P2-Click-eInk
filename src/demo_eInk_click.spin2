@@ -32,7 +32,7 @@ CON { click module io pins }
     EINK_CLICK_PINGROUP = eInkDisplay.PINS_P16_P31
 
     ' we are using a 2.13" eInk display
-    EINK_DISPLAY_TYPE = eInkDisplay.DS_eink154
+    EINK_DISPLAY_TYPE = eInkDisplay.DS_eink290
 
 OBJ { the object being demo'd }
 
@@ -54,15 +54,19 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
     eraseDisplay()
 
 
-    'image_demo()            ' WORKS  43 * 2 seconds runtime!
-    'text_demoRecreate()     ' WORKS
-    'text_demo()             ' WORKS
-    'text_demoRegionImage()  ' WORKS!!
-    'region_image_demo()     ' WORKS
-    p2_demoRegionImage()
+    text_demo()             ' Text
+    waitms(2000)
 
-    'repeat 10
-    '    image_demo()
+    region_image_demo()     ' Coffee Cups
+    waitms(2000)
+
+    ' full screen images
+    if eInkDisplay.displayType() == eInkDisplay.DS_eink213
+        repeat 1
+            fullScreen_image_demo()
+
+    ' end with our device P2 Logo image
+    p2_demoRegionImage()
 
     debug("* stopped")
     eInkDisplay.stop()
@@ -157,33 +161,31 @@ PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWid
             eInkDisplay.DS_eink154:
                 debug(" - filling DS_eink154")
                 ' place image itself, rotated properly
-                eInkDisplay.placeImageAtXY(10, dsplyHeightInPix - imgWidthInPix - 2, pImageBits, imgWidth, imgHeight, 270)
+                eInkDisplay.placeImageAtXY(10, dsplyHeightInPix - imgWidthInPix - 30, pImageBits, imgWidth, imgHeight, 270)
                 eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_10)
-                eInkDisplay.setTextAtXY(15, dsplyHeightInPix - imgWidthInPix - 8, @"Spin2")
-                eInkDisplay.setTextAtXY(30, dsplyHeightInPix - imgWidthInPix - 8, @"Driver")
+                eInkDisplay.setTextAtXY(15, dsplyHeightInPix - imgWidthInPix - 38, @"Spin2")
+                eInkDisplay.setTextAtXY(30, dsplyHeightInPix - imgWidthInPix - 38, @"Driver")
 
-                firstLine := 55
-                eInkDisplay.fillRegionAt(4, firstLine, eInkDisplay.EINK_COLOR_BLACK, 25, 194)
-
+                eInkDisplay.fillRegionAt(54, 6, eInkDisplay.EINK_COLOR_BLACK, 27, 188)
                 eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_WHITE, eInkDisplay.FONT_Tahoma_14)
-                eInkDisplay.setTextAtXY(firstLine, 20, @recr_text1)
-{
-                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_14)
-                leftEdge := 55
-                firstLine := 10
-                lineSpacing := 14+7
-                eInkDisplay.setTextAtXY(leftEdge, firstLine + lineSpacing * 0, @recr_text2)
-                eInkDisplay.setTextAtXY(leftEdge, firstLine + lineSpacing * 1, @recr_text3)
-                eInkDisplay.setTextAtXY(leftEdge, firstLine + lineSpacing * 2, @recr_text4)
-                eInkDisplay.setTextAtXY(leftEdge, firstLine + lineSpacing * 3, @recr_text5)
-'}
+                eInkDisplay.setTextAtXY(55, 175, @recr_text1)
+
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_16)
+                leftEdge := 190
+                firstLine := 87
+                lineSpacing := 16+7
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 0, leftEdge, @recr_text2)
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 1, leftEdge, @recr_text3)
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 2, leftEdge, @recr_text4)
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 3, leftEdge, @recr_text5)
+
             eInkDisplay.DS_eink290:
                 debug(" - filling DS_eink290")
                 ' place image itself, rotated properly
-                eInkDisplay.placeImageAtXY(10, dsplyHeightInPix - imgWidthInPix, pImageBits, imgWidth, imgHeight, 270)
+                eInkDisplay.placeImageAtXY(10, dsplyHeightInPix - imgWidthInPix - 5, pImageBits, imgWidth, imgHeight, 270)
                 eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_10)
-                eInkDisplay.setTextAtXY(15, dsplyHeightInPix - imgWidthInPix - 7, @"Spin2")
-                eInkDisplay.setTextAtXY(30, dsplyHeightInPix - imgWidthInPix - 7, @"Driver")
+                eInkDisplay.setTextAtXY(15, dsplyHeightInPix - imgWidthInPix - 8, @"Spin2")
+                eInkDisplay.setTextAtXY(30, dsplyHeightInPix - imgWidthInPix - 8, @"Driver")
 
                 firstLine := 55
                 eInkDisplay.fillRegionAt(4, 4, eInkDisplay.EINK_COLOR_BLACK, 50, 140)
@@ -283,7 +285,7 @@ PRI text_demoRecreate() | leftEdge, firstLine, lineSpacing, pImageBits, imgWidth
     eInkDisplay.flushToDisplay()
     waitms(5000)
 
-PRI text_demo()
+PRI text_demo() | dsplyWidthInPix, dsplyHeightInPix
     ' demo display text on screen
     '   X: 0-71
     '   Y: 0-171
@@ -298,9 +300,12 @@ PRI text_demo()
     eInkDisplay.lineAtXY(25, 5, 25, 15, eInkDisplay.EINK_COLOR_LIGHT_GREY)
     eInkDisplay.lineAtXY(30, 5, 30, 15, eInkDisplay.EINK_COLOR_DARK_GREY)
 '}
+    dsplyWidthInPix, dsplyHeightInPix := eInkDisplay.displaySize()
+    debug("* getSize()  w,h=(", udec_(dsplyWidthInPix), udec_(dsplyHeightInPix), ")")
+
     ' borderAtXY(X,Y, color, thickness, width, height)
-    eInkDisplay.borderAtXY(0, 0, eInkDisplay.EINK_COLOR_LIGHT_GREY, 1, 122, 250)
-    eInkDisplay.borderAtXY(0+2, 0+4, eInkDisplay.EINK_COLOR_BLACK, 1, 122-4, 250-8)
+    eInkDisplay.borderAtXY(0, 0, eInkDisplay.EINK_COLOR_LIGHT_GREY, 1, dsplyWidthInPix, dsplyHeightInPix)
+    eInkDisplay.borderAtXY(0+2, 0+4, eInkDisplay.EINK_COLOR_BLACK, 1, dsplyWidthInPix-4, dsplyHeightInPix-8)
 
     'eInkDisplay.lineAtXY(0, 0, 0, 100, eInkDisplay.EINK_COLOR_BLACK)        ' left
     'eInkDisplay.lineAtXY(0, 0, 60, 0, eInkDisplay.EINK_COLOR_BLACK)         ' top
