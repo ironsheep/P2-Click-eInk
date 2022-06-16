@@ -10,7 +10,7 @@ The source code of the P2 driver for the Mikroe eInk adapter Click board™
 
 These source files demonstrate the use of the eInk display as shipped from Parallax.com. 
 <p align="center">
-  <img src="../Images/eink_213inch.png" width="300">
+  <img src="../Images/eink_213.jpg" width="300">
 </p>
 
 ## The Source Code

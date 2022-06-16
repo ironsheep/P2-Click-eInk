@@ -12,7 +12,7 @@ These documents serve as additional reference for the eInk display as shipped fr
 
 **1.54" iInk hardware** (avail from [Mikroe.com](https://www.mikroe.com/e-paper-bundle-1))
 <p align="center">
-  <img src="../Images/eink_154inch.png" width="265">
+  <img src="../Images/eink_154.jpg" width="265">
 </p>
 
 **2.00" iInk hardware** (avail from [Mouser.com](https://www.mouser.com/ProductDetail/Display-Visions/EA-EPA20-A?qs=EU6FO9ffTwdcD%252BcseurWVQ%3D%3D)
@@ -21,12 +21,12 @@ These documents serve as additional reference for the eInk display as shipped fr
 
 **2.13" iInk hardware** (avail from [Parallax.com](https://www.parallax.com/product/eink-click-e-paper-bundle-2/))
 <p align="center">
-  <img src="../Images/eink_213inch.png" width="327">
+  <img src="../Images/eink_213.jpg" width="327">
 </p>
 
 **2.90" iInk hardware** (avail from [Mikroe.com](https://www.mikroe.com/e-paper-bundle-3))
 <p align="center">
-  <img src="../Images/eink_29inch.png" width="390">
+  <img src="../Images/eink_290.jpg" width="390">
 </p>
 
 ## Hardware Documents

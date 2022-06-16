@@ -137,3 +137,4 @@ dmypy.json
 .pyre/
 C-src/New Piskel-coffee-002.c
 C-src/isp_demo_coffee_image.spin2
+.DS_Store
