@@ -1,0 +1,26 @@
+#!/bin/bash
+
+PIXEL_FILE="P2-Piskel.c"
+SPIN2_FILE=isp_demo_P2logo_image.spin2
+
+if [ ! -f "${PIXEL_FILE}" ]; then
+ cp -p REF/"${PIXEL_FILE}" .
+fi
+
+if [ ! -f convert ]; then
+  make clean all
+    if [ ! -f convert ]; then
+        echo "TST: failed to build our convert utility!"
+        exit 255
+    fi
+fi
+
+(set -x; ./convert -o ${SPIN2_FILE} -i p2logo -v)
+
+if [ ! -f ${SPIN2_FILE} ]; then
+    echo "TST: failed to build our convert utility!"
+    exit 255
+else
+    echo "TST: Created ${SPIN2_FILE}!"
+
+fi

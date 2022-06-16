@@ -206,13 +206,14 @@ Lastly you'll send this image to be put on the display with something
  like:
  
 ```spin2
-    pImageBits, imgWidth, imgHeight := coffeeImage.imageAddress(coffeeImage.IMAGE_Coffee)
+    pImageBits, imgWidth, imgHeight := imageInfo(coffeeImage.IMAGE_Coffee)
     eInkDisplay.placeImageAtXY(10, 10, pImageBits, imgWidth, imgHeight, 90)
 ```
 
-Yes, I added a method at the top of my image file: `PUB imageAddress(eImage) : pImageBits, imgWidth, imgHeight` 
+Yes, I added a method at the top of my image file: `PUB imageInfo(eImage) : imageAddr, imageWidthBytes, imageHeightBytes` 
 
 *This is included in the demo file of this driver. feel free to copy it to your new image file.*
+(**NOTE**: widthInPix = imageWidthBytes * 2, while heightInPix = imageHeightBytes)
 
 Ok. that's all there is to know. Have fun using your new images on your eInk displays!
 

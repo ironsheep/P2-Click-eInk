@@ -54,12 +54,15 @@ CON { click module io pins }
 
     ' our Click module is on 16-31!
     EINK_CLICK_PINGROUP = eInkDisplay.PINS_P16_P31
+    
+    ' we are using a 2.13" eInk display
+    EINK_DISPLAY_TYPE = eInkDisplay.DS_eink213
 
 PUB main() | ok
 '' DEMO let's see what our radio hears!
 
     ' tell object where the module is connected
-    ok := eInkDisplay.start(EINK_CLICK_PINGROUP)
+    ok := eInkDisplay.start(EINK_DISPLAY_TYPE, EINK_CLICK_PINGROUP)
     if not ok
         debug("* SPI FAILED to start")
     else
@@ -79,9 +82,11 @@ From here on, just use any of the Public Methods found in the interface descript
 
 | Method Signature | Purpose |
 | --- | --- |
-| PUB  start(eClickBasePin) : ok | Specify the eval board connect location for the EINK click and start SPI
+| PUB  start(eDisplayType, eClickBasePin) : ok | Specify the eval board connect location for the EINK click and start SPI</br>** eDisplayType** is [DS\_eink154, DS\_eink200, DS\_eink213, or DS\_eink290]</br>**eClickBasePin** is [PINS\_P0\_P15, PINS\_P16\_P31, or PINS\_P32\_P47]
 | PUB  stop() | Stop the EINK Click SPI Object
 | PUB  resetDevice() | Reset the EINK device
+| PUB displaySize() : widthInPix, heightInPix | Return display size in pixels</br>**NOTE**: only valid is device is successfully started!</br>(ensure start() is called, first and that it is successful!)
+PUB displayType() : eDisplayType| Return display size in pixels</br>**NOTE**: only valid is device is successfully started!</br>(ensure start() is called, first and that it is successful!)</br>** eDisplayType** is [DS\_eink154, DS\_eink200, DS\_eink213, or DS\_eink290]
 | **WRITE DIRECTLY TO DISPLAY**
 | PUB  fillScreen(color) | Fill Display with {color}
 | PUB  displayImage(pImageBffr) | Write image bitmap to Display

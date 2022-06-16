@@ -1,5 +1,5 @@
-# P2 eInk Hardware Documents
-Hardware documents for the Mikroe eInk adapter Click board™
+# P2 eINK Hardware Documents
+Hardware documents for the Mikroe eINK adapter Click board™
 
 ![Project Maintenance][maintenance-shield]
 
@@ -8,23 +8,23 @@ Hardware documents for the Mikroe eInk adapter Click board™
 
 ## The hardware
 
-These documents serve as additional reference for the eInk display as shipped from Parallax.com and Mikroe.com. 
+These documents serve as additional reference for the eINK display as shipped from Parallax.com and Mikroe.com. 
 
-**1.54" iInk hardware** (avail from [Mikroe.com](https://www.mikroe.com/e-paper-bundle-1))
+**1.54" eINK hardware** - 200x200 pixels - (avail from [Mikroe.com](https://www.mikroe.com/e-paper-bundle-1))
 <p align="center">
   <img src="../Images/eink_154.jpg" width="265">
 </p>
 
-**2.00" iInk hardware** (avail from [Mouser.com](https://www.mouser.com/ProductDetail/Display-Visions/EA-EPA20-A?qs=EU6FO9ffTwdcD%252BcseurWVQ%3D%3D)
+**2.00" eINK hardware** (avail from [Mouser.com](https://www.mouser.com/ProductDetail/Display-Visions/EA-EPA20-A?qs=EU6FO9ffTwdcD%252BcseurWVQ%3D%3D)
 
 *-image coming soon-*
 
-**2.13" iInk hardware** (avail from [Parallax.com](https://www.parallax.com/product/eink-click-e-paper-bundle-2/))
+**2.13" eINK hardware** - 122x250 pixels- (avail from [Parallax.com](https://www.parallax.com/product/eink-click-e-paper-bundle-2/))
 <p align="center">
   <img src="../Images/eink_213.jpg" width="327">
 </p>
 
-**2.90" iInk hardware** (avail from [Mikroe.com](https://www.mikroe.com/e-paper-bundle-3))
+**2.90" eINK hardware** - 128x296 pixels- (avail from [Mikroe.com](https://www.mikroe.com/e-paper-bundle-3))
 <p align="center">
   <img src="../Images/eink_290.jpg" width="390">
 </p>
@@ -33,9 +33,9 @@ These documents serve as additional reference for the eInk display as shipped fr
 
 The following documents are found in this repo (this driver is inteded to support all of these displays):
 
-| Filename | Purpose | Description | eInk Display
+| Filename | Purpose | Description | eINK Display
 | --- | --- | --- | --- |
-| [epa20-ae.pdf](epa20-ae.pdf) | eInk display | Older display data sheet | 2.00"
+| [epa20-ae.pdf](epa20-ae.pdf) | eINK display | Older display data sheet | 2.00"
 | [LM75A.pdf](LM75A.pdf) | controller chip | **Product data sheet** - Digital temperature sensor and thermal watchdog, Rev 04 - 10 July 2007 | 1.54", 2.00", 2.13", and 2.9"
 | [ssd1606.pdf](ssd1606.pdf) | controller chip | **Solomon Systech SSD1606** 4GS Active Matrix EPD 128 x 180 Display Driver with Controller - Oct 2011 | 2.00"
 | [ssd1608.pdf](ssd1608.pdf) | controller chip | **Solomon Systech SSD1608** Active Matrix EPD 240 x 320 Display Driver with Controller - Jan 2015 | 1.54"
@@ -45,7 +45,7 @@ The following documents are found in this repo (this driver is inteded to suppor
 
 Additional pages:
 
-- [Top README](https://github.com/ironsheep/P2-Click-eInk) - Return to the top-level README for this repository
+- [Top README](https://github.com/ironsheep/P2-Click-eINK) - Return to the top-level README for this repository
 
 
 
