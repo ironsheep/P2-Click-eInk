@@ -21,7 +21,7 @@ These documents serve as additional reference for the eINK display as shipped fr
 
 **2.13" eINK hardware** - 122x250 pixels- (avail from [Parallax.com](https://www.parallax.com/product/eink-click-e-paper-bundle-2/))
 <p align="center">
-  <img src="../Images/eink_213.jpg" width="327">
+  <img src="../Images/eink_213.jpg" width="333">
 </p>
 
 **2.90" eINK hardware** - 128x296 pixels- (avail from [Mikroe.com](https://www.mikroe.com/e-paper-bundle-3))
