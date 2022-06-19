@@ -118,7 +118,7 @@ PRI eraseDisplay()
     eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_WHITE)
     waitms(5000)
 
-PRI trial_200_demo() | dsplyWidthInPix, dsplyHeightInPix, xPix, yPix, pImageBits, imgWidth, imgHeight
+PRI trial_200_demo() | dsplyWidthInPix, dsplyHeightInPix, xPix, yPix, pImageBits, imgWidth, imgHeight, imgWidthInPix
     debug("* write border, place marker for image corner, place small cup, then border around image")
 
     ' first empty the screen
@@ -141,7 +141,8 @@ PRI trial_200_demo() | dsplyWidthInPix, dsplyHeightInPix, xPix, yPix, pImageBits
 
     ' 2nd fonts
 
-    ' 3rd bitmaps
+{
+    ' 3rd bitmaps (coffee)
         ' select font for image labels
     eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
 
@@ -151,8 +152,14 @@ PRI trial_200_demo() | dsplyWidthInPix, dsplyHeightInPix, xPix, yPix, pImageBits
         ' ROTATION 0 - GOOD
         placeRotatedImageAtXY(18, 18, 0, pImageBits, imgWidth, imgHeight, @"0 degr")
 
-
+        ' ROTATION 90 - GOOD
+        placeRotatedImageAtXY(18, 90, 270, pImageBits, imgWidth, imgHeight, @"270 degr")
 '}
+    ' 4th bitmap P2 logo
+    pImageBits, imgWidth, imgHeight := p2LogoImage.imageInfo(p2LogoImage.IMAGE_P2_logo)
+    imgWidthInPix := imgWidth * 2
+    eInkDisplay.placeImageAtXY(3, dsplyHeightInPix - imgWidthInPix - 3, pImageBits, imgWidth, imgHeight, 270)
+
 
     debug("and flush to screen")
     eInkDisplay.flushToDisplay()

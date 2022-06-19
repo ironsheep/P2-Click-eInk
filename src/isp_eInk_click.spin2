@@ -1090,9 +1090,8 @@ PUB frame_px(x, y, fntColor) | bitInByte, byteIdx
         ' for 2.00" display with 2-bit grey-scale
         '  4bits packed into each byte - 2-bits / pixel
         '
-        ' AUGH!  orientation of display is inverted in both X and Y
+        ' AUGH!  orientation of display is Y inverted
         '  let's counter this so 0,0 is same on all 4 displays
-        x := (displayWidth - 1) - x
         y := (displayHeight- 1) - y
         byteIdx := (y * (displayWidth / 4)) + (x / 4)
         bitInByte := (3 - (x +// 4)) * 2
