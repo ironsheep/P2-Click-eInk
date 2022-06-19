@@ -1,6 +1,14 @@
 #!/bin/bash
 
 SRC_SPIN_DIR=/Users/stephen/Dropbox/PropV2-Shared/Projects/P2-Click-eInk-SW
+
 DST_SPIN_DIR="/Users/stephen/Projects/Projects-ExtGit/IronSheepProductionsLLC/Projects Propeller/P2-click-eInk/P2-Click-eInk"
+
+# on my new mac it's: /Users/stephen/Projects/Projects-ExtGit/IronSheepProductionsLLC/Propeller2/P2-Click-eInk/P2-Click-eInk
+DST_SPIN_DIR2="/Users/stephen/Projects/Projects-ExtGit/IronSheepProductionsLLC/Propeller2/P2-Click-eInk/P2-Click-eInk"
+
+if [ ! -d "${DST_SPIN_DIR}" ]; then
+ DST_SPIN_DIR="${DST_SPIN_DIR2}"
+fi
 
 (set -x;cp -p "${SRC_SPIN_DIR}"/*.spin2 "${DST_SPIN_DIR}/src")

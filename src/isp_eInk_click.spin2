@@ -302,14 +302,19 @@ PUB fillScreen(color) | xCtr, yCtr, fillColor, byteCtr
     ' override color if it is not one of the supported four!
     fillColor := validColor(color)
 
-    setMemoryArea(0, 0, displayWidth - 1, displayHeight - 1)
+    if deviceType <> DS_eink200
+        ' setMemoryArea(xStart, yStart, xEnd, yEnd)
+        setMemoryArea(0, 0, displayWidth - 1, displayHeight - 1)
+    else
+        ' setMemoryArea(xStart, yStart, xEnd, yEnd)
+        setMemoryArea(0, displayHeight - 1, displayWidth - 1, 0)
 
     if deviceType <> DS_eink213
         ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
         if deviceType == DS_eink200
             setMemoryPointer(0, $AB)
         else
-             setMemoryPointer(0, 0)
+            setMemoryPointer(0, 0)
         writeCmd(CMD_WRITE_RAM)
         repeat byteCtr from 0 to frameSizeInBytes - 1
             writeData(fillColor)
@@ -333,14 +338,19 @@ PUB fillScreen(color) | xCtr, yCtr, fillColor, byteCtr
 
 PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
 '' Write image bitmap to Display
-    setMemoryArea(0, 0, displayWidth - 1, displayHeight - 1)
+    if deviceType <> DS_eink200
+        ' setMemoryArea(xStart, yStart, xEnd, yEnd)
+        setMemoryArea(0, 0, displayWidth - 1, displayHeight - 1)
+    else
+        ' setMemoryArea(xStart, yStart, xEnd, yEnd)
+        setMemoryArea(0, displayHeight - 1, displayWidth - 1, 0)
 
     if deviceType <> DS_eink213
         ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
         if deviceType == DS_eink200
             setMemoryPointer(0, $AB)
         else
-             setMemoryPointer(0, 0)
+            setMemoryPointer(0, 0)
         writeCmd(CMD_WRITE_RAM)
         repeat imgIdx from 0 to frameSizeInBytes - 1
             writeData(BYTE [@pImageBffr][ imgIdx ])
@@ -636,21 +646,25 @@ PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
                 if rtBits <> $07
                     frame_px(dstY, dstX+0, rtBits & $03)
 
-
     else
         debug("* ERROR unsupported rotation: ", udec_(rotation))
     debug("  - placed from x,y=(", udec_(minX), ", ", udec_(minY), "), to x,y=(", udec_(maxX), ", ", udec_(maxY), ")")
 
 PUB flushToDisplay() | byteCtr, yCtr, xCtr
 '' Flush Frame Buffer content to Display
-    setMemoryArea(0, 0, displayWidth - 1, displayHeight - 1)
+    if deviceType <> DS_eink200
+        ' setMemoryArea(xStart, yStart, xEnd, yEnd)
+        setMemoryArea(0, 0, displayWidth - 1, displayHeight - 1)
+    else
+        ' setMemoryArea(xStart, yStart, xEnd, yEnd)
+        setMemoryArea(0, displayHeight - 1, displayWidth - 1, 0)
 
     if deviceType <> DS_eink213
         ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
         if deviceType == DS_eink200
             setMemoryPointer(0, $AB)
         else
-             setMemoryPointer(0, 0)
+            setMemoryPointer(0, 0)
         writeCmd(CMD_WRITE_RAM)
         repeat byteCtr from 0 to frameSizeInBytes - 1
             writeData(BYTE [@deviceFrame][ byteCtr ])
@@ -1062,7 +1076,7 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY,
 
         deviceY := frmX - 1    ' move to next char position vertically
 
-PRI frame_px(x, y, fntColor) | bitInByte, byteIdx
+PUB frame_px(x, y, fntColor) | bitInByte, byteIdx
 ' place colored font pixel in device frame for later display
     if deviceType <> DS_eink200
         ' for 1.54", 2.13" and 2.90" displays
@@ -1074,6 +1088,12 @@ PRI frame_px(x, y, fntColor) | bitInByte, byteIdx
         BYTE [@deviceFrame][byteIdx] |= ((fntColor & $01) << bitInByte)
     else
         ' for 2.00" display with 2-bit grey-scale
+        '  4bits packed into each byte - 2-bits / pixel
+        '
+        ' AUGH!  orientation of display is inverted in both X and Y
+        '  let's counter this so 0,0 is same on all 4 displays
+        x := (displayWidth - 1) - x
+        y := (displayHeight- 1) - y
         byteIdx := (y * (displayWidth / 4)) + (x / 4)
         bitInByte := (3 - (x +// 4)) * 2
 

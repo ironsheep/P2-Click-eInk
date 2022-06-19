@@ -32,7 +32,7 @@ CON { click module io pins }
     EINK_CLICK_PINGROUP = eInkDisplay.PINS_P16_P31
 
     ' we are using a 2.13" eInk display
-    EINK_DISPLAY_TYPE = eInkDisplay.DS_eink290
+    EINK_DISPLAY_TYPE = eInkDisplay.DS_eink200
 
 OBJ { the object being demo'd }
 
@@ -53,7 +53,8 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
 
     eraseDisplay()
 
-
+    trial_200_demo()
+{
     text_demo()             ' Text
     waitms(2000)
 
@@ -67,7 +68,7 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
 
     ' end with our device P2 Logo image
     p2_demoRegionImage()
-
+'}
     debug("* stopped")
     eInkDisplay.stop()
 
@@ -100,7 +101,7 @@ DAT { demonstration data }
 
     recr_text21      BYTE    "EA EPA20-A",34,0
     recr_text22      BYTE    "* E-Paper",0
-    recr_text23      BYTE    "* 2,4..3,3V",0
+    recr_text23      BYTE    "* 72 x 172 pixels",0
     recr_text24      BYTE    "* 4 Grey Levels",0
     recr_text25      BYTE    "* SPI Interface",0
 
@@ -116,6 +117,45 @@ PRI eraseDisplay()
     debug("* erase display")
     eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_WHITE)
     waitms(5000)
+
+PRI trial_200_demo() | dsplyWidthInPix, dsplyHeightInPix, xPix, yPix, pImageBits, imgWidth, imgHeight
+    debug("* write border, place marker for image corner, place small cup, then border around image")
+
+    ' first empty the screen
+    eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
+
+    ' first place pixels in some location....
+    '   do they map correctly?
+'{
+    ' mark 0,0 of display
+    repeat xPix from 0 to 9
+        repeat yPix from 0 to 4
+            eInkDisplay.frame_px(xPix, yPix, eInkDisplay.EINK_COLOR_BLACK)
+'}
+'{
+    ' next, the border
+    dsplyWidthInPix, dsplyHeightInPix := eInkDisplay.displaySize()
+    debug("* getSize()  w,h=(", udec_(dsplyWidthInPix), udec_(dsplyHeightInPix), ")")
+    ' borderAtXY(X, Y, color, thickness, width, height)
+    eInkDisplay.borderAtXY(0, 0, eInkDisplay.EINK_COLOR_BLACK, 1, dsplyWidthInPix, dsplyHeightInPix)
+
+    ' 2nd fonts
+
+    ' 3rd bitmaps
+        ' select font for image labels
+    eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
+
+    pImageBits, imgWidth, imgHeight := coffeeImage.imageInfo(coffeeImage.IMAGE_Coffee)
+    debug("* imageInfo() ", uhex_long(pImageBits), ", w,h=(", udec_(imgWidth), udec_(imgHeight), ")")
+    if pImageBits <> coffeeImage.IMAGE_UNKNOWN
+        ' ROTATION 0 - GOOD
+        placeRotatedImageAtXY(18, 18, 0, pImageBits, imgWidth, imgHeight, @"0 degr")
+
+
+'}
+
+    debug("and flush to screen")
+    eInkDisplay.flushToDisplay()
 
 PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWidth, imgHeight, imgWidthInPix, leftEdge, firstLine, lineSpacing
     ' github pictures screen - make it look pretty
