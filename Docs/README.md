@@ -15,9 +15,13 @@ These documents serve as additional reference for the eINK display as shipped fr
   <img src="../Images/eink_154.jpg" width="265">
 </p>
 
-**2.00" eINK hardware** (avail from [Mouser.com](https://www.mouser.com/ProductDetail/Display-Visions/EA-EPA20-A?qs=EU6FO9ffTwdcD%252BcseurWVQ%3D%3D)
 
-*-image coming soon-*
+**2.00" eINK hardware** (avail from [Mouser.com](https://www.mouser.com/ProductDetail/Display-Visions/EA-EPA20-A?qs=EU6FO9ffTwdcD%252BcseurWVQ%3D%3D)
+<p align="center">
+  <img src="../Images/EA-EPA20-A.jpg" width="330">
+</p>
+
+**NOTE***: this display has two levels of gray in addition to black and white.*
 
 **2.13" eINK hardware** - 122x250 pixels- (avail from [Parallax.com](https://www.parallax.com/product/eink-click-e-paper-bundle-2/))
 <p align="center">

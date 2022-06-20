@@ -48,6 +48,8 @@ To this, we added these additional capabilities:
 Latest Changes:
 
 ```
+20 June 2022
+- Completed 2.00" EP-EPA20-A (fm Mouser) device support
 15 June 2022
 - Updated demos to now produce P2 Logo'd display screen specific to device
 - Update images in repo documents to show P2 Logo'd eInk displays
@@ -93,8 +95,6 @@ Things we know about that still need attention:
 ```
 - We still want to support all display orientations (only two are supported currently.)
   - Landscape (connector to left) and Portrait (connector at bottom)
-- We want to test against all click supported displays [1.54", 2.00", 2.13" and 2.90"]
-  - We still haven't finished the 2.00" 4-color display
 - Want to add utility methods like: 
   - Calculate length of string in given font
   - Calculate offset to center string of given font in region
@@ -113,7 +113,7 @@ Additional pages:
 
 - [Start your project using this object](DEVELOP.md) - Walks thru configuration and setup of your own project using this object
 - [Create bitmaps for display on your eINK device](./C-src)
-- There are a small number of .PDFs in the [Docs](./Docs) directory providing  detailed information on the display and controller chips
+- [See images of all four displays working!](./Docs) There are a small number of .PDFs in the [Docs](./Docs) directory providing  detailed information on the display and controller chips
 
 ## How to Contribute
 

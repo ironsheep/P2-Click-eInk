@@ -53,8 +53,8 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
 
     eraseDisplay()
 
-    trial_200_demo()
-{
+   ' -- REMOVE -- trial_200_demo()
+
     text_demo()             ' Text
     waitms(2000)
 
@@ -68,7 +68,7 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
 
     ' end with our device P2 Logo image
     p2_demoRegionImage()
-'}
+
     debug("* stopped")
     eInkDisplay.stop()
 
@@ -99,11 +99,12 @@ DAT { demonstration data }
     recr_text14      BYTE    "* Mono Black/White",0
     recr_text15      BYTE    "* SPI Interface",0
 
-    recr_text21      BYTE    "EA EPA20-A",34,0
+    recr_text20      BYTE    "eInk 2.00",34,0
+    recr_text21      BYTE    "EA EPA20-A",0
     recr_text22      BYTE    "* E-Paper",0
     recr_text23      BYTE    "* 72 x 172 pixels",0
     recr_text24      BYTE    "* 4 Grey Levels",0
-    recr_text25      BYTE    "* SPI Interface",0
+    recr_text25      BYTE    "* SPI I/F",0
 
     recr_text30      BYTE    "eINK 2.90",34,0
     recr_text31      BYTE    "Rectanglar",0
@@ -118,30 +119,24 @@ PRI eraseDisplay()
     eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_WHITE)
     waitms(5000)
 
-PRI trial_200_demo() | dsplyWidthInPix, dsplyHeightInPix, xPix, yPix, pImageBits, imgWidth, imgHeight, imgWidthInPix
+PRI trial_200_demo() | dsplyWidthInPix, dsplyHeightInPix, xPix, yPix, pImageBits, imgWidth, imgHeight, imgWidthInPix, leftEdge, firstLine, lineSpacing
     debug("* write border, place marker for image corner, place small cup, then border around image")
 
     ' first empty the screen
     eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
 
-    ' first place pixels in some location....
-    '   do they map correctly?
-'{
-    ' mark 0,0 of display
-    repeat xPix from 0 to 9
-        repeat yPix from 0 to 4
-            eInkDisplay.frame_px(xPix, yPix, eInkDisplay.EINK_COLOR_BLACK)
-'}
-'{
+    ' place display banner to right of P2
+    eInkDisplay.fillRegionAt(4, 4, eInkDisplay.EINK_COLOR_LIGHT_GREY, 15, 64)
+    ' place display label
+    eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
+    eInkDisplay.setTextAtXY(6, 58, @recr_text20)
+
     ' next, the border
     dsplyWidthInPix, dsplyHeightInPix := eInkDisplay.displaySize()
     debug("* getSize()  w,h=(", udec_(dsplyWidthInPix), udec_(dsplyHeightInPix), ")")
     ' borderAtXY(X, Y, color, thickness, width, height)
     eInkDisplay.borderAtXY(0, 0, eInkDisplay.EINK_COLOR_BLACK, 1, dsplyWidthInPix, dsplyHeightInPix)
 
-    ' 2nd fonts
-
-{
     ' 3rd bitmaps (coffee)
         ' select font for image labels
     eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
@@ -149,17 +144,35 @@ PRI trial_200_demo() | dsplyWidthInPix, dsplyHeightInPix, xPix, yPix, pImageBits
     pImageBits, imgWidth, imgHeight := coffeeImage.imageInfo(coffeeImage.IMAGE_Coffee)
     debug("* imageInfo() ", uhex_long(pImageBits), ", w,h=(", udec_(imgWidth), udec_(imgHeight), ")")
     if pImageBits <> coffeeImage.IMAGE_UNKNOWN
-        ' ROTATION 0 - GOOD
-        placeRotatedImageAtXY(18, 18, 0, pImageBits, imgWidth, imgHeight, @"0 degr")
+        eInkDisplay.placeImageAtXY(22, 4, pImageBits, imgWidth, imgHeight, 270)
 
-        ' ROTATION 90 - GOOD
-        placeRotatedImageAtXY(18, 90, 270, pImageBits, imgWidth, imgHeight, @"270 degr")
-'}
     ' 4th bitmap P2 logo
     pImageBits, imgWidth, imgHeight := p2LogoImage.imageInfo(p2LogoImage.IMAGE_P2_logo)
     imgWidthInPix := imgWidth * 2
     eInkDisplay.placeImageAtXY(3, dsplyHeightInPix - imgWidthInPix - 3, pImageBits, imgWidth, imgHeight, 270)
 
+    ' speak to Spin2 Driver
+    eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
+    eInkDisplay.setTextAtXY(20, dsplyHeightInPix - imgWidthInPix - 6, @"Spin2")
+    eInkDisplay.setTextAtXY(31, dsplyHeightInPix - imgWidthInPix - 6, @"Driver")
+
+    ' test our grays!
+    'eInkDisplay.fillRegionAt(45, 100, eInkDisplay.EINK_COLOR_LIGHT_GREY, 30, 30)
+    eInkDisplay.fillRegionAt(56, 38, eInkDisplay.EINK_COLOR_DARK_GREY, 14, 130)
+
+    leftEdge := dsplyHeightInPix - 8
+    firstLine := 44
+    lineSpacing := 7+7
+    eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
+    eInkDisplay.setTextAtXY(firstLine + lineSpacing * 0, leftEdge, @recr_text23)
+    eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_WHITE, eInkDisplay.FONT_Tahoma_7)
+    eInkDisplay.setTextAtXY(firstLine + lineSpacing * 1, leftEdge, @recr_text24)
+
+    leftEdge := dsplyHeightInPix - 88
+    eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
+    eInkDisplay.setTextAtXY(firstLine + lineSpacing * 0, leftEdge, @recr_text22)
+    eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_WHITE, eInkDisplay.FONT_Tahoma_7)
+    eInkDisplay.setTextAtXY(firstLine + lineSpacing * 1, leftEdge, @recr_text25)
 
     debug("and flush to screen")
     eInkDisplay.flushToDisplay()
@@ -182,7 +195,7 @@ PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWid
         case eInkDisplay.displayType()
             eInkDisplay.DS_eink213:
                 debug(" - filling DS_eink213")
-                ' ROTATION 0 - GOOD
+                ' ROTATION 0
                 ' place image itself, rotated properly
                 eInkDisplay.placeImageAtXY(10, dsplyHeightInPix - imgWidthInPix - 5, pImageBits, imgWidth, imgHeight, 270)
                 eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_10)
@@ -251,6 +264,58 @@ PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWid
                 eInkDisplay.setTextAtXY(firstLine + lineSpacing * 2, leftEdge, @recr_text34)
                 eInkDisplay.setTextAtXY(firstLine + lineSpacing * 3, leftEdge, @recr_text35)
 
+            eInkDisplay.DS_eink200:
+                debug(" - filling DS_eink200")
+                ' place display banner to right of P2
+                eInkDisplay.fillRegionAt(4, 4, eInkDisplay.EINK_COLOR_LIGHT_GREY, 15, 64)
+                ' place display label
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
+                eInkDisplay.setTextAtXY(6, 58, @recr_text20)
+
+                ' next, the border
+                dsplyWidthInPix, dsplyHeightInPix := eInkDisplay.displaySize()
+                debug("* getSize()  w,h=(", udec_(dsplyWidthInPix), udec_(dsplyHeightInPix), ")")
+                ' borderAtXY(X, Y, color, thickness, width, height)
+                eInkDisplay.borderAtXY(0, 0, eInkDisplay.EINK_COLOR_BLACK, 1, dsplyWidthInPix, dsplyHeightInPix)
+
+                ' 3rd bitmaps (coffee)
+                    ' select font for image labels
+                eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
+
+                pImageBits, imgWidth, imgHeight := coffeeImage.imageInfo(coffeeImage.IMAGE_Coffee)
+                debug("* imageInfo() ", uhex_long(pImageBits), ", w,h=(", udec_(imgWidth), udec_(imgHeight), ")")
+                if pImageBits <> coffeeImage.IMAGE_UNKNOWN
+                    eInkDisplay.placeImageAtXY(22, 4, pImageBits, imgWidth, imgHeight, 270)
+
+                ' 4th bitmap P2 logo
+                pImageBits, imgWidth, imgHeight := p2LogoImage.imageInfo(p2LogoImage.IMAGE_P2_logo)
+                imgWidthInPix := imgWidth * 2
+                eInkDisplay.placeImageAtXY(3, dsplyHeightInPix - imgWidthInPix - 3, pImageBits, imgWidth, imgHeight, 270)
+
+                ' speak to Spin2 Driver
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
+                eInkDisplay.setTextAtXY(20, dsplyHeightInPix - imgWidthInPix - 6, @"Spin2")
+                eInkDisplay.setTextAtXY(31, dsplyHeightInPix - imgWidthInPix - 6, @"Driver")
+
+                ' place a panel as text background!
+                eInkDisplay.fillRegionAt(56, 38, eInkDisplay.EINK_COLOR_DARK_GREY, 14, 130)
+
+                ' place two rows, two columns of text
+                leftEdge := dsplyHeightInPix - 8
+                firstLine := 44
+                lineSpacing := 7+7
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 0, leftEdge, @recr_text23)
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_WHITE, eInkDisplay.FONT_Tahoma_7)
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 1, leftEdge, @recr_text24)
+
+                leftEdge := dsplyHeightInPix - 88
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 0, leftEdge, @recr_text22)
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_WHITE, eInkDisplay.FONT_Tahoma_7)
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 1, leftEdge, @recr_text25)
+
+
     debug("and flush to screen")
     eInkDisplay.flushToDisplay()
 
@@ -277,16 +342,6 @@ PRI text_demoRegionImage() | pImageBits, imgWidth, imgHeight
     eInkDisplay.lineAtXY(101, 20, 101, 229, eInkDisplay.EINK_COLOR_BLACK)    ' vert rt
     eInkDisplay.lineAtXY(20, 229, 101, 229, eInkDisplay.EINK_COLOR_BLACK)   ' horiz bot
     eInkDisplay.lineAtXY(20, 20, 20, 229, eInkDisplay.EINK_COLOR_BLACK)    ' vert lt
-
-        ' fillRegionAt(X, Y, color, width, height)
-    'eInkDisplay.fillRegionAt(5, 140, eInkDisplay.EINK_COLOR_DARK_GREY, 50, 50)
-    'eInkDisplay.fillRegionAt(5, 192, eInkDisplay.EINK_COLOR_LIGHT_GREY, 50, 50)
-
-{
-    pImageBits, imgWidth, imgHeight := coffeeImage.imageInfo(coffeeImage.IMAGE_Coffee)
-    if pImageBits <> coffeeImage.IMAGE_UNKNOWN
-        eInkDisplay.placeImageAtXY(14, 10, pImageBits, imgWidth, imgHeight, 0)
-'}
 
     ' place a circle on our screen, too
     ' circleAtXY(c, y, diameter, color)
@@ -338,60 +393,39 @@ PRI text_demo() | dsplyWidthInPix, dsplyHeightInPix
     '   Y: 0-171
 
     eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
-{
-    eInkDisplay.lineAtXY(50, 5, 65, 5, eInkDisplay.EINK_COLOR_BLACK)
-    eInkDisplay.lineAtXY(50, 10, 65, 10, eInkDisplay.EINK_COLOR_LIGHT_GREY)
-    eInkDisplay.lineAtXY(50, 15, 65, 15, eInkDisplay.EINK_COLOR_DARK_GREY)
 
-    eInkDisplay.lineAtXY(20, 5, 20, 15, eInkDisplay.EINK_COLOR_BLACK)
-    eInkDisplay.lineAtXY(25, 5, 25, 15, eInkDisplay.EINK_COLOR_LIGHT_GREY)
-    eInkDisplay.lineAtXY(30, 5, 30, 15, eInkDisplay.EINK_COLOR_DARK_GREY)
-'}
     dsplyWidthInPix, dsplyHeightInPix := eInkDisplay.displaySize()
     debug("* getSize()  w,h=(", udec_(dsplyWidthInPix), udec_(dsplyHeightInPix), ")")
 
-    ' borderAtXY(X,Y, color, thickness, width, height)
     eInkDisplay.borderAtXY(0, 0, eInkDisplay.EINK_COLOR_LIGHT_GREY, 1, dsplyWidthInPix, dsplyHeightInPix)
     eInkDisplay.borderAtXY(0+2, 0+4, eInkDisplay.EINK_COLOR_BLACK, 1, dsplyWidthInPix-4, dsplyHeightInPix-8)
 
-    'eInkDisplay.lineAtXY(0, 0, 0, 100, eInkDisplay.EINK_COLOR_BLACK)        ' left
-    'eInkDisplay.lineAtXY(0, 0, 60, 0, eInkDisplay.EINK_COLOR_BLACK)         ' top
+    ' place text at various locations and orientations
+    case eInkDisplay.displayType()
+        eInkDisplay.DS_eink200:
+            eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_18)
+            eInkDisplay.setTextAtXY(5, 70, @demo_text)
 
-    'eInkDisplay.lineAtXY(60, 4, 60, 100, eInkDisplay.EINK_COLOR_BLACK)      ' right
-    'eInkDisplay.lineAtXY(0, 249, 60, 249, eInkDisplay.EINK_COLOR_BLACK)         ' bottom
+            eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+            eInkDisplay.setTextAtXY(20, 60, @demo_text3)
 
-{
-    eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
-    eInkDisplay.setTextAtXY(0, 0, @demo_text00_000)
+            eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_18)
+            eInkDisplay.setTextAtXY(30, 152, @demo_text)
 
-    eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
-    eInkDisplay.setTextAtXY(10, 50, @demo_text10_050)
+            eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL_COLUMN, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+            eInkDisplay.setTextAtXY(5, 100, @demo_text4)
+        other:
+            eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_18)
+            eInkDisplay.setTextAtXY(5, 70, @demo_text)
 
-    eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
-    eInkDisplay.setTextAtXY(20, 100, @demo_text20_100)
+            eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+            eInkDisplay.setTextAtXY(20, 60, @demo_text3)
 
-    eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
-    eInkDisplay.setTextAtXY(30, 200, @demo_text30_200)
-'}
+            eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_18)
+            eInkDisplay.setTextAtXY(30, 240, @demo_text)
 
-'{
-    eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_18)
-    eInkDisplay.setTextAtXY(5, 70, @demo_text)
-
-    'eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
-    'eInkDisplay.setTextAtXY(5, 120, @demo_text2)
-'}
-'{
-    eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
-    eInkDisplay.setTextAtXY(20, 60, @demo_text3)
-'}
-    eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_18)
-    eInkDisplay.setTextAtXY(30, 240, @demo_text)
-
-'{
-    eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL_COLUMN, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
-    eInkDisplay.setTextAtXY(5, 140, @demo_text4)
-'}
+            eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL_COLUMN, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+            eInkDisplay.setTextAtXY(5, 140, @demo_text4)
 
     eInkDisplay.flushToDisplay()
 
@@ -416,43 +450,55 @@ PRI region_image_demo() | pImageBits, imgWidth, imgHeight, dsplyWidthInPix, dspl
     if pImageBits <> coffeeImage.IMAGE_UNKNOWN
         case eInkDisplay.displayType()
             eInkDisplay.DS_eink213:
-                ' ROTATION 0 - GOOD
+                ' ROTATION 0
                 placeRotatedImageAtXY(18, 18, 0, pImageBits, imgWidth, imgHeight, @"0 degr")
 
-                ' ROTATION 180 - GOOD
+                ' ROTATION 180
                 placeRotatedImageAtXY(70, 18, 180, pImageBits, imgWidth, imgHeight, @"180 degr")
 
-                ' ROTATION 90 - ????
+                ' ROTATION 90
                 placeRotatedImageAtXY(35, 106, 90, pImageBits, imgWidth, imgHeight, @"90 degr")
 
-                ' ROTATION 270 - ????
+                ' ROTATION 270
                 placeRotatedImageAtXY(35, 178, 270, pImageBits, imgWidth, imgHeight, @"270 degr")
             eInkDisplay.DS_eink154:
-                ' ROTATION 0 - GOOD
+                ' ROTATION 0
                 placeRotatedImageAtXY(18, 18, 0, pImageBits, imgWidth, imgHeight, @"0 degr")
 
-                ' ROTATION 180 - GOOD
+                ' ROTATION 180
                 placeRotatedImageAtXY(70, 18, 180, pImageBits, imgWidth, imgHeight, @"180 degr")
 
-                ' ROTATION 90 - ????
+                ' ROTATION 90
                 placeRotatedImageAtXY(35, 106, 90, pImageBits, imgWidth, imgHeight, @"90 degr")
 
-                ' ROTATION 270 - ????
+                ' ROTATION 270
                 placeRotatedImageAtXY(100, 106, 270, pImageBits, imgWidth, imgHeight, @"270 degr")
 
             eInkDisplay.DS_eink290:
-                ' ROTATION 0 - GOOD
+                ' ROTATION 0
                 placeRotatedImageAtXY(18, 18, 0, pImageBits, imgWidth, imgHeight, @"0 degr")
 
-                ' ROTATION 180 - GOOD
+                ' ROTATION 180
                 placeRotatedImageAtXY(70, 18, 180, pImageBits, imgWidth, imgHeight, @"180 degr")
 
-                ' ROTATION 90 - ????
+                ' ROTATION 90
                 placeRotatedImageAtXY(35, 106, 90, pImageBits, imgWidth, imgHeight, @"90 degr")
 
-                ' ROTATION 270 - ????
+                ' ROTATION 270
                 placeRotatedImageAtXY(35, 178, 270, pImageBits, imgWidth, imgHeight, @"270 degr")
 
+            eInkDisplay.DS_eink200:
+                ' ROTATION 0
+                'placeRotatedImageAtXY(4, 4, 0, pImageBits, imgWidth, imgHeight, @"0 degr")
+
+                ' ROTATION 180
+                placeRotatedImageAtXY(30, 4, 180, pImageBits, imgWidth, imgHeight, @"180 degr")
+
+                ' ROTATION 90
+                placeRotatedImageAtXY(8, 72, 90, pImageBits, imgWidth, imgHeight, @"90 degr")
+
+                ' ROTATION 270
+                placeRotatedImageAtXY(8, 124, 270, pImageBits, imgWidth, imgHeight, @"270 degr")
 
     eInkDisplay.flushToDisplay()
 
