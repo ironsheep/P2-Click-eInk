@@ -53,8 +53,6 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
 
     eraseDisplay()
 
-   ' -- REMOVE -- trial_200_demo()
-
     text_demo()             ' Text
     waitms(2000)
 
@@ -118,64 +116,6 @@ PRI eraseDisplay()
     debug("* erase display")
     eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_WHITE)
     waitms(5000)
-
-PRI trial_200_demo() | dsplyWidthInPix, dsplyHeightInPix, xPix, yPix, pImageBits, imgWidth, imgHeight, imgWidthInPix, leftEdge, firstLine, lineSpacing
-    debug("* write border, place marker for image corner, place small cup, then border around image")
-
-    ' first empty the screen
-    eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
-
-    ' place display banner to right of P2
-    eInkDisplay.fillRegionAt(4, 4, eInkDisplay.EINK_COLOR_LIGHT_GREY, 15, 64)
-    ' place display label
-    eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
-    eInkDisplay.setTextAtXY(6, 58, @recr_text20)
-
-    ' next, the border
-    dsplyWidthInPix, dsplyHeightInPix := eInkDisplay.displaySize()
-    debug("* getSize()  w,h=(", udec_(dsplyWidthInPix), udec_(dsplyHeightInPix), ")")
-    ' borderAtXY(X, Y, color, thickness, width, height)
-    eInkDisplay.borderAtXY(0, 0, eInkDisplay.EINK_COLOR_BLACK, 1, dsplyWidthInPix, dsplyHeightInPix)
-
-    ' 3rd bitmaps (coffee)
-        ' select font for image labels
-    eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
-
-    pImageBits, imgWidth, imgHeight := coffeeImage.imageInfo(coffeeImage.IMAGE_Coffee)
-    debug("* imageInfo() ", uhex_long(pImageBits), ", w,h=(", udec_(imgWidth), udec_(imgHeight), ")")
-    if pImageBits <> coffeeImage.IMAGE_UNKNOWN
-        eInkDisplay.placeImageAtXY(22, 4, pImageBits, imgWidth, imgHeight, 270)
-
-    ' 4th bitmap P2 logo
-    pImageBits, imgWidth, imgHeight := p2LogoImage.imageInfo(p2LogoImage.IMAGE_P2_logo)
-    imgWidthInPix := imgWidth * 2
-    eInkDisplay.placeImageAtXY(3, dsplyHeightInPix - imgWidthInPix - 3, pImageBits, imgWidth, imgHeight, 270)
-
-    ' speak to Spin2 Driver
-    eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
-    eInkDisplay.setTextAtXY(20, dsplyHeightInPix - imgWidthInPix - 6, @"Spin2")
-    eInkDisplay.setTextAtXY(31, dsplyHeightInPix - imgWidthInPix - 6, @"Driver")
-
-    ' test our grays!
-    'eInkDisplay.fillRegionAt(45, 100, eInkDisplay.EINK_COLOR_LIGHT_GREY, 30, 30)
-    eInkDisplay.fillRegionAt(56, 38, eInkDisplay.EINK_COLOR_DARK_GREY, 14, 130)
-
-    leftEdge := dsplyHeightInPix - 8
-    firstLine := 44
-    lineSpacing := 7+7
-    eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
-    eInkDisplay.setTextAtXY(firstLine + lineSpacing * 0, leftEdge, @recr_text23)
-    eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_WHITE, eInkDisplay.FONT_Tahoma_7)
-    eInkDisplay.setTextAtXY(firstLine + lineSpacing * 1, leftEdge, @recr_text24)
-
-    leftEdge := dsplyHeightInPix - 88
-    eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_7)
-    eInkDisplay.setTextAtXY(firstLine + lineSpacing * 0, leftEdge, @recr_text22)
-    eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_WHITE, eInkDisplay.FONT_Tahoma_7)
-    eInkDisplay.setTextAtXY(firstLine + lineSpacing * 1, leftEdge, @recr_text25)
-
-    debug("and flush to screen")
-    eInkDisplay.flushToDisplay()
 
 PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWidth, imgHeight, imgWidthInPix, leftEdge, firstLine, lineSpacing
     ' github pictures screen - make it look pretty
