@@ -16,6 +16,19 @@ Driving the Mikroe eINK Click with our P2
   <img src="./Images/eink_213.jpg" width="300">
 </p>
 
+If you wish to use the click module with your P2 Evaluation board, P2 Edge Module Breadboard, or the P2 Edge Mini Breakout Board then you'll need:
+
+- the Eval adapter board [P2 Eval to MikroBUS Click Adapter](https://www.parallax.com/product/p2-to-mikrobus-click-adapter/)
+
+Additionally, you can buy the eINK displays and the click module separately from Parallax:
+
+- [eINK Click](https://www.parallax.com/product/eink-click/) adapter
+- [122 x 250 2.13 inch E-Paper Display for eINK Click](https://www.parallax.com/product/122-x-250-2-13-inch-e-paper-display-for-eink-click/)
+- [200 x 200 1.54 inch E-Paper Display for eINK Click](https://www.parallax.com/product/200-x-200-1-54-inch-e-paper-display-for-eink-click/)
+- [296 x 128 2.9 inch E-Paper Display for eINK Click](https://www.parallax.com/product/296-x-128-2-9-inch-e-paper-display-for-eink-click/)
+
+
+
 ## P2 Driver for the eINK Click Module
 
 This project provides a working driver for the P2 developed in spin2.  It started as a port of the C example code for the 2.13" eINK display which Parallax ships.  It has been extended to add capabilities to create more creative displays. 
