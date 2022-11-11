@@ -10,21 +10,25 @@ Hardware documents for the Mikroe eINK adapter Click board™
 
 These documents serve as additional reference for the eINK display as shipped from Parallax.com and Mikroe.com. 
 
-**1.54" eINK hardware** - 200x200 pixels - (avail from [Mikroe.com](https://www.mikroe.com/e-paper-bundle-1))
+**1.54" eINK hardware** - 200x200 pixels - (avail from [Parallax.com](https://www.parallax.com/product/200-x-200-1-54-inch-e-paper-display-for-eink-click/))
 <p align="center">
   <img src="../Images/eink_154.jpg" width="265">
 </p>
 
-**2.00" eINK hardware** (avail from [Mouser.com](https://www.mouser.com/ProductDetail/Display-Visions/EA-EPA20-A?qs=EU6FO9ffTwdcD%252BcseurWVQ%3D%3D)
 
-*-image coming soon-*
+**2.00" eINK hardware** (avail from [Mouser.com](https://www.mouser.com/ProductDetail/Display-Visions/EA-EPA20-A?qs=EU6FO9ffTwdcD%252BcseurWVQ%3D%3D))
+<p align="center">
+  <img src="../Images/EA-EPA20-A.jpg" width="330">
+</p>
 
-**2.13" eINK hardware** - 122x250 pixels- (avail from [Parallax.com](https://www.parallax.com/product/eink-click-e-paper-bundle-2/))
+**NOTE***: this display has two levels of gray in addition to black and white.*
+
+**2.13" eINK hardware** - 122x250 pixels- (avail as bundle from [Parallax.com](https://www.parallax.com/product/eink-click-e-paper-bundle-2/) or as display only also from [Parallax.com](https://www.parallax.com/product/122-x-250-2-13-inch-e-paper-display-for-eink-click/))
 <p align="center">
   <img src="../Images/eink_213.jpg" width="333">
 </p>
 
-**2.90" eINK hardware** - 128x296 pixels- (avail from [Mikroe.com](https://www.mikroe.com/e-paper-bundle-3))
+**2.90" eINK hardware** - 128x296 pixels- (avail from [Parallax.com](https://www.parallax.com/product/296-x-128-2-9-inch-e-paper-display-for-eink-click/))
 <p align="center">
   <img src="../Images/eink_290.jpg" width="390">
 </p>
