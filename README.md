@@ -119,7 +119,7 @@ Additional pages:
 
 This is a project supporting our P2 Development Community. Please feel free to contribute to this project. You can contribute in the following ways:
 
-- File **Feature Requests** or **Issues** (describing things you are seeing while using our code) at the [Project Issue Tracking Page](hhttps://github.com/ironsheep/P2-Click-UWB/issues)
+- File **Feature Requests** or **Issues** (describing things you are seeing while using our code) at the [Project Issue Tracking Page](https://github.com/ironsheep/P2-Click-UWB/issues)
 - Fork this repo and then add your code to it. Finally, create a Pull Request to contribute your code back to this repository for inclusion with the projects code. See [CONTRIBUTING](CONTRIBUTING.md)
 
 ---
