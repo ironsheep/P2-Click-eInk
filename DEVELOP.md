@@ -14,6 +14,7 @@ On this Page:
 - [Download the latest release .zip file]( #download-the-latest-release-demo-archive-setzip-file) - get project files
 - [Include project object(s) in your top-object-file]( #include-project-objects-in-your-top-object-file) - adjust your top-level file
 - [Add your own display code]( #and-youre-off--add-your-own-motor-control-code) 
+
 Additional pages:
 
 - [Main Page](https://github.com/ironsheep/P2-Click-eInk) - Return to the top of this repo
@@ -29,7 +30,7 @@ Lastly you'll start the objects and then add your writte to display code.
 
 ## Include Project Objects in your top-object-file
 
-You now need to select objects based on if you are a one-wheel or two-wheel confuration.
+You now need to add eInk objects to your project.
 
 
 ### Using the P2 Click driver
