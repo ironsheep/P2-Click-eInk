@@ -332,7 +332,7 @@ PUB fillScreen(color) | xCtr, yCtr, fillColor, byteCtr
     if deviceType == DS_eink200
         writeCmd(CMD_MASTER_ACTIVATION)
 
-    ' memory lodaed update display hardware
+    ' memory loaded update display hardware
     forceUpdateDisplay()
 
 
@@ -370,7 +370,7 @@ PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
         writeCmd(CMD_MASTER_ACTIVATION)
 
 
-    ' memory lodaed update display hardware
+    ' memory loaded update display hardware
     forceUpdateDisplay()
 
 
@@ -451,7 +451,7 @@ PUB fillRegionAt(X, Y, color, width, height) | xCoord, yCoord, fillColor
             frame_px(xCoord, yCoord, fillColor)   ' place color bits in Frame Buffer
 
 PUB borderAtXY(X, Y, color, thickness, width, height) | lineCt, topRow, botRow, ltCol, rtCol, maxThickness
-'' Draw border of thinkness into Frame Buffer
+'' Draw border of thickness into Frame Buffer
     ' if object not visible (zero or neg. size) abort
     if thickness <= 0 or width <= 0 or height <= 0
         return  ' nothing to do...
@@ -490,7 +490,7 @@ PUB borderAtXY(X, Y, color, thickness, width, height) | lineCt, topRow, botRow, 
 
 PUB lineAtXY(fmX, fmY, toX, toY, color) | vFmX, vFmY, vToX, vToY, xOffset, yOffset, lineColor
 '' Draw line into Frame Buffer
-' Draw Line - start co-ords, end co-ords, color
+' Draw Line - start coords, end coords, color
 
     ' limit locations to displayable area
     vFmX, vFmY := validXY(fmX, fmY)
@@ -500,7 +500,7 @@ PUB lineAtXY(fmX, fmY, toX, toY, color) | vFmX, vFmY, vToX, vToY, xOffset, yOffs
     lineColor := validColor(color)
 
     if vFmX == vToX
-        ' simlple vertical
+        ' simple vertical
         repeat yOffset from 0 to vToY - vFmY
             frame_px(vFmX, vFmY + yOffset, lineColor)
 
@@ -521,7 +521,7 @@ PUB lineAtXY(fmX, fmY, toX, toY, color) | vFmX, vFmY, vToX, vToY, xOffset, yOffs
 
 PUB circleAtXY(xc, yc, diameter, color) | x, y, vXc, vYc, lineColor
 '' Draw circle into Frame Buffer
-' Draw Circle d^2 = x^2 + y^2; y = SQRT(d^2 - x^2) (Pythagoras theorum)
+' Draw Circle d^2 = x^2 + y^2; y = SQRT(d^2 - x^2) (Pythagoras theorem)
 
     ' limit locations to displayable area
     vXc, vYc := validXY(xc, yc)
@@ -808,7 +808,7 @@ PRI startConfig()
             writeData((((displayHeight - 1) >> 8) & $FF))
             writeData($00)
 
-            ' New eink display sttings
+            ' New eink display settings
             writeCmd(CMD_SET_DUMMY_LINE_PERIOD)
             writeData($1A)
             writeCmd(CMD_SET_GATE_TIME)
@@ -881,7 +881,7 @@ PRI setMemoryArea(xStart, yStart, xEnd, yEnd)
 
 
 PRI forceUpdateDisplay()
-' tell display heardware to update
+' tell display hardware to update
     displayDelay()
     updateDisplay() ' waits for busy to end...
 
