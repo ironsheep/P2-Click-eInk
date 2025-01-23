@@ -1017,7 +1017,7 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY,
     descriptorOffset := (chrCode - first_char) << 2      ' NOTE: "<< 2" - descriptors are 4 bytes ea.
     pChrDescriptor := fontAddr + (8 + descriptorOffset) ' NOTE font header is 8 bytes
 
-    ' load values from descriptor of this charactor
+    ' load values from descriptor of this character
     chrWidth := BYTE [pChrDescriptor][0]
     bitmapOffset := BYTE [pChrDescriptor][1] + (BYTE [pChrDescriptor][2] << 8) + (BYTE [pChrDescriptor][3] << 16)
 

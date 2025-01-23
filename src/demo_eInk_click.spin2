@@ -91,7 +91,7 @@ DAT { demonstration data }
     recr_text5      BYTE    "* SPI Interface",0
 
     recr_text10      BYTE    "eInk 2.13",34,0
-    recr_text11      BYTE    "Rectanglar",0
+    recr_text11      BYTE    "Rectangular",0
     recr_text12      BYTE    "* E-Paper",0
     recr_text13      BYTE    "* 122 x 250 pixels",0
     recr_text14      BYTE    "* Mono Black/White",0
@@ -105,7 +105,7 @@ DAT { demonstration data }
     recr_text25      BYTE    "* SPI I/F",0
 
     recr_text30      BYTE    "eINK 2.90",34,0
-    recr_text31      BYTE    "Rectanglar",0
+    recr_text31      BYTE    "Rectangular",0
     recr_text32      BYTE    "* E-Paper",0
     recr_text33      BYTE    "* 228 x 290 pixels",0
     recr_text34      BYTE    "* Mono Black/White",0
@@ -443,7 +443,7 @@ PRI region_image_demo() | pImageBits, imgWidth, imgHeight, dsplyWidthInPix, dspl
     eInkDisplay.flushToDisplay()
 
 
-PRI placeRotatedImageAtXY(x, y, rotation, pImgBits, imgWidth, imgHeight, pLlabel) | rotHeight, rotWidth
+PRI placeRotatedImageAtXY(x, y, rotation, pImgBits, imgWidth, imgHeight, pLabel) | rotHeight, rotWidth
 ' utility to bound images so we can validate rotation an pixel placement
     rotHeight := imgHeight
     rotWidth := imgWidth * 2
@@ -457,7 +457,7 @@ PRI placeRotatedImageAtXY(x, y, rotation, pImgBits, imgWidth, imgHeight, pLlabel
     ' place image itself, rotated properly
     eInkDisplay.placeImageAtXY(x, y, pImgBits, imgWidth, imgHeight, rotation)
     ' image label
-    eInkDisplay.setTextAtXY(x + 1, y + rotHeight + 2, pLlabel)
+    eInkDisplay.setTextAtXY(x + 1, y + rotHeight + 2, pLabel)
 
 
 PRI fullScreen_image_demo()
