@@ -163,5 +163,5 @@ Follow these links for more information:
 
 [maintenance-shield]: https://img.shields.io/badge/maintainer-stephen%40ironsheep%2ebiz-blue.svg?style=for-the-badge
 
-[license-shield]: https://img.shields.io/badge/License-MIT-yellow.svg
+	[license-shield]: https://img.shields.io/badge/License-MIT-yellow.svg
 
