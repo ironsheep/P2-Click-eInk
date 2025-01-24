@@ -19,7 +19,7 @@ CON { Public Interface Constants }
     ' return value when user makes bad choice
     INVALID_PIN_BASE = -1
 
-    #40, DS_eink154, DS_eink200, DS_eink213, DS_eink290
+    #40, DS_eink154, DS_eink200, DS_eink213, DS_eink290, DS_WS_2in13B, DS_PD_370Tch
     ' return value when user makes bad choice
     INVALID_DISPLAY_TYPE = -1
 
@@ -98,41 +98,68 @@ CON { eInk Constants }
 
     EINK154_DISPLAY_WIDTH = 200
     EINK154_DISPLAY_HEIGHT = 200
-    EINK154_DISPLAY_RESOLUTION = 5000   ' = 200 * 200 / 8  ???
+    EINK154_DISPLAY_RESOLUTION = 5000   ' = 200 * 200 / 8
 
 ' ---------------------------------------
 ' 2.00" rectangular eInk display 72x172 (??mm x ??mm)
+' black/white/2 levels of gray
 ' resolution 172-gate, 72-source
 
     EINK200_DISPLAY_WIDTH = 72
     EINK200_DISPLAY_HEIGHT = 172
-    EINK200_DISPLAY_RESOLUTION = 3096   '=  72 * 172 * 2 / 8  !!!
+    EINK200_DISPLAY_RESOLUTION = 3096   '=  (72 * 172 * 2) / 8  !!!
 
 ' ---------------------------------------
 ' 2.13" rectangular eInk display 122x250 (2.37mm x 48.44mm) - SSD1675
 ' resolution 250-gate, 122-source
 
-    EINK213_DISPLAY_WIDTH = 128         ' 122 rounded up to 8-bit multiple (128)
+    EINK213_DISPLAY_WIDTH = 122 + 6         ' 122 rounded up to 8-bit multiple (128)
     EINK213_DISPLAY_HEIGHT = 250
-    EINK213_DISPLAY_RESOLUTION = 4000   ' = 128 * 250 / 8  ???
+    EINK213_DISPLAY_RESOLUTION = 4000   ' = (122+6) * 250 / 8
 
 ' ---------------------------------------
 ' 2.9" rectangular eInk display 128x296 (29.06mm x 66.90mm) - SSD1675
+' resolution 296-gate, 128-source
 
     EINK290_DISPLAY_WIDTH = 128
     EINK290_DISPLAY_HEIGHT = 296
-    EINK290_DISPLAY_RESOLUTION = 4736   ' = 128 * 296 / 8  ???
+    EINK290_DISPLAY_RESOLUTION = 4736   ' = 128 * 296 / 8
 '
-' =======================================
+' ---------------------------------------
+' 2.13"(b, v3) WaveShare rectangular eInk display 104x212 (29.06mm x 66.90mm)
+'  BLack/White/Red: 3-color display
+' resolution 212-gate, 104-source
 
-    LARGEST_FRAME_SIZE_IN_BYTES = EINK154_DISPLAY_RESOLUTION
+    EINKWS213B_DISPLAY_WIDTH = 104
+    EINKWS213B_DISPLAY_HEIGHT = 212
+    ' x2 cuz black buffer followed by red buffer
+    EINKWS213B_DISPLAY_RESOLUTION = 5512   ' = (104 * 212 / 8) * 2
+'
+'' ---------------------------------------
+' 3.7 PervasiveDisplays rectangular eInk display 240x416 (53.00mm x 92.99mm)
+' resolution 416-gate, 240-source
+
+    EINKPD370T_DISPLAY_WIDTH = 240
+    EINKPD370T_DISPLAY_HEIGHT = 416
+    EINKPD370T_DISPLAY_RESOLUTION = 12480   ' = 240 * 416 / 8
+'
+ =======================================
+
+' you can reduce this if you are not using the larger displays
+'   just set it to the one you are using to save memory
+    LARGEST_FRAME_SIZE_IN_BYTES = EINKPD370T_DISPLAY_RESOLUTION
 
 ' screen_color screen color
-    ' $FF=white, $00=black, $55=gray 1, $AA=gray 2
-    EINK_COLOR_WHITE          = $FF
-    EINK_COLOR_BLACK          = $00
-    EINK_COLOR_LIGHT_GREY     = $AA
-    EINK_COLOR_DARK_GREY      = $55
+    ' DS_eink200: $FF=white, $00=black, $55=gray 1, $AA=gray 2
+    EINK200_COLOR_WHITE          = $FF
+    EINK200_COLOR_BLACK          = $00
+    EINK200_COLOR_LIGHT_GREY     = $AA
+    EINK200_COLOR_DARK_GREY      = $55
+
+    ' DS_WS_2in13B Black/White/Red: 3-color display
+    EINK213B_COLOR_WHITE          = $00 ' internal use values
+    EINK213B_COLOR_BLACK          = $01
+    EINK213B_COLOR_RED            = $02
 
 ' character orientation on screen
     FO_HORIZONTAL               = $00
@@ -140,6 +167,7 @@ CON { eInk Constants }
     FO_VERTICAL_COLUMN          = $02
 
 ' display_commands Display Commands
+'   DS_eink154, DS_eink200, DS_eink213, DS_eink290 commands
     CMD_DRIVER_OUTPUT_CTRL          = $01
     CMD_BOOSTER_SOFT_START_CTRL     = $0C
     CMD_GATE_SCAN_START_POSN        = $0F
@@ -162,6 +190,10 @@ CON { eInk Constants }
     CMD_SET_RAM_Y_ADDR_CTR          = $4F
     CMD_BOOSTER_FEEDBACK_SELECTION  = $F0
     CMD_TERMINATE_FRAME_READ_WRITE  = $FF
+
+    ' DS_WS_2in13B commands
+
+    ' DS_PD_370Tch commands
 
     ' SPI Communication Freq w/EINK Board
     EINK_SPI_CLK_MHZ = 20_000
@@ -218,6 +250,22 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
 
             displayWidthInPix   := EINK290_DISPLAY_WIDTH
             displayHeightInPix  := EINK290_DISPLAY_HEIGHT
+
+        DS_WS_2in13B:
+            displayWidth        := EINKWS213B_DISPLAY_WIDTH
+            displayHeight       := EINKWS213B_DISPLAY_HEIGHT
+            frameSizeInBytes    := EINKWS213B_DISPLAY_RESOLUTION
+
+            displayWidthInPix   := EINKWS213B_DISPLAY_WIDTH
+            displayHeightInPix  := EINKWS213B_DISPLAY_HEIGHT
+
+        DS_PD_370Tch:
+            displayWidth        := EINKPD370T_DISPLAY_WIDTH
+            displayHeight       := EINKPD370T_DISPLAY_HEIGHT
+            frameSizeInBytes    := EINKPD370T_DISPLAY_RESOLUTION
+
+            displayWidthInPix   := EINKPD370T_DISPLAY_WIDTH
+            displayHeightInPix  := EINKPD370T_DISPLAY_HEIGHT
 
         OTHER :
             deviceType := INVALID_DISPLAY_TYPE
@@ -929,13 +977,27 @@ PRI validColor(rawColor) : valColor
     valColor := rawColor
 
     ' override color if it is not one of the supported four!
-    case rawColor
-        EINK_COLOR_WHITE:
-        EINK_COLOR_BLACK:
-        EINK_COLOR_LIGHT_GREY:
-        EINK_COLOR_DARK_GREY:
+    case deviceType
+        DS_eink154:
+        DS_eink200:
+        DS_eink213:
+        DS_eink290:
+            case rawColor
+                EINK200_COLOR_WHITE:
+                EINK200_COLOR_BLACK:
+                EINK200_COLOR_LIGHT_GREY:
+                EINK200_COLOR_DARK_GREY:
+                other:
+                    valColor := EINK200_COLOR_WHITE    ' default
+        DS_WS_2in13B:
+            case rawColor
+                EINK213B_COLOR_WHITE:
+                EINK213B_COLOR_BLACK:
+                EINK213B_COLOR_RED:
+                other:
+                    valColor := EINK213B_COLOR_WHITE    ' default
         other:
-            valColor := EINK_COLOR_WHITE    ' default
+            valColor := EINK200_COLOR_WHITE    ' default
 
 PRI validXY(X, Y) : valX, valY
     ' limit region to displayable area
