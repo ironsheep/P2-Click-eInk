@@ -19,9 +19,11 @@ CON { Public Interface Constants }
     ' return value when user makes bad choice
     INVALID_PIN_BASE = -1
 
-    #40, DS_eink154, DS_eink200, DS_eink213, DS_eink290, DS_WS_2in13B, DS_PD_370Tch
+    #40, DS_eink154, DS_eink200, DS_eink213, DS_eink290, DSWS_2in13BV3, DS_PD_370Tch
     ' return value when user makes bad choice
     INVALID_DISPLAY_TYPE = -1
+
+    ' NOTE: DSWS_2in13BV3 is a write whole buffer to display type of device
 
     ' forward the font constants so user can select an internal font
     FONT_Tahoma_6 = eInkFonts.FONT_Tahoma_6
@@ -105,9 +107,9 @@ CON { eInk Constants }
 ' black/white/2 levels of gray
 ' resolution 172-gate, 72-source
 
-    EINK200_DISPLAY_WIDTH = 72
-    EINK200_DISPLAY_HEIGHT = 172
-    EINK200_DISPLAY_RESOLUTION = 3096   '=  (72 * 172 * 2) / 8  !!!
+    EINK_DISPLAY_WIDTH = 72
+    EINK_DISPLAY_HEIGHT = 172
+    EINK_DISPLAY_RESOLUTION = 3096   '=  (72 * 172 * 2) / 8  !!!
 
 ' ---------------------------------------
 ' 2.13" rectangular eInk display 122x250 (2.37mm x 48.44mm) - SSD1675
@@ -142,8 +144,8 @@ CON { eInk Constants }
     EINKPD370T_DISPLAY_WIDTH = 240
     EINKPD370T_DISPLAY_HEIGHT = 416
     EINKPD370T_DISPLAY_RESOLUTION = 12480   ' = 240 * 416 / 8
-'
- =======================================
+
+' =======================================
 
 ' you can reduce this if you are not using the larger displays
 '   just set it to the one you are using to save memory
@@ -151,14 +153,14 @@ CON { eInk Constants }
 
 ' screen_color screen color
     ' DS_eink200: $FF=white, $00=black, $55=gray 1, $AA=gray 2
-    EINK200_COLOR_WHITE          = $FF
-    EINK200_COLOR_BLACK          = $00
-    EINK200_COLOR_LIGHT_GREY     = $AA
-    EINK200_COLOR_DARK_GREY      = $55
+    EINK_COLOR_WHITE          = $FF
+    EINK_COLOR_BLACK          = $00
+    EINK_COLOR_LIGHT_GREY     = $AA
+    EINK_COLOR_DARK_GREY      = $55
 
-    ' DS_WS_2in13B Black/White/Red: 3-color display
-    EINK213B_COLOR_WHITE          = $00 ' internal use values
-    EINK213B_COLOR_BLACK          = $01
+    ' DSWS_2in13BV3 Black/White/Red: 3-color display
+    EINK213B_COLOR_WHITE          = $01 ' internal-use values
+    EINK213B_COLOR_BLACK          = $00
     EINK213B_COLOR_RED            = $02
 
 ' character orientation on screen
@@ -191,7 +193,13 @@ CON { eInk Constants }
     CMD_BOOSTER_FEEDBACK_SELECTION  = $F0
     CMD_TERMINATE_FRAME_READ_WRITE  = $FF
 
-    ' DS_WS_2in13B commands
+    ' additional DSWS_2in13BV3 commands
+    CMD_PANEL_SETTINGS              = $00
+    CMD_DATA_START_XMIT_1           = $10  ' black bits
+    CMD_DATA_START_XMIT_2           = $13  ' red bits
+    CMD_DISPLAY_REFRESH             = $12
+    CMD_RESOLUTION_SETTINGS         = $61
+    CMD_VCOM_DATA_INTERVAL          = $50
 
     ' DS_PD_370Tch commands
 
@@ -203,7 +211,15 @@ PUB null()
 '' This is not a top-level object
 
 PUB start(eDisplayType, eClickBasePin) : ok | legalBase
-'' Specify the eval board connect location for the EINK click and start SPI
+'' Specify the Eink display type and the eval board connect location for the EINK click and start SPI
+''
+'' @param eDisplayType - display from enum value
+'' @param eClickBasePin - pin-group enum value
+'' @returns ok - return T/F where F means invalid pin or display type
+
+' Local Variables:
+' @local legalBase - temporary storage for legal base pin
+''
     ' REF https://www.mikroe.com/eink-click
 
    ' ensure we only use legal values
@@ -228,12 +244,12 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
             displayHeightInPix  := EINK154_DISPLAY_HEIGHT
 
         DS_eink200:
-            displayWidth        := EINK200_DISPLAY_WIDTH
-            displayHeight       := EINK200_DISPLAY_HEIGHT
-            frameSizeInBytes    := EINK200_DISPLAY_RESOLUTION
+            displayWidth        := EINK_DISPLAY_WIDTH
+            displayHeight       := EINK_DISPLAY_HEIGHT
+            frameSizeInBytes    := EINK_DISPLAY_RESOLUTION
 
-            displayWidthInPix   := EINK200_DISPLAY_WIDTH
-            displayHeightInPix  := EINK200_DISPLAY_HEIGHT
+            displayWidthInPix   := EINK_DISPLAY_WIDTH
+            displayHeightInPix  := EINK_DISPLAY_HEIGHT
 
         DS_eink213:
             displayWidth        := EINK213_DISPLAY_WIDTH
@@ -251,7 +267,7 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
             displayWidthInPix   := EINK290_DISPLAY_WIDTH
             displayHeightInPix  := EINK290_DISPLAY_HEIGHT
 
-        DS_WS_2in13B:
+        DSWS_2in13BV3:
             displayWidth        := EINKWS213B_DISPLAY_WIDTH
             displayHeight       := EINKWS213B_DISPLAY_HEIGHT
             frameSizeInBytes    := EINKWS213B_DISPLAY_RESOLUTION
@@ -282,11 +298,14 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
         pinlow(pinbase + CLICK_OFST_RST)
         ' Deselect the click SPI device
         pinhigh(pinbase + CLICK_OFST_CS)
-        ' start the smart pins                            ' deselect EINK Click
+        ' start the smart pins                            ' select EINK Click
         ok := spi.start(pinbase + CLICK_OFST_MISO, pinbase + CLICK_OFST_MOSI, pinbase + CLICK_OFST_SCK, EINK_SPI_CLK_MHZ)                     ' spi to EINK @ 3MHz(can run at 20MHz)
 
         ' reset device
         resetDevice()
+
+        if deviceType == DSWS_2in13BV3
+            resetDS213BV3()
 
         '  Click initialization based on display size
         startConfig()
@@ -301,10 +320,12 @@ CON ' ---- PUBLIC interface Methods ----
 
 PUB enableDevice()
 '' Enable the EINK Device(pull it out of reset)
+''
     pinhigh(pinbase + CLICK_OFST_RST)                       ' de-assert reset
 
 PUB resetDevice()
 '' Reset the EINK device
+''
     pinhigh(pinbase + CLICK_OFST_CS)    ' CS idle=1
     pinlow(pinbase + CLICK_OFST_SCK)    ' SCLK idle=0
 
@@ -325,14 +346,28 @@ PUB resetDevice()
 
 PUB enterSleepMode()
 '' Tell device to sleep
-    writeCmd(CMD_DEEP_SLEEP_MODE)
-    waitForDeviceIdle()
+''
+''
+    if deviceType == DSWS_2in13BV3
+        writeCmd($50)
+        writeData($f7)
+        writeCmd($02)
+        waitForDeviceIdle()
+        writeData($07) ' DEEP sleep
+        writeData($a5) ' check code
+        waitms(2000)    ' 2 sec before quit
+    else
+        writeCmd(CMD_DEEP_SLEEP_MODE)
+        waitForDeviceIdle()
 
 PUB displaySize() : widthInPix, heightInPix
 '' Return display size in pixels
 ''  NOTE: only valid is device is successfully started!
 ''  (ensure start() is called, first and that it is successful!)
-    ' return actual value only if device is started!
+''
+'' @returns widthInPix - device width in pixels
+'' @returns heightInPix - device height in pixels
+
     widthInPix := displayWidthInPix
     heightInPix := displayHeightInPix
 
@@ -340,45 +375,65 @@ PUB displayType() : eDisplayType
 '' Return display size in pixels
 ''  NOTE: only valid is device is successfully started!
 ''  (ensure start() is called, first and that it is successful!)
-    ' return actual value only if device is started!
+''
+'' @returns eDisplayType - the current device type enum value
+
     eDisplayType := deviceType
 
 CON ' --- PUBLIC write to Display methods ---
 
+PUB clearScreen()
+'' Clear the eInk display
+''
+    fillScreen(EINK_COLOR_WHITE)
+
 PUB fillScreen(color) | xCtr, yCtr, fillColor, byteCtr
 '' Fill Display with {color}
-    ' override color if it is not one of the supported four!
+''  Defaults to white if color not supported by device
+''
+'' @param color - fill color, specific to eInk device
+
+' Local Variables:
+' @local xCtr -
+' @local yCtr -
+' @local fillColor -
+' @local byteCtr -
+
+
     fillColor := validColor(color)
 
-    if deviceType <> DS_eink200
-        ' setMemoryArea(xStart, yStart, xEnd, yEnd)
-        setMemoryArea(0, 0, displayWidth - 1, displayHeight - 1)
+    if deviceType == DSWS_2in13BV3
+        fillBufferWS213BV3(fillColor)
+        writeBufferWS213BV3()
     else
-        ' setMemoryArea(xStart, yStart, xEnd, yEnd)
-        setMemoryArea(0, displayHeight - 1, displayWidth - 1, 0)
-
-    if deviceType <> DS_eink213
-        ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
-        if deviceType == DS_eink200
-            setMemoryPointer(0, $AB)
+        if deviceType <> DS_eink200
+            ' setMemoryArea(xStart, yStart, xEnd, yEnd)
+            setMemoryArea(0, 0, displayWidth - 1, displayHeight - 1)
         else
-            setMemoryPointer(0, 0)
-        writeCmd(CMD_WRITE_RAM)
-        repeat byteCtr from 0 to frameSizeInBytes - 1
-            writeData(fillColor)
+            ' setMemoryArea(xStart, yStart, xEnd, yEnd)
+            setMemoryArea(0, displayHeight - 1, displayWidth - 1, 0)
 
-    else
-        ' 2.13" means of doing this... we have 6 extra bits at end of ea row!
-        ' for each display line...
-        repeat yCtr from 0 to displayHeight - 1
-            setMemoryPointer(0, yCtr)
-            ' write contents for this line
+        if deviceType <> DS_eink213
+            ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
+            if deviceType == DS_eink200
+                setMemoryPointer(0, $AB)
+            else
+                setMemoryPointer(0, 0)
             writeCmd(CMD_WRITE_RAM)
-            repeat xCtr from 0 to (displayWidth / 8) - 1   ' our 122 width is really 128 bits with last 6 ignored!
+            repeat byteCtr from 0 to frameSizeInBytes - 1
                 writeData(fillColor)
+        else
+            ' 2.13" means of doing this... we have 6 extra bits at end of ea row!
+            ' for each display line...
+            repeat yCtr from 0 to displayHeight - 1
+                setMemoryPointer(0, yCtr)
+                ' write contents for this line
+                writeCmd(CMD_WRITE_RAM)
+                repeat xCtr from 0 to (displayWidth / 8) - 1   ' our 122 width is really 128 bits with last 6 ignored!
+                    writeData(fillColor)
 
-    if deviceType == DS_eink200
-        writeCmd(CMD_MASTER_ACTIVATION)
+        if deviceType == DS_eink200
+            writeCmd(CMD_MASTER_ACTIVATION)
 
     ' memory loaded update display hardware
     forceUpdateDisplay()
@@ -386,44 +441,65 @@ PUB fillScreen(color) | xCtr, yCtr, fillColor, byteCtr
 
 PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
 '' Write image bitmap to Display
-    if deviceType <> DS_eink200
-        ' setMemoryArea(xStart, yStart, xEnd, yEnd)
-        setMemoryArea(0, 0, displayWidth - 1, displayHeight - 1)
-    else
-        ' setMemoryArea(xStart, yStart, xEnd, yEnd)
-        setMemoryArea(0, displayHeight - 1, displayWidth - 1, 0)
+''  NOTE: MUST fit within display size
+''
+'' @param pImageBffr - pointer to the image buffer
 
-    if deviceType <> DS_eink213
-        ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
-        if deviceType == DS_eink200
-            setMemoryPointer(0, $AB)
+' Local Variables:
+' @local xCtr -
+' @local yCtr -
+' @local imgIdx -
+
+    if deviceType == DSWS_2in13BV3
+    ' NOT supported on this device
+    '    NOTE: will likely be a 2bpp image file when we get it supported
+    else
+        ' set memory area to full display
+        if deviceType <> DS_eink200
+            ' setMemoryArea(xStart, yStart, xEnd, yEnd)
+            setMemoryArea(0, 0, displayWidth - 1, displayHeight - 1)
         else
-            setMemoryPointer(0, 0)
-        writeCmd(CMD_WRITE_RAM)
-        repeat imgIdx from 0 to frameSizeInBytes - 1
-            writeData(BYTE [@pImageBffr][ imgIdx ])
+            ' setMemoryArea(xStart, yStart, xEnd, yEnd)
+            setMemoryArea(0, displayHeight - 1, displayWidth - 1, 0)
 
-    else
-        ' 2.13" means of doing this... we have 6 extra bits at end of ea row!
-        ' for each display line...
-        repeat yCtr from 0 to displayHeight - 1
-            setMemoryPointer(0, yCtr)
-            ' write contents for this line
+        ' write image to memory
+        if deviceType <> DS_eink213
+            ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
+            if deviceType == DS_eink200
+                setMemoryPointer(0, $AB)
+            else
+                setMemoryPointer(0, 0)
             writeCmd(CMD_WRITE_RAM)
-            repeat xCtr from 0 to (displayWidth / 8) - 1   ' our 122 width is really 128 bits with last 6 ignored!
-                imgIdx := xCtr +(yCtr * (displayWidth / 8))
-                writeData(BYTE [pImageBffr][imgIdx])
+            repeat imgIdx from 0 to frameSizeInBytes - 1
+                writeData(BYTE [@pImageBffr][ imgIdx ])
 
-    if deviceType == DS_eink200
-        writeCmd(CMD_MASTER_ACTIVATION)
+        else
+            ' 2.13" means of doing this... we have 6 extra bits at end of ea row!
+            ' for each display line...
+            repeat yCtr from 0 to displayHeight - 1
+                setMemoryPointer(0, yCtr)
+                ' write contents for this line
+                writeCmd(CMD_WRITE_RAM)
+                repeat xCtr from 0 to (displayWidth / 8) - 1   ' our 122 width is really 128 bits with last 6 ignored!
+                    imgIdx := xCtr +(yCtr * (displayWidth / 8))
+                    writeData(BYTE [pImageBffr][imgIdx])
 
+        if deviceType == DS_eink200
+            writeCmd(CMD_MASTER_ACTIVATION)
 
-    ' memory loaded update display hardware
-    forceUpdateDisplay()
+        ' memory loaded update display hardware
+        forceUpdateDisplay()
 
 
 PUB selectFont(orientation, color, eFont) | pFont
 '' Set font configuration to be used in following setTextAtXY() and displayTextAtXY() calls
+''
+'' @param orientation - orientation of text
+'' @param color - text color, specific to eInk device
+'' @param eFont - font to use for text
+
+' Local Variables:
+' @local pFont -
 
     pFont := eInkFonts.fontAddress(eFont)
     if pFont == FONT_UNKNOWN
@@ -433,7 +509,7 @@ PUB selectFont(orientation, color, eFont) | pFont
     first_char      := BYTE [pFont][ 2 ] + (BYTE [pFont][ 3 ] << 8)
     last_char       := BYTE [pFont][ 4 ] + (BYTE [pFont][ 5 ] << 8)
     fontHeight      := BYTE [pFont][ 6 ]
-    fontColor       := color
+    fontColor       := validColor(color)
     fontOrientation := orientation
     debug("ft: fontAddr ", uhex_Long_(first_char))
     debug("ft: first_char ", udec_(first_char), ", ", uhex_byte_(first_char))
@@ -441,9 +517,20 @@ PUB selectFont(orientation, color, eFont) | pFont
     debug("ft: fontHeight ", udec_(fontHeight))
     debug("ft: fontColor ", uhex_(fontColor))
 
-
 PUB displayTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
-'' Write zstr to Display at device row, column
+'' Write zstr to Display at device row, column,  is immediately displayed
+''
+'' @param X - horizontal position
+'' @param Y - vertical position
+'' @param pText - text string to display
+
+' Local Variables:
+' @local xCtr -
+' @local yCtr -
+' @local strIdx -
+' @local nChar -
+' @local byteCtr -
+''
     if (X >= displayWidthInPix) || (Y >= displayHeightInPix)
         return
 
@@ -453,21 +540,49 @@ PUB displayTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
     deviceY := Y
 
     repeat strIdx from 0 to nChar - 1
-        char_wr(BYTE [pText][strIdx])   ' place chars in Frame Buffer
+        char_wr(BYTE [pText][strIdx], fontColor)   ' place chars in Frame Buffer
 
     flushToDisplay()
 
 CON ' --- PUBLIC write to Frame Buffer methods ---
 
+PUB setTextColor(color)
+'' Set text color to be used in subsequent setTextAtXY() and displayTextAtXY() calls
+''  NOTE: overrides color set by selectFont()
+''
+'' @param color - text color, specific to eInk device
+''
+    fontColor := validColor(color)
+
 PUB setBackground(color)
 '' Fill Frame Buffer with {color}
+''  NOTE: not immediately displayed, use flushToDisplay() to display
+''
+'' @param color - background color, specific to eInk device
+''
     bkgndColor := validColor(color)
-    ' preset background color
-    bytefill(@deviceFrame, bkgndColor, frameSizeInBytes)
+    if deviceType == DSWS_2in13BV3
+        fillBufferWS213BV3(bkgndColor)
+    else
+        ' preset background color
+        bytefill(@deviceFrame, bkgndColor, frameSizeInBytes)
 
 
 PUB setTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
 '' Write zstr to Frame Buffer at row, column
+''  NOTE: not immediately displayed, use flushToDisplay() to display
+''
+'' @param X - horizontal position
+'' @param Y - vertical position
+'' @param pText - text string to display
+
+' Local Variables:
+' @local xCtr -
+' @local yCtr -
+' @local strIdx -
+' @local nChar -
+' @local byteCtr -
+''
     if (X >= displayWidthInPix) || (Y >= displayHeightInPix)
         return
 
@@ -477,11 +592,24 @@ PUB setTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
     deviceY := Y
 
     repeat strIdx from 0 to nChar - 1
-        char_wr(BYTE [pText][strIdx])   ' place chars in Frame Buffer
+        char_wr(BYTE [pText][strIdx], fontColor)   ' place chars in Frame Buffer
 
 
-PUB fillRegionAt(X, Y, color, width, height) | xCoord, yCoord, fillColor
+PUB fillRegionAtXY(X, Y, color, width, height) | xCoord, yCoord, fillColor
 '' Fill region of Frame Buffer with color
+''  NOTE: not immediately displayed, use flushToDisplay() to display
+''
+'' @param X - horizontal position
+'' @param Y - vertical position
+'' @param color - fill color, specific to eInk device
+'' @param width - width of region to fill
+'' @param height - height of region to fill
+
+' Local Variables:
+' @local xCoord -
+' @local yCoord -
+' @local fillColor -
+''
 
     ' bail if region doesn't exist
     if width <= 0 or height <= 0
@@ -496,10 +624,27 @@ PUB fillRegionAt(X, Y, color, width, height) | xCoord, yCoord, fillColor
     ' fill the limited area
     repeat yCoord from vY to vY + vHeight - 1
         repeat xCoord from vX to vX + vWidth - 1
-            frame_px(xCoord, yCoord, fillColor)   ' place color bits in Frame Buffer
+            setPixelAtXY(xCoord, yCoord, fillColor)   ' place color bits in Frame Buffer
 
 PUB borderAtXY(X, Y, color, thickness, width, height) | lineCt, topRow, botRow, ltCol, rtCol, maxThickness
 '' Draw border of thickness into Frame Buffer
+''  NOTE: not immediately displayed, use flushToDisplay() to display
+''
+'' @param X - horizontal position
+'' @param Y - vertical position
+'' @param color - border color, specific to eInk device
+'' @param thickness - border thickness
+'' @param width - width of region to border
+'' @param height - height of region to border
+
+' Local Variables:
+' @local lineCt -
+' @local topRow -
+' @local botRow -
+' @local ltCol -
+' @local rtCol -
+' @local maxThickness -
+
     ' if object not visible (zero or neg. size) abort
     if thickness <= 0 or width <= 0 or height <= 0
         return  ' nothing to do...
@@ -538,6 +683,23 @@ PUB borderAtXY(X, Y, color, thickness, width, height) | lineCt, topRow, botRow, 
 
 PUB lineAtXY(fmX, fmY, toX, toY, color) | vFmX, vFmY, vToX, vToY, xOffset, yOffset, lineColor
 '' Draw line into Frame Buffer
+''  NOTE: not immediately displayed, use flushToDisplay() to display
+''
+'' @param fmX - starting horizontal position
+'' @param fmY - starting vertical position
+'' @param toX - ending horizontal position
+'' @param toY - ending vertical position
+'' @param color - line color, specific to eInk device
+
+' Local Variables:
+' @local vFmX -
+' @local vFmY -
+' @local vToX -
+' @local vToY -
+' @local xOffset -
+' @local yOffset -
+' @local lineColor -
+
 ' Draw Line - start coords, end coords, color
 
     ' limit locations to displayable area
@@ -550,25 +712,39 @@ PUB lineAtXY(fmX, fmY, toX, toY, color) | vFmX, vFmY, vToX, vToY, xOffset, yOffs
     if vFmX == vToX
         ' simple vertical
         repeat yOffset from 0 to vToY - vFmY
-            frame_px(vFmX, vFmY + yOffset, lineColor)
+            setPixelAtXY(vFmX, vFmY + yOffset, lineColor)
 
     elseif vFmY == vToY
         ' simple horizontal
         repeat xOffset from 0 to vToX - vFmX
-            frame_px(vFmX + xOffset, vFmY, lineColor)
+            setPixelAtXY(vFmX + xOffset, vFmY, lineColor)
     else
         ' diagonal (maybe issues with endpoint lengths!)
         '  plot incrementing x axis
         repeat xOffset from 0 to vToX - vFmX
             yOffset := (vToY - vFmY) * xOffset / (vToX - vFmX)
-            frame_px(vFmX + xOffset, vFmY + yOffset, lineColor)
+            setPixelAtXY(vFmX + xOffset, vFmY + yOffset, lineColor)
         '  plot incrementing y axis
         repeat yOffset from 0 to vToY-vFmY
             xOffset := (vToX - vFmX) * yOffset / (vToY - vFmY)
-            frame_px(vFmX + xOffset, vFmY + yOffset, lineColor)
+            setPixelAtXY(vFmX + xOffset, vFmY + yOffset, lineColor)
 
 PUB circleAtXY(xc, yc, diameter, color) | x, y, vXc, vYc, lineColor
 '' Draw circle into Frame Buffer
+''  NOTE: not immediately displayed, use flushToDisplay() to display
+''
+'' @param xc - center horizontal position
+'' @param yc - center vertical position
+'' @param diameter - diameter of circle
+'' @param color - circle color, specific to eInk device
+
+' Local Variables:
+' @local x -
+' @local y -
+' @local vXc -
+' @local vYc -
+' @local lineColor -
+''
 ' Draw Circle d^2 = x^2 + y^2; y = SQRT(d^2 - x^2) (Pythagoras theorem)
 
     ' limit locations to displayable area
@@ -580,17 +756,95 @@ PUB circleAtXY(xc, yc, diameter, color) | x, y, vXc, vYc, lineColor
     repeat x from 0 to diameter
         y := SQRT((diameter * diameter) - (x * x))
         'plot 4 quadrants for incrementing x axis
-        frame_px(vXc + x, vYc + y, lineColor)
-        frame_px(vXc - x, vYc + y, lineColor)
-        frame_px(vXc + x, vYc - y, lineColor)
-        frame_px(vXc - x, vYc - y, lineColor)
+        setPixelAtXY(vXc + x, vYc + y, lineColor)
+        setPixelAtXY(vXc - x, vYc + y, lineColor)
+        setPixelAtXY(vXc + x, vYc - y, lineColor)
+        setPixelAtXY(vXc - x, vYc - y, lineColor)
         'plot 4 quadrants for incrementing y axis (fills in more dots on circle)
-        frame_px(vXc + y, vYc + x, lineColor)
-        frame_px(vXc - y, vYc + x, lineColor)
-        frame_px(vXc + y, vYc - x, lineColor)
-        frame_px(vXc - y, vYc - x, lineColor)
+        setPixelAtXY(vXc + y, vYc + x, lineColor)
+        setPixelAtXY(vXc - y, vYc + x, lineColor)
+        setPixelAtXY(vXc + y, vYc - x, lineColor)
+        setPixelAtXY(vXc - y, vYc - x, lineColor)
+
+PUB setPixelAtXY(x, y, color) | bitColor, bitInByte, byteIdx, pBlkBffr, pRedBffr, blkBit, redBit
+'' place colored pixel in device frame for later display
+''
+'' @param x - horizontal pixel position
+'' @param y - vertical pixel position
+'' @param color - pixel color, specific to eInk device
+
+' Local Variables:
+' @local bitColor -
+' @local bitInByte -
+' @local byteIdx -
+' @local pBlkBffr -
+' @local pRedBffr -
+' @local blkBit -
+' @local redBit -
+'
+    bitColor := validColor(color)
+    if deviceType <> DSWS_2in13BV3
+        ' for 2.13" displays V3 & V4
+        ' BLACK (black/white) - 1 bit / pixel!
+        ' RED (red/white) - 1 bit / pixel!
+        byteIdx := (y * (displayWidth / 8)) + (x / 8)
+        bitInByte := 7 - (x +// 8)
+
+        blkBit, redBit := bitsForColorWS213BV3(bitColor)
+
+        pRedBffr := BYTE [@deviceFrame][EINKWS213B_DISPLAY_RESOLUTION/2]
+        BYTE [pRedBffr][byteIdx] &= !($01 << bitInByte)
+        BYTE [pRedBffr][byteIdx] |= ((redBit & $01) << bitInByte)
+        pBlkBffr := BYTE [@deviceFrame][0]
+        BYTE [pBlkBffr][byteIdx] &= !($01 << bitInByte)
+        BYTE [pBlkBffr][byteIdx] |= ((blkBit & $01) << bitInByte)
+
+    elseif deviceType <> DS_eink200
+        ' for 1.54", 2.13" and 2.90" displays
+        ' monochrome (black/white) - 1 bit / pixel!
+        byteIdx := (y * (displayWidth / 8)) + (x / 8)
+        bitInByte := 7 - (x +// 8)
+
+        BYTE [@deviceFrame][byteIdx] &= !($01 << bitInByte)
+        BYTE [@deviceFrame][byteIdx] |= ((bitColor & $01) << bitInByte)
+    else
+        ' for 2.00" display with 2-bit grey-scale
+        '  4bits packed into each byte - 2-bits / pixel
+        '
+        ' AUGH!  orientation of display is Y inverted
+        '  let's counter this so 0,0 is same on all 4 displays
+        y := (displayHeight- 1) - y
+        byteIdx := (y * (displayWidth / 4)) + (x / 4)
+        bitInByte := (3 - (x +// 4)) * 2
+
+        BYTE [@deviceFrame][byteIdx] &= !($03 << bitInByte)
+        BYTE [@deviceFrame][byteIdx] |= ((bitColor & $03) << bitInByte)
 
 PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, dstX, dstY, imageIdx, ltBits, rtBits, srcXinverted, srcYinverted, minX, minY, maxX, maxY
+'' place an image bitmap into Frame Buffer at X,Y
+''  NOTE: not immediately displayed, use flushToDisplay() to display
+''
+'' @param X - horizontal position
+'' @param Y - vertical position
+'' @param pImgBits - pointer to image
+'' @param imgWidth - image width
+'' @param imgHeight - image height
+'' @param rotation - image rotation
+
+' Local Variables:
+' @local srcX -
+' @local srcY -
+' @local dstX -
+' @local dstY -
+' @local imageIdx -
+' @local ltBits -
+' @local rtBits -
+' @local srcXinverted -
+' @local srcYinverted -
+' @local minX -
+' @local minY -
+' @local maxX -
+' @local maxY -
 '' Overlay image bits of color into Frame Buffer
 ' NOTE image left-right must be flipped
     debug("* placeImageAtXY() x,y=(", udec_byte_(X), udec_byte_(Y), ") ", uhex_long(pImgBits), udec(imgWidth), udec(imgHeight), udec_byte(rotation))
@@ -617,9 +871,9 @@ PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
                 rtBits := (BYTE [pImgBits][imageIdx] & $0f)
                 ' place our two px values only if colored
                 if ltBits <> $07
-                    frame_px(dstX + 0, dstY, ltBits & $03)
+                    setPixelAtXY(dstX + 0, dstY, ltBits & $03)
                 if rtBits <> $07
-                    frame_px(dstX + 1, dstY, rtBits & $03)
+                    setPixelAtXY(dstX + 1, dstY, rtBits & $03)
 
     elseif rotation == 90
         ' for each column... (2-px values/byte)
@@ -641,9 +895,9 @@ PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
                 rtBits := (BYTE [pImgBits][imageIdx] & $0f)
                 ' place our two px values only if colored
                 if ltBits <> $07
-                    frame_px(dstY, dstX+0, ltBits & $03)
+                    setPixelAtXY(dstY, dstX+0, ltBits & $03)
                 if rtBits <> $07
-                    frame_px(dstY, dstX+1, rtBits & $03)
+                    setPixelAtXY(dstY, dstX+1, rtBits & $03)
 
     elseif rotation == 180
         ' for each column... (2-px values/byte)
@@ -666,9 +920,9 @@ PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
                 rtBits := (BYTE [pImgBits][imageIdx] & $0f)
                 ' place our two px values only if colored
                 if ltBits <> $07
-                    frame_px(dstX + 1, dstY, ltBits & $03)
+                    setPixelAtXY(dstX + 1, dstY, ltBits & $03)
                 if rtBits <> $07
-                    frame_px(dstX + 0, dstY, rtBits & $03)
+                    setPixelAtXY(dstX + 0, dstY, rtBits & $03)
 
     elseif rotation == 270
         ' for each column... (2-px values/byte)
@@ -690,9 +944,9 @@ PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
                 rtBits := (BYTE [pImgBits][imageIdx] & $0f)
                 ' place our two px values only if colored
                 if ltBits <> $07
-                    frame_px(dstY, dstX+1, ltBits & $03)
+                    setPixelAtXY(dstY, dstX+1, ltBits & $03)
                 if rtBits <> $07
-                    frame_px(dstY, dstX+0, rtBits & $03)
+                    setPixelAtXY(dstY, dstX+0, rtBits & $03)
 
     else
         debug("* ERROR unsupported rotation: ", udec_(rotation))
@@ -700,36 +954,39 @@ PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
 
 PUB flushToDisplay() | byteCtr, yCtr, xCtr
 '' Flush Frame Buffer content to Display
-    if deviceType <> DS_eink200
-        ' setMemoryArea(xStart, yStart, xEnd, yEnd)
-        setMemoryArea(0, 0, displayWidth - 1, displayHeight - 1)
+    if deviceType <> DSWS_2in13BV3
+        writeBufferWS213BV3()
     else
-        ' setMemoryArea(xStart, yStart, xEnd, yEnd)
-        setMemoryArea(0, displayHeight - 1, displayWidth - 1, 0)
-
-    if deviceType <> DS_eink213
-        ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
-        if deviceType == DS_eink200
-            setMemoryPointer(0, $AB)
+        if deviceType <> DS_eink200
+            ' setMemoryArea(xStart, yStart, xEnd, yEnd)
+            setMemoryArea(0, 0, displayWidth - 1, displayHeight - 1)
         else
-            setMemoryPointer(0, 0)
-        writeCmd(CMD_WRITE_RAM)
-        repeat byteCtr from 0 to frameSizeInBytes - 1
-            writeData(BYTE [@deviceFrame][ byteCtr ])
+            ' setMemoryArea(xStart, yStart, xEnd, yEnd)
+            setMemoryArea(0, displayHeight - 1, displayWidth - 1, 0)
 
-    else
-        ' 2.13" means of doing this... we have 6 extra bits at end of ea row!
-        ' for each display line...
-        repeat yCtr from 0 to displayHeight - 1
-            setMemoryPointer(0, yCtr)
-            ' write contents for this line
+        if deviceType <> DS_eink213
+            ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
+            if deviceType == DS_eink200
+                setMemoryPointer(0, $AB)
+            else
+                setMemoryPointer(0, 0)
             writeCmd(CMD_WRITE_RAM)
-            repeat xCtr from 0 to (displayWidth / 8) - 1   ' our 122 width is really 128 bits with last 6 ignored!
-                byteCtr := xCtr + (yCtr * (displayWidth / 8))
+            repeat byteCtr from 0 to frameSizeInBytes - 1
                 writeData(BYTE [@deviceFrame][ byteCtr ])
 
-    if deviceType == DS_eink200
-        writeCmd(CMD_MASTER_ACTIVATION)
+        else
+            ' 2.13" means of doing this... we have 6 extra bits at end of ea row!
+            ' for each display line...
+            repeat yCtr from 0 to displayHeight - 1
+                setMemoryPointer(0, yCtr)
+                ' write contents for this line
+                writeCmd(CMD_WRITE_RAM)
+                repeat xCtr from 0 to (displayWidth / 8) - 1   ' our 122 width is really 128 bits with last 6 ignored!
+                    byteCtr := xCtr + (yCtr * (displayWidth / 8))
+                    writeData(BYTE [@deviceFrame][ byteCtr ])
+
+        if deviceType == DS_eink200
+            writeCmd(CMD_MASTER_ACTIVATION)
 
     forceUpdateDisplay()
 
@@ -819,7 +1076,7 @@ PRI startConfig()
             writeData($C4)
 
             displayDelay()
-            setDeviceLut(@EINK200_LUT_TABLE, 90)    ' waits for 1sec at end
+            setDeviceLut(@EINK_LUT_TABLE, 90)    ' waits for 1sec at end
 
         DS_eink213:
             writeCmd(CMD_DRIVER_OUTPUT_CTRL)            ' 0x01
@@ -882,6 +1139,22 @@ PRI startConfig()
 
             displayDelay()
             setDeviceLut(@EINK290_LUT_TABLE, 70)    ' waits for 1sec at end
+
+        DSWS_2in13BV3:
+            ' panel setting
+            writeCmd(CMD_PANEL_SETTINGS)
+            writeData($0f)   ' LUT from OTP,128x296 (want $8f?)
+            ' following not in datasheet?!
+            writeData($89)   ' Temperature sensor, boost and other related timing settings
+            ' resolution setting
+            writeCmd(CMD_RESOLUTION_SETTINGS)
+            writeData($68)   ' horiz 104
+            writeData($00)
+            writeData($D4)   ' vert 212
+
+            writeCmd(CMD_VCOM_DATA_INTERVAL) ' VCOM AND DATA INTERVAL SETTING
+            writeData($77)   ' WBmode:VBDF 17|D7 VBDW 97 VBDB 57
+                             ' WBRmode:VBDF F7 VBDW 77 VBDB 37  VBDR B7
         other:
             debug("sc() ERROR unknown display size")
 
@@ -889,44 +1162,46 @@ PRI startConfig()
 
 PRI setDeviceLut(pLut, nBytes) | nIdx
 ' write the device LUT data - waits for 1sec at end
-    writeCmd(CMD_WRITE_LUT_REGISTER)
-    repeat nIdx from 0 to nBytes - 1
-        writeData(BYTE [pLut][nIdx])
+    if(deviceType <> DSWS_2in13BV3)
+        writeCmd(CMD_WRITE_LUT_REGISTER)
+        repeat nIdx from 0 to nBytes - 1
+            writeData(BYTE [pLut][nIdx])
 
-    waitms(1000)    ' let device settle
-
+        waitms(1000)    ' let device settle
 
 PRI setMemoryPointer(x, y)
 ' set pointer to RAM
-    writeCmd(CMD_SET_RAM_X_ADDR_CTR)
-    writeData(((x >> 3) & $FF))
-    writeCmd(CMD_SET_RAM_Y_ADDR_CTR)
-    writeData((y & $FF))
-    if deviceType <> DS_eink200
-        writeData(((y >> 8) & $FF))
-    if deviceType == DS_eink200 or deviceType == DS_eink154
-        waitForDeviceIdle()
+    if(deviceType <> DSWS_2in13BV3)
+        writeCmd(CMD_SET_RAM_X_ADDR_CTR)
+        writeData(((x >> 3) & $FF))
+        writeCmd(CMD_SET_RAM_Y_ADDR_CTR)
+        writeData((y & $FF))
+        if deviceType <> DS_eink200
+            writeData(((y >> 8) & $FF))
+        if deviceType == DS_eink200 or deviceType == DS_eink154
+            ' hmm ds_ws_2in13b doesn't have this need
+            waitForDeviceIdle()
 
 
 PRI setMemoryArea(xStart, yStart, xEnd, yEnd)
 ' set region of RAM
-    if deviceType == DS_eink200
-        writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
-        writeData((xStart >> 3) & $FF)
-        writeData((((xEnd + 1) >> 2) - 1) & $FF)
-        writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
-        writeData(yStart & $FF)
-        writeData(yEnd & $FF)
-    else
-        writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
-        writeData((xStart >> 3) & $FF)
-        writeData((xEnd >> 3) & $FF)
-        writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
-        writeData(yStart & $FF)
-        writeData((yStart >> 8) & $FF)
-        writeData(yEnd & $FF)
-        writeData((yEnd >> 8) & $FF)
-
+    if deviceType <> DSWS_2in13BV3
+        if deviceType == DS_eink200
+            writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
+            writeData((xStart >> 3) & $FF)
+            writeData((((xEnd + 1) >> 2) - 1) & $FF)
+            writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
+            writeData(yStart & $FF)
+            writeData(yEnd & $FF)
+        else
+            writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
+            writeData((xStart >> 3) & $FF)
+            writeData((xEnd >> 3) & $FF)
+            writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
+            writeData(yStart & $FF)
+            writeData((yStart >> 8) & $FF)
+            writeData(yEnd & $FF)
+            writeData((yEnd >> 8) & $FF)
 
 PRI forceUpdateDisplay()
 ' tell display hardware to update
@@ -941,26 +1216,32 @@ PRI displayDelay()
 
 PRI updateDisplay() | cmdValue
 ' Tell display to show updates
-    case deviceType
-        DS_eink154:
-            cmdValue := $C4
-        DS_eink200:
-            cmdValue := $02
-        DS_eink213:
-            cmdValue := $C7
-        DS_eink290:
-            cmdValue := $C7
-        other:
-            cmdValue := $C7 ' just some random value since unknown display
-            debug("ud() ERROR unknown display size")
+    if deviceType == DSWS_2in13BV3
 
-    waitms(100)
-    writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)
-    writeData(cmdValue)
-    writeCmd(CMD_MASTER_ACTIVATION) ' raises BUSY must wait for end!
+        writeCmd(CMD_DISPLAY_REFRESH) ' refresh
+        waitms(100) ' partial wait for display to update
 
-    if deviceType <> DS_eink200
-        writeCmd(CMD_TERMINATE_FRAME_READ_WRITE)
+    else
+        case deviceType
+            DS_eink154:
+                cmdValue := $C4
+            DS_eink200:
+                cmdValue := $02
+            DS_eink213:
+                cmdValue := $C7
+            DS_eink290:
+                cmdValue := $C7
+            other:
+                cmdValue := $C7 ' just some random value since unknown display
+                debug("ud() ERROR unknown display size")
+
+        waitms(100)
+        writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)
+        writeData(cmdValue)
+        writeCmd(CMD_MASTER_ACTIVATION) ' raises BUSY must wait for end!
+
+        if deviceType <> DS_eink200
+            writeCmd(CMD_TERMINATE_FRAME_READ_WRITE)
 
     waitForDeviceIdle()
 
@@ -983,21 +1264,25 @@ PRI validColor(rawColor) : valColor
         DS_eink213:
         DS_eink290:
             case rawColor
-                EINK200_COLOR_WHITE:
-                EINK200_COLOR_BLACK:
-                EINK200_COLOR_LIGHT_GREY:
-                EINK200_COLOR_DARK_GREY:
+                EINK_COLOR_WHITE:
+                EINK_COLOR_BLACK:
+                EINK_COLOR_LIGHT_GREY:
+                EINK_COLOR_DARK_GREY:
                 other:
-                    valColor := EINK200_COLOR_WHITE    ' default
-        DS_WS_2in13B:
+                    valColor := EINK_COLOR_WHITE    ' default
+        DSWS_2in13BV3:
             case rawColor
+                EINK_COLOR_WHITE:
+                    valColor := EINK213B_COLOR_WHITE    ' use ours
+                EINK_COLOR_BLACK:
+                    valColor := EINK213B_COLOR_BLACK    ' use ours
                 EINK213B_COLOR_WHITE:
                 EINK213B_COLOR_BLACK:
                 EINK213B_COLOR_RED:
                 other:
                     valColor := EINK213B_COLOR_WHITE    ' default
         other:
-            valColor := EINK200_COLOR_WHITE    ' default
+            valColor := EINK_COLOR_WHITE    ' default
 
 PRI validXY(X, Y) : valX, valY
     ' limit region to displayable area
@@ -1020,6 +1305,56 @@ PRI min(a,b) : minValue
     minValue := (a < b) ? a : b
 
 
+CON ' --- PRIVATE (DS)WS_2in13BV3 Display Methods ---
+
+PRI resetDS213BV3()
+    resetDevice()
+    writeCmd($04)
+    waitForDeviceIdle()
+
+PRI clearWS213BV3()
+    ' clear the display
+    fillBufferWS213BV3(EINK213B_COLOR_WHITE)
+    writeBufferWS213BV3()
+
+PRI bitsForColorWS213BV3(color): blkBit, redBit
+    ' return the bits to fill the buffer with color
+    if color == EINK213B_COLOR_RED
+        blkBit := 0
+        redBit := 1
+    elseif color == EINK213B_COLOR_BLACK
+        blkBit := 1
+        redBit := 0
+    else ' EINK213B_COLOR_WHITE
+        blkBit := 1
+        redBit := 1
+
+PRI fillBufferWS213BV3(color) | pRedBffr, pBlkBffr, blkByte, redByte, blkBit, redBit
+    ' fill the buffer with color
+    blkBit, redBit := bitsForColorWS213BV3(color)
+    blkByte := blkBit == 1 ? $ff : $00
+    redByte := redBit == 1 ? $ff : $00
+    pBlkBffr := BYTE [@deviceFrame][0]
+    pRedBffr := BYTE [@deviceFrame][EINKWS213B_DISPLAY_RESOLUTION/2]
+    bytefill(pBlkBffr, blkByte, EINKWS213B_DISPLAY_RESOLUTION/2)
+    bytefill(pRedBffr, redByte, EINKWS213B_DISPLAY_RESOLUTION/2)
+
+PRI writeBufferWS213BV3() | byteIdx, pRedBffr, pBlkBffr
+    ' write the buffer to the display black half then red half
+    pBlkBffr := BYTE [@deviceFrame][0]
+    pRedBffr := BYTE [@deviceFrame][EINKWS213B_DISPLAY_RESOLUTION/2]
+
+    writeCmd(CMD_DATA_START_XMIT_1) ' black bits
+    repeat byteIdx from 0 to EINKWS213B_DISPLAY_RESOLUTION/2 - 1
+        writeData(BYTE [pBlkBffr][byteIdx])
+
+    writeCmd(CMD_DATA_START_XMIT_2) ' red bits
+    repeat byteIdx from 0 to EINKWS213B_DISPLAY_RESOLUTION/2 - 1
+        writeData(BYTE [pRedBffr][byteIdx])
+
+    ' follow this with updateDisplay() to show changes
+
+
 DAT { PRIVATE object CLASS data }
 
      EINK154_LUT_TABLE      BYTE    $02, $02, $01, $11, $12, $12, $22, $22      ' 30 bytes long!
@@ -1027,7 +1362,7 @@ DAT { PRIVATE object CLASS data }
                             BYTE    $00, $00, $00, $00, $F8, $B4, $13, $51
                             BYTE    $35, $51, $51, $19, $01, $00
 
-     EINK200_LUT_TABLE      BYTE    $82, $00, $00, $00, $AA, $00, $00, $00      ' 90 bytes long!
+     EINK_LUT_TABLE      BYTE    $82, $00, $00, $00, $AA, $00, $00, $00      ' 90 bytes long!
                             BYTE    $AA, $AA, $00, $00, $AA, $AA, $AA, $00
                             BYTE    $55, $AA, $AA, $00, $55, $55, $55, $55
                             BYTE    $AA, $AA, $AA, $AA, $55, $55, $55, $55
@@ -1062,8 +1397,7 @@ DAT { PRIVATE object CLASS data }
                             BYTE    $00, $00, $00, $00, $00, $00, $00
                             BYTE    $00, $00, $00, $00, $00, $00, $00
 
-
-PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY, rowBits, mask, bitmapOffset, pChrDescriptor, pChrBitmap
+PRI char_wr(chrCode, textColor) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY, rowBits, mask, bitmapOffset, pChrDescriptor, pChrBitmap
 ' place font character in device frame for later display
 ' NOTE: font color and device X,Y set externally
 '       adjusts external device X,Y to value for next character
@@ -1100,7 +1434,7 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY,
                     mask := $01
 
                 if rowBits & mask
-                    frame_px(frmX, frmY, fontColor)
+                    setPixelAtXY(frmX, frmY, textColor)
                    'waitms(1)   ' PROXY for Delay_80us()
 
                 frmX++
@@ -1127,7 +1461,7 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY,
                     mask := $01
 
                 if rowBits & mask
-                    frame_px(frmY, frmX, fontColor)
+                    setPixelAtXY(frmY, frmX, textColor)
                     'waitms(1)   ' PROXY for Delay_80us()
 
                 frmX--
@@ -1137,30 +1471,6 @@ PRI char_wr(chrCode) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY,
             frmY++
 
         deviceY := frmX - 1    ' move to next char position vertically
-
-PUB frame_px(x, y, fntColor) | bitInByte, byteIdx
-' place colored font pixel in device frame for later display
-    if deviceType <> DS_eink200
-        ' for 1.54", 2.13" and 2.90" displays
-        ' monochrome (black/white) - 1 bit / pixel!
-        byteIdx := (y * (displayWidth / 8)) + (x / 8)
-        bitInByte := 7 - (x +// 8)
-
-        BYTE [@deviceFrame][byteIdx] &= !($01 << bitInByte)
-        BYTE [@deviceFrame][byteIdx] |= ((fntColor & $01) << bitInByte)
-    else
-        ' for 2.00" display with 2-bit grey-scale
-        '  4bits packed into each byte - 2-bits / pixel
-        '
-        ' AUGH!  orientation of display is Y inverted
-        '  let's counter this so 0,0 is same on all 4 displays
-        y := (displayHeight- 1) - y
-        byteIdx := (y * (displayWidth / 4)) + (x / 4)
-        bitInByte := (3 - (x +// 4)) * 2
-
-        BYTE [@deviceFrame][byteIdx] &= !($03 << bitInByte)
-        BYTE [@deviceFrame][byteIdx] |= ((fntColor & $03) << bitInByte)
-
 
 
 PRI writeCmd(data)
