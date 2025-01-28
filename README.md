@@ -61,6 +61,8 @@ To this, we added these additional capabilities:
 Latest Changes:
 
 ```
+27 Jan 2025
+- Added support to WaveShare 2.13" R/B/W eINK display
 20 June 2022
 - Completed 2.00" EP-EPA20-A (fm Mouser) device support
 15 June 2022
@@ -126,7 +128,7 @@ Additional pages:
 
 - [Start your project using this object](DEVELOP.md) - Walks thru configuration and setup of your own project using this object
 - [Create bitmaps for display on your eINK device](./C-src)
-- [See images of all four displays working!](./Docs) There are a small number of .PDFs in the [Docs](./Docs) directory providing  detailed information on the display and controller chips
+- [See images of all supported displays working!](./Docs) There are a small number of .PDFs in the [Docs](./Docs) directory providing  detailed information on the display and controller chips
 
 ## How to Contribute
 
