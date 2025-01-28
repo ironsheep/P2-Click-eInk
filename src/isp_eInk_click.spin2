@@ -153,15 +153,15 @@ CON { eInk Constants }
 
 ' screen_color screen color
     ' DS_eink200: $FF=white, $00=black, $55=gray 1, $AA=gray 2
-    EINK_COLOR_WHITE          = $FF
-    EINK_COLOR_BLACK          = $00
-    EINK_COLOR_LIGHT_GREY     = $AA
-    EINK_COLOR_DARK_GREY      = $55
+    EINK_COLOR_WHITE            = $FF
+    EINK_COLOR_BLACK            = $00
+    EINK_COLOR_LIGHT_GREY       = $AA
+    EINK_COLOR_DARK_GREY        = $55
 
     ' DSWS_2in13BV3 Black/White/Red: 3-color display
-    EINK213B_COLOR_WHITE          = $01 ' internal-use values
-    EINK213B_COLOR_BLACK          = $00
-    EINK213B_COLOR_RED            = $02
+    EINK213B_COLOR_WHITE        = $03' internal-use values
+    EINK213B_COLOR_BLACK        = $00
+    EINK213B_COLOR_RED          = $02
 
 ' character orientation on screen
     FO_HORIZONTAL               = $00
@@ -198,8 +198,9 @@ CON { eInk Constants }
     CMD_DATA_START_XMIT_1           = $10  ' black bits
     CMD_DATA_START_XMIT_2           = $13  ' red bits
     CMD_DISPLAY_REFRESH             = $12
-    CMD_RESOLUTION_SETTINGS         = $61
     CMD_VCOM_DATA_INTERVAL          = $50
+    CMD_RESOLUTION_SETTINGS         = $61
+    CMD_GET_STATUS                  = $71
 
     ' DS_PD_370Tch commands
 
@@ -304,9 +305,6 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
         ' reset device
         resetDevice()
 
-        if deviceType == DSWS_2in13BV3
-            resetDS213BV3()
-
         '  Click initialization based on display size
         startConfig()
 
@@ -329,12 +327,15 @@ PUB resetDevice()
     pinhigh(pinbase + CLICK_OFST_CS)    ' CS idle=1
     pinlow(pinbase + CLICK_OFST_SCK)    ' SCLK idle=0
 
-    pinhigh(pinbase + CLICK_OFST_RST)   ' toggle reset
-    waitms(1)
-    pinlow(pinbase + CLICK_OFST_RST)
-    waitms(2)
-    pinhigh(pinbase + CLICK_OFST_RST)
-    waitms(3)
+    if deviceType == DSWS_2in13BV3
+        resetDS213BV3()
+    else
+        pinhigh(pinbase + CLICK_OFST_RST)   ' toggle reset
+        waitms(1)
+        pinlow(pinbase + CLICK_OFST_RST)
+        waitms(2)
+        pinhigh(pinbase + CLICK_OFST_RST)
+        waitms(3)
 
 {PRI reset()
 ' from library source
@@ -384,12 +385,32 @@ CON ' --- PUBLIC write to Display methods ---
 
 PUB clearScreen()
 '' Clear the eInk display
+''  NOTE: this is immediately displayed
 ''
     fillScreen(EINK_COLOR_WHITE)
 
-PUB fillScreen(color) | xCtr, yCtr, fillColor, byteCtr
+PUB clearBuffer()
+'' Clear the eInk display buffer
+''  NOTE: this only affects the buffer not the eInk display
+''
+    debug("* clearBuffer()")
+    fillBuffer(EINK_COLOR_WHITE)
+
+PUB fillScreen(color)
+'' write color to the entire eInk display
+''  NOTE: this is immediately displayed
+''
+'' @param color - fill color, specific to eInk device
+    debug("* fillScreen(", udec_byte_(color), ")")
+
+    fillBuffer(color)
+    ' memory loaded update display hardware
+    updateDisplayNWaitIdle()
+
+PUB fillBuffer(color) | xCtr, yCtr, fillColor, byteCtr
 '' Fill Display with {color}
 ''  Defaults to white if color not supported by device
+''  NOTE: this only affects the buffer not the eInk display
 ''
 '' @param color - fill color, specific to eInk device
 
@@ -399,8 +420,8 @@ PUB fillScreen(color) | xCtr, yCtr, fillColor, byteCtr
 ' @local fillColor -
 ' @local byteCtr -
 
-
     fillColor := validColor(color)
+    debug("* fillBuffer(ds=", udec_byte_(fillColor), ")")
 
     if deviceType == DSWS_2in13BV3
         fillBufferWS213BV3(fillColor)
@@ -434,9 +455,6 @@ PUB fillScreen(color) | xCtr, yCtr, fillColor, byteCtr
 
         if deviceType == DS_eink200
             writeCmd(CMD_MASTER_ACTIVATION)
-
-    ' memory loaded update display hardware
-    forceUpdateDisplay()
 
 
 PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
@@ -488,7 +506,7 @@ PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
             writeCmd(CMD_MASTER_ACTIVATION)
 
         ' memory loaded update display hardware
-        forceUpdateDisplay()
+        updateDisplayNWaitIdle()
 
 
 PUB selectFont(orientation, color, eFont) | pFont
@@ -783,7 +801,7 @@ PUB setPixelAtXY(x, y, color) | bitColor, bitInByte, byteIdx, pBlkBffr, pRedBffr
 ' @local redBit -
 '
     bitColor := validColor(color)
-    if deviceType <> DSWS_2in13BV3
+    if deviceType == DSWS_2in13BV3
         ' for 2.13" displays V3 & V4
         ' BLACK (black/white) - 1 bit / pixel!
         ' RED (red/white) - 1 bit / pixel!
@@ -792,10 +810,11 @@ PUB setPixelAtXY(x, y, color) | bitColor, bitInByte, byteIdx, pBlkBffr, pRedBffr
 
         blkBit, redBit := bitsForColorWS213BV3(bitColor)
 
-        pRedBffr := BYTE [@deviceFrame][EINKWS213B_DISPLAY_RESOLUTION/2]
+        pBlkBffr := @BYTE [@deviceFrame][0]
+        pRedBffr := @BYTE [@deviceFrame][EINKWS213B_DISPLAY_RESOLUTION/2]
+
         BYTE [pRedBffr][byteIdx] &= !($01 << bitInByte)
         BYTE [pRedBffr][byteIdx] |= ((redBit & $01) << bitInByte)
-        pBlkBffr := BYTE [@deviceFrame][0]
         BYTE [pBlkBffr][byteIdx] &= !($01 << bitInByte)
         BYTE [pBlkBffr][byteIdx] |= ((blkBit & $01) << bitInByte)
 
@@ -954,7 +973,8 @@ PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
 
 PUB flushToDisplay() | byteCtr, yCtr, xCtr
 '' Flush Frame Buffer content to Display
-    if deviceType <> DSWS_2in13BV3
+    if deviceType == DSWS_2in13BV3
+        waitForDeviceIdle()
         writeBufferWS213BV3()
     else
         if deviceType <> DS_eink200
@@ -988,7 +1008,7 @@ PUB flushToDisplay() | byteCtr, yCtr, xCtr
         if deviceType == DS_eink200
             writeCmd(CMD_MASTER_ACTIVATION)
 
-    forceUpdateDisplay()
+    updateDisplayNWaitIdle()
 
 VAR { PRIVATE Instance Variables }
 
@@ -1203,19 +1223,15 @@ PRI setMemoryArea(xStart, yStart, xEnd, yEnd)
             writeData(yEnd & $FF)
             writeData((yEnd >> 8) & $FF)
 
-PRI forceUpdateDisplay()
-' tell display hardware to update
-    displayDelay()
-    updateDisplay() ' waits for busy to end...
-
 
 PRI displayDelay()
 ' wait for settle time
     waitms(2)
 
 
-PRI updateDisplay() | cmdValue
+PRI updateDisplayNWaitIdle() | cmdValue
 ' Tell display to show updates
+    displayDelay()
     if deviceType == DSWS_2in13BV3
 
         writeCmd(CMD_DISPLAY_REFRESH) ' refresh
@@ -1248,11 +1264,18 @@ PRI updateDisplay() | cmdValue
 
 PRI waitForDeviceIdle() | state
     ' wait until BUSY is de-asserted
-    repeat
-        state := pinread(pinbase + CLICK_OFST_BSY)
-        if state
-            waitms(100)
-    until state == 0
+    state := pinread(pinbase + CLICK_OFST_BSY)
+    if deviceType == DSWS_2in13BV3
+        waitDeviceIdleDS213BV3()
+    else
+        Debug("* wait idle - ENTRY: ", udec(state))
+        ' wait for busy to go low
+        repeat
+            state := pinread(pinbase + CLICK_OFST_BSY)
+            if state
+                waitms(100)
+        until state == 0
+        Debug("* wait idle - EXIT: ", udec(state))
 
 PRI validColor(rawColor) : valColor
     valColor := rawColor
@@ -1277,8 +1300,8 @@ PRI validColor(rawColor) : valColor
                 EINK_COLOR_BLACK:
                     valColor := EINK213B_COLOR_BLACK    ' use ours
                 EINK213B_COLOR_WHITE:
-                EINK213B_COLOR_BLACK:
                 EINK213B_COLOR_RED:
+                EINK213B_COLOR_BLACK:
                 other:
                     valColor := EINK213B_COLOR_WHITE    ' default
         other:
@@ -1308,51 +1331,85 @@ PRI min(a,b) : minValue
 CON ' --- PRIVATE (DS)WS_2in13BV3 Display Methods ---
 
 PRI resetDS213BV3()
-    resetDevice()
+    resetDeviceDS213BV3()
     writeCmd($04)
-    waitForDeviceIdle()
+    waitDeviceIdleDS213BV3()
+
+PRI resetDeviceDS213BV3()
+    ' reset the device
+    pinwrite(pinbase + CLICK_OFST_RST, 1)
+    waitms(200)
+    pinwrite(pinbase + CLICK_OFST_RST, 0)
+    waitms(2)
+    pinwrite(pinbase + CLICK_OFST_RST, 1)
+    waitms(200)
+
+PRI waitDeviceIdleDS213BV3() | state ', statusByte
+    ' wait for busy to go high
+    state := pinread(pinbase + CLICK_OFST_BSY)
+    Debug("* wait idle - ENTRY: ", uhex(state))
+    repeat
+        state := pinread(pinbase + CLICK_OFST_BSY)
+        if state == 0
+            'writeCmd(CMD_GET_STATUS)
+            'waitms(1)
+            'statusByte := readData()
+            waitms(100)
+    until state <> 0
+    Debug("* wait idle - EXIT: ", uhex(state))
 
 PRI clearWS213BV3()
     ' clear the display
     fillBufferWS213BV3(EINK213B_COLOR_WHITE)
     writeBufferWS213BV3()
 
-PRI bitsForColorWS213BV3(color): blkBit, redBit
-    ' return the bits to fill the buffer with color
-    if color == EINK213B_COLOR_RED
-        blkBit := 0
-        redBit := 1
-    elseif color == EINK213B_COLOR_BLACK
-        blkBit := 1
-        redBit := 0
-    else ' EINK213B_COLOR_WHITE
-        blkBit := 1
-        redBit := 1
-
 PRI fillBufferWS213BV3(color) | pRedBffr, pBlkBffr, blkByte, redByte, blkBit, redBit
     ' fill the buffer with color
     blkBit, redBit := bitsForColorWS213BV3(color)
     blkByte := blkBit == 1 ? $ff : $00
     redByte := redBit == 1 ? $ff : $00
-    pBlkBffr := BYTE [@deviceFrame][0]
-    pRedBffr := BYTE [@deviceFrame][EINKWS213B_DISPLAY_RESOLUTION/2]
+
+    pBlkBffr := @BYTE [@deviceFrame][0]
+    pRedBffr := @BYTE [@deviceFrame][EINKWS213B_DISPLAY_RESOLUTION/2]
+
     bytefill(pBlkBffr, blkByte, EINKWS213B_DISPLAY_RESOLUTION/2)
     bytefill(pRedBffr, redByte, EINKWS213B_DISPLAY_RESOLUTION/2)
 
-PRI writeBufferWS213BV3() | byteIdx, pRedBffr, pBlkBffr
+
+PRI bitsForColorWS213BV3(color): blkBit, redBit
+    ' return the bits to fill the buffer with color
+    '  blk red =>
+    '   0   0   red
+    '   0   1   black
+    '   1   0   red
+    '   1   1   white
+    if color == EINK213B_COLOR_RED
+        blkBit := 1
+        redBit := 0
+    elseif color == EINK213B_COLOR_BLACK
+        blkBit := 0
+        redBit := 1
+    else ' EINK213B_COLOR_WHITE
+        blkBit := 1
+        redBit := 1
+
+
+PRI writeBufferWS213BV3() | byteIdx, pRedBffr, pBlkBffr, buffLen
     ' write the buffer to the display black half then red half
-    pBlkBffr := BYTE [@deviceFrame][0]
-    pRedBffr := BYTE [@deviceFrame][EINKWS213B_DISPLAY_RESOLUTION/2]
+    pBlkBffr := @BYTE [@deviceFrame][0]
+    pRedBffr := @BYTE [@deviceFrame][EINKWS213B_DISPLAY_RESOLUTION/2] ' point to red half
+
+    buffLen := EINKWS213B_DISPLAY_RESOLUTION/2
 
     writeCmd(CMD_DATA_START_XMIT_1) ' black bits
-    repeat byteIdx from 0 to EINKWS213B_DISPLAY_RESOLUTION/2 - 1
+    repeat byteIdx from 0 to buffLen - 1
         writeData(BYTE [pBlkBffr][byteIdx])
 
     writeCmd(CMD_DATA_START_XMIT_2) ' red bits
-    repeat byteIdx from 0 to EINKWS213B_DISPLAY_RESOLUTION/2 - 1
+    repeat byteIdx from 0 to buffLen - 1
         writeData(BYTE [pRedBffr][byteIdx])
 
-    ' follow this with updateDisplay() to show changes
+    ' follow this with updateDisplayNWaitIdle() to show changes
 
 
 DAT { PRIVATE object CLASS data }
@@ -1484,6 +1541,19 @@ PRI writeData(data)
     pinhigh(pinbase + CLICK_OFST_DC)
     selectNWrite(data)
 
+PRI readData(): value8bit
+' read data byte(DC high = data)
+    pinhigh(pinbase + CLICK_OFST_DC)
+    value8bit := selectNRead()
+
+PRI selectNRead(): value8bit | count
+' read byte from SPI
+    ' select device
+    pinlow(pinbase + CLICK_OFST_CS)
+    ' clock out bits MSB first
+    value8bit := spi.shiftin(spi.MSBFIRST, 8)
+    ' deselect device
+    pinhigh(pinbase + CLICK_OFST_CS)
 
 PRI selectNWrite(dataByte) | count
 ' write byte to SPI
@@ -1491,6 +1561,18 @@ PRI selectNWrite(dataByte) | count
     pinlow(pinbase + CLICK_OFST_CS)
     ' clock out bits MSB first
     spi.shiftout(spi.MSBFIRST, dataByte, 8)
+    ' deselect device
+    pinhigh(pinbase + CLICK_OFST_CS)
+
+PRI writeDataBytes(pData, nBytes) | byteIdx
+' write multiple date bytes (more efficient)
+    ' write data byte(DC high = data)
+    pinhigh(pinbase + CLICK_OFST_DC)
+    ' select device
+    pinlow(pinbase + CLICK_OFST_CS)
+    ' clock out bits MSB first
+    repeat byteIdx from 0 to nBytes - 1
+        spi.shiftout(spi.MSBFIRST, BYTE [pData][byteIdx], 8)
     ' deselect device
     pinhigh(pinbase + CLICK_OFST_CS)
 

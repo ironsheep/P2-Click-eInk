@@ -56,6 +56,48 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
     if eInkDisplay.displayType() == eInkDisplay.DSWS_2in13BV3
 
         p2_demoRegionImage()
+        debug("* HOLD Here... A ")
+        repeat
+
+{
+        eInkDisplay.clearBuffer()
+        eInkDisplay.fillScreen(eInkDisplay.EINK213B_COLOR_RED)
+        debug("- IS RED")
+        debug(" ")
+        waitms(5000)
+        eInkDisplay.clearBuffer()
+        eInkDisplay.fillScreen(eInkDisplay.EINK213B_COLOR_BLACK)
+        debug("- IS BLACK")
+        debug(" ")
+        waitms(5000)
+        eInkDisplay.clearBuffer()
+        eInkDisplay.fillScreen(eInkDisplay.EINK213B_COLOR_WHITE)
+        debug("- IS WHITE")
+        debug(" ")
+        waitms(5000)
+        eraseDisplay()
+        debug("- IS CLEARED")
+        debug(" ")
+        waitms(5000)
+
+        debug("* HOLD Here... B ")
+        repeat
+'}
+        ' 104x212
+        debug("* fill buffer with lines")
+        eInkDisplay.clearBuffer()
+
+        'eInkDisplay.lineAtXY(2, 2, 209, 2, eInkDisplay.EINK213B_COLOR_RED)
+
+        'eInkDisplay.lineAtXY(2, 6, 209, 6, eInkDisplay.EINK213B_COLOR_BLACK)
+        eInkDisplay.fillRegionAtXY(2, 2, eInkDisplay.EINK213B_COLOR_RED, 75, 50)
+        eInkDisplay.fillRegionAtXY(10, 10, eInkDisplay.EINK213B_COLOR_WHITE, 20, 10)
+        eInkDisplay.lineAtXY(3, 3, 3, 208, eInkDisplay.EINK213B_COLOR_BLACK)
+
+        eInkDisplay.flushToDisplay()
+
+        debug("* HOLD Here... C ")
+        repeat
 
     else
         text_demo()             ' Text
@@ -127,9 +169,11 @@ PRI eraseDisplay()
 
     debug("* erase display")
     eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_WHITE)
+    debug("- IS ERASED")
+    debug(" ")
     waitms(5000)
 
-PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWidth, imgHeight, imgWidthInPix, leftEdge, firstLine, lineSpacing
+PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWidth, imgHeight, imgWidthInPix, leftEdge, firstLine, lineSpacing, vertOffset
     ' github pictures screen - make it look pretty
     debug("* write border, place marker for image corner, place small cup, then border around image")
 
@@ -147,28 +191,37 @@ PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWid
         case eInkDisplay.displayType()
             eInkDisplay.DSWS_2in13BV3:
                 debug(" - filling DS_eink213")
+                eInkDisplay.borderAtXY(2, 2, eInkDisplay.EINK213B_COLOR_RED, 1, dsplyWidthInPix-4, dsplyHeightInPix-4)
                 ' ROTATION 0
                 ' place image itself, rotated properly
-                eInkDisplay.placeImageAtXY(10, dsplyHeightInPix - imgWidthInPix - 5, pImageBits, imgWidth, imgHeight, 270)
-                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_10)
-                eInkDisplay.setTextAtXY(15, dsplyHeightInPix - imgWidthInPix - 8, @"Spin2")
-                eInkDisplay.setTextAtXY(30, dsplyHeightInPix - imgWidthInPix - 8, @"Driver")
+                eInkDisplay.placeImageAtXY(5, dsplyHeightInPix - imgWidthInPix - 5, pImageBits, imgWidth, imgHeight, 270)
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK213B_COLOR_RED, eInkDisplay.FONT_Tahoma_10)
+                eInkDisplay.setTextAtXY(10, dsplyHeightInPix - imgWidthInPix - 8, @"Spin2")
+                eInkDisplay.setTextAtXY(25, dsplyHeightInPix - imgWidthInPix - 8, @"Driver")
 
-                eInkDisplay.fillRegionAtXY(4, 4, eInkDisplay.EINK_COLOR_BLACK, 50, 100)
+                pImageBits, imgWidth, imgHeight := coffeeImage.imageInfo(coffeeImage.IMAGE_Coffee)
+                debug("* imageInfo() ", uhex_long(pImageBits), ", w,h=(", udec_(imgWidth), udec_(imgHeight), ")")
 
-                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_WHITE, eInkDisplay.FONT_Tahoma_14)
-                eInkDisplay.setTextAtXY(9, 94, @recr_text40)
-                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_WHITE, eInkDisplay.FONT_Tahoma_10)
-                eInkDisplay.setTextAtXY(31, 94, @recr_text41)
+                if pImageBits <> coffeeImage.IMAGE_UNKNOWN
+                    eInkDisplay.placeImageAtXY(1, 5 + imgWidthInPix/3 - 10, pImageBits, imgWidth, imgHeight, 270)
 
-                'eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
-                'leftEdge := dsplyHeightInPix - 20
-                'firstLine := 55
-                'lineSpacing := 11+5
-                'eInkDisplay.setTextAtXY(firstLine + lineSpacing * 0, leftEdge, @recr_text12)
-                'eInkDisplay.setTextAtXY(firstLine + lineSpacing * 1, leftEdge, @recr_text13)
-                'eInkDisplay.setTextAtXY(firstLine + lineSpacing * 2, leftEdge, @recr_text14)
-                'eInkDisplay.setTextAtXY(firstLine + lineSpacing * 3, leftEdge, @recr_text15)
+                vertOffset := 46
+                eInkDisplay.fillRegionAtXY(4+vertOffset, 4, eInkDisplay.EINK213B_COLOR_RED, 50, 100)
+
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK213B_COLOR_WHITE, eInkDisplay.FONT_Tahoma_14)
+                eInkDisplay.setTextAtXY(9+vertOffset, 96, @recr_text40)
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK213B_COLOR_BLACK, eInkDisplay.FONT_Tahoma_10)
+                eInkDisplay.setTextAtXY(31+vertOffset, 96, @recr_text41)
+
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK213B_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+                leftEdge := dsplyHeightInPix - 6
+                firstLine := 48
+                lineSpacing := 8+5
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 0, leftEdge, @recr_text42)
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 1, leftEdge, @recr_text43)
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 2, leftEdge, @recr_text44)
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 3, leftEdge, @recr_text45)
+
             eInkDisplay.DS_eink213:
                 debug(" - filling DS_eink213")
                 ' ROTATION 0
