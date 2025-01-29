@@ -144,3 +144,6 @@ C-src/isp_demo_P2logo_image.spin2
 C-src/P2-Piskel.c
 src/test.txt
 C-src/lut_dumper.c
+src/demo_eInk_clickREF.spin2
+src/isp_eInk_clickREF.spin2
+src/isp_dummy_flash.spin2

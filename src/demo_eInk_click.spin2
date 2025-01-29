@@ -40,8 +40,9 @@ OBJ { the object being demo'd }
     eInkImages  : "isp_eInk_demo_images"
     coffeeImage : "isp_image_coffee"
     p2LogoImage : "isp_demo_P2logo_image"
+    strFmt      : "isp_mem_strings"
 
-PUB main() | ok, deviceID, uniqMSB, uniqLSB
+PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
 '' DEMO let's see what our radio hears!
 
     ' tell object what display hardware we have and where the click board is connected
@@ -53,25 +54,48 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
 
     eraseDisplay()
 
+    'repeat ' hold here - when prepping the display for storage (no image on it)
+
     if eInkDisplay.displayType() == eInkDisplay.DSWS_2in13BV3
 
+{
+        ' make our orientation display set
+        drawOrientationDisplay(eInkDisplay.ROTATE_0)
+        waitms(22_000) ' 18 for screen paint + 2 more sec
+
+        drawOrientationDisplay(eInkDisplay.ROTATE_90)
+        waitms(22_000)
+
+        drawOrientationDisplay(eInkDisplay.ROTATE_180)
+        waitms(22_000)
+
+        drawOrientationDisplay(eInkDisplay.ROTATE_270)
+        waitms(22_000)
+
+        debug("* HOLD Here... ")
+        repeat
+'}
+
+
+'{
         p2_demoRegionImage()
         debug("* HOLD Here... A ")
         repeat
+'}
 
 {
         eInkDisplay.clearBuffer()
-        eInkDisplay.fillScreen(eInkDisplay.EINK213B_COLOR_RED)
+        eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_RED)
         debug("- IS RED")
         debug(" ")
         waitms(5000)
         eInkDisplay.clearBuffer()
-        eInkDisplay.fillScreen(eInkDisplay.EINK213B_COLOR_BLACK)
+        eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_BLACK)
         debug("- IS BLACK")
         debug(" ")
         waitms(5000)
         eInkDisplay.clearBuffer()
-        eInkDisplay.fillScreen(eInkDisplay.EINK213B_COLOR_WHITE)
+        eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_WHITE)
         debug("- IS WHITE")
         debug(" ")
         waitms(5000)
@@ -84,15 +108,21 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
         repeat
 '}
         ' 104x212
-        debug("* fill buffer with lines")
-        eInkDisplay.clearBuffer()
+        debug("* fill buffer with line")
+        einkDisplay.clearBuffer()
+        einkDisplay.setOrientation(eInkDisplay.ROTATE_90)
+        dsplyWidthInPix, dsplyHeightInPix := eInkDisplay.displaySize()
+        debug("* getSize()  w,h=(", udec_(dsplyWidthInPix), udec_(dsplyHeightInPix), ")")
+        'eInkDisplay.lineAtXY(2, 2, 209, 2, eInkDisplay.EINK_COLOR_RED)
 
-        'eInkDisplay.lineAtXY(2, 2, 209, 2, eInkDisplay.EINK213B_COLOR_RED)
+        'eInkDisplay.lineAtXY(2, 6, 209, 6, eInkDisplay.EINK_COLOR_BLACK)
+        'eInkDisplay.fillRegionAtXY(2, 2, eInkDisplay.EINK_COLOR_RED, 75, 50)
+        'eInkDisplay.fillRegionAtXY(10, 10, eInkDisplay.EINK_COLOR_WHITE, 20, 10)
 
-        'eInkDisplay.lineAtXY(2, 6, 209, 6, eInkDisplay.EINK213B_COLOR_BLACK)
-        eInkDisplay.fillRegionAtXY(2, 2, eInkDisplay.EINK213B_COLOR_RED, 75, 50)
-        eInkDisplay.fillRegionAtXY(10, 10, eInkDisplay.EINK213B_COLOR_WHITE, 20, 10)
-        eInkDisplay.lineAtXY(3, 3, 3, 208, eInkDisplay.EINK213B_COLOR_BLACK)
+        ' short distance...
+        eInkDisplay.lineAtXY(3, 3, 3, dsplyWidthInPix-6, eInkDisplay.EINK_COLOR_BLACK)
+        ' long distance...
+        eInkDisplay.lineAtXY(3, 3, dsplyHeightInPix - 6, 3, eInkDisplay.EINK_COLOR_BLACK)
 
         eInkDisplay.flushToDisplay()
 
@@ -116,6 +146,145 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB
 
     debug("* stopped")
     eInkDisplay.stop()
+
+pri min(a,b) : result
+    result := a < b ? a : b
+
+VAR { local variables }
+
+    BYTE    strBuffer[20+1]
+
+PRI drawOrientationDisplay(rotation) | dsplyWidthInPix, dsplyHeightInPix, startX, startY, endX, endY, pTitle, lineLen, bLandscape, detailColor
+    einkDisplay.clearBuffer()
+    einkDisplay.setOrientation(rotation)
+
+    detailColor := eInkDisplay.EINK_COLOR_BLACK
+    case einkDisplay.displayType()
+        eInkDisplay.DSWS_2in13BV3:
+            detailColor := eInkDisplay.EINK_COLOR_RED
+        eInkDisplay.DS_eink200:
+            detailColor := eInkDisplay.EINK_COLOR_DARK_GREY
+
+    pTitle := @"ROTATE ???"
+    case rotation
+        eInkDisplay.ROTATE_0:
+            pTitle := @"ROT 0"
+        eInkDisplay.ROTATE_90:
+            pTitle := @"ROT 90"
+        eInkDisplay.ROTATE_180:
+            pTitle := @"ROT 180"
+        eInkDisplay.ROTATE_270:
+            pTitle := @"ROT 270"
+
+    dsplyWidthInPix, dsplyHeightInPix := eInkDisplay.displaySize()
+
+    bLandscape := dsplyWidthInPix > dsplyHeightInPix ? true : false
+
+    strFmt.sFormatStr2(@strBuffer, string("w%d, h%d"), dsplyWidthInPix, dsplyHeightInPix)
+
+    ' line length is half the smallest dimension
+    lineLen := min(dsplyWidthInPix, dsplyHeightInPix) / 2
+
+    eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+    ' our junction point
+    startX := 20
+    startY := 20
+    ' draw horizontal line, with arrow at end with label
+    endX := startX + lineLen
+    endY := 20
+    eInkDisplay.lineAtXY(startX, startY, endX, endY, eInkDisplay.EINK_COLOR_BLACK)
+    arrowAtXY(endX, endY, 6, 8, eInkDisplay.ROTATE_90, detailColor)
+    eInkDisplay.setTextAtXY(endX - 5, endY + 5, @"X")
+    ' draw vertical line, with arrow at end with label
+    endX := 20
+    endY := startY + lineLen
+    eInkDisplay.lineAtXY(startX, startY, endX, endY, eInkDisplay.EINK_COLOR_BLACK)
+    arrowAtXY(endX, endY, 6, 8, eInkDisplay.ROTATE_180, detailColor)
+    eInkDisplay.setTextAtXY(endX + 6, endY - 10, @"Y")
+
+    ' draw DOT (filled circle) at junction of lines
+    eInkDisplay.circleAtXY(startX, startY, 2, detailColor)
+    eInkDisplay.circleAtXY(startX, startY, 3, detailColor)
+    eInkDisplay.circleAtXY(startX, startY, 4, detailColor)
+
+    if bLandscape
+        ' -- LANDSCAPE --
+        ' horiz inset from line
+        startX += 15 ' inset from line
+        ' vert mid-way up our line
+        startY := endY - 16
+        ' set title
+        eInkDisplay.setTextAtXY(startX + 6, startY, pTitle)
+
+        ' set dimensions
+        eInkDisplay.setTextAtXY(startX, startY + 15, @strBuffer)
+    else
+        ' -- PORTRAIT --
+        ' horiz inset from line
+        startX += 6 ' inset from line
+        ' vert just past our down arrow
+        startY := endY + 15
+        ' set title
+        eInkDisplay.setTextAtXY(startX + 7, startY, pTitle)
+
+        ' set dimensions
+        eInkDisplay.setTextAtXY(startX, startY + 15, @strBuffer)
+
+    ' color patch testing RED
+    ' rect width = lineLen, height = 20
+    if bLandscape
+        ' -- LANDSCAPE --
+        ' X is mid-display
+        startX := (dsplyWidthInPix / 2) + 10
+        ' y calc for rect in vertical center
+        startY := (dsplyHeightInPix - 20 ) / 2
+        eInkDisplay.fillRegionAtXY(startX, startY, detailColor, lineLen, 20)
+    else
+        ' -- PORTRAIT --
+        ' X is horizontal center
+        startX := (dsplyWidthInPix - lineLen) / 2
+        ' y calc for rect mid of bottom half (3/4ths?)
+        startY := dsplyHeightInPix / 4 * 3
+        eInkDisplay.fillRegionAtXY(startX, startY, detailColor, lineLen, 20)
+
+    eInkDisplay.flushToDisplay()
+
+PRI arrowAtXY(x, y, width, length, rotation, color) | endX1, endY1, endX2, endY2
+    ' draw an arrow at x,y with width, height, and color
+    ' where x,y is the point of the arrow
+    ' width, length is the size of the bounding box containing the arrow head
+    ' rotation is the angle of the arrow head rotation 0, 90, 180, 270
+    ' color is the color of the arrow head
+    case rotation
+        einkDisplay.ROTATE_0:
+            endX1 := x - width / 2
+            endY1 := y + length
+            endX2 := x + width / 2
+            endY2 := y + length
+        einkDisplay.ROTATE_90:
+            endX1 := x - width
+            endY1 := y - length / 2
+            endX2 := x - width
+            endY2 := y + length / 2
+        einkDisplay.ROTATE_180:
+            endX1 := x - width / 2
+            endY1 := y - length
+            endX2 := x + width / 2
+            endY2 := y - length
+        einkDisplay.ROTATE_270:
+            endX1 := x + width
+            endY1 := y - length / 2
+            endX2 := x + width
+            endY2 := y + length / 2
+
+    einkDisplay.lineAtXY(x, y, endX1, endY1, color)
+    einkDisplay.lineAtXY(x, y, endX2, endY2, color)
+
+pri sin(angle): sinAngle
+    sinAngle := angle
+
+pri cos(angle): cosAngle
+    cosAngle := angle
 
 DAT { demonstration data }
 
@@ -191,11 +360,11 @@ PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWid
         case eInkDisplay.displayType()
             eInkDisplay.DSWS_2in13BV3:
                 debug(" - filling DS_eink213")
-                eInkDisplay.borderAtXY(2, 2, eInkDisplay.EINK213B_COLOR_RED, 1, dsplyWidthInPix-4, dsplyHeightInPix-4)
+                eInkDisplay.borderAtXY(2, 2, eInkDisplay.EINK_COLOR_RED, 1, dsplyWidthInPix-4, dsplyHeightInPix-4)
                 ' ROTATION 0
                 ' place image itself, rotated properly
                 eInkDisplay.placeImageAtXY(5, dsplyHeightInPix - imgWidthInPix - 5, pImageBits, imgWidth, imgHeight, 270)
-                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK213B_COLOR_RED, eInkDisplay.FONT_Tahoma_10)
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_RED, eInkDisplay.FONT_Tahoma_10)
                 eInkDisplay.setTextAtXY(10, dsplyHeightInPix - imgWidthInPix - 8, @"Spin2")
                 eInkDisplay.setTextAtXY(25, dsplyHeightInPix - imgWidthInPix - 8, @"Driver")
 
@@ -206,14 +375,14 @@ PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWid
                     eInkDisplay.placeImageAtXY(1, 5 + imgWidthInPix/3 - 10, pImageBits, imgWidth, imgHeight, 270)
 
                 vertOffset := 46
-                eInkDisplay.fillRegionAtXY(4+vertOffset, 4, eInkDisplay.EINK213B_COLOR_RED, 50, 100)
+                eInkDisplay.fillRegionAtXY(4+vertOffset, 4, eInkDisplay.EINK_COLOR_RED, 50, 100)
 
-                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK213B_COLOR_WHITE, eInkDisplay.FONT_Tahoma_14)
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_WHITE, eInkDisplay.FONT_Tahoma_14)
                 eInkDisplay.setTextAtXY(9+vertOffset, 96, @recr_text40)
-                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK213B_COLOR_BLACK, eInkDisplay.FONT_Tahoma_10)
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_10)
                 eInkDisplay.setTextAtXY(31+vertOffset, 96, @recr_text41)
 
-                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK213B_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
                 leftEdge := dsplyHeightInPix - 6
                 firstLine := 48
                 lineSpacing := 8+5
