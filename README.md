@@ -61,6 +61,10 @@ To this, we added these additional capabilities:
 Latest Changes:
 
 ```
+30 Jan 2025
+- Now at Release v1.0.0
+- Add new Orientation doc and updated inline source documentation
+- Added Driver public interface document to repo
 27 Jan 2025
 - Added support to WaveShare 2.13" R/B/W eINK display
 20 June 2022
@@ -126,7 +130,9 @@ On this Page:
 
 Additional pages:
 
+- [Driver Public Interface](./isp_eink_click.txt) - shows full driver annotated API 
 - [Start your project using this object](DEVELOP.md) - Walks thru configuration and setup of your own project using this object
+- [Configure Display Orientation](./Docs/Orientation.md) - set driver to match your hardare set up
 - [Create bitmaps for display on your eINK device](./C-src)
 - [See images of all supported displays working!](./Docs) There are a small number of .PDFs in the [Docs](./Docs) directory providing  detailed information on the display and controller chips
 

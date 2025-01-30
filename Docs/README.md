@@ -1,5 +1,5 @@
 # P2 eINK Hardware Documents
-Hardware documents for the Mikroe eINK adapter Click board™
+Hardware documents for the Mikroe eINK adapter Click board™ and various eINK displays
 
 ![Project Maintenance][maintenance-shield]
 
@@ -84,8 +84,6 @@ Additional pages:
 ---
 
 ## License
-
-Copyright © 2022 Iron Sheep Productions, LLC. All rights reserved.
 
 Licensed under the MIT License.
 

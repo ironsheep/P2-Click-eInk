@@ -55,8 +55,6 @@ Additional pages:
 
 ## License
 
-Copyright © 2022 Iron Sheep Productions, LLC. All rights reserved.
-
 Licensed under the MIT License.
 
 Follow these links for more information:

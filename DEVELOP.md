@@ -80,14 +80,16 @@ PUB main() | ok
 ### And you're off!  Add your own display code
 
 You are now at the `... and do your app stuff from here on ...` section of this page.
-From here on, just use any of the Public Methods found in the interface description.  Here's a quick (maybe partial) summary:
+From here on, just use any of the Public Methods found in the interface description.  See [Driver Public Interface](./isp_eink_click.txt) which is our latest full driver annotated API 
+
+Here's a quick (maybe partial) summary:
 
 | Method Signature | Purpose |
 | --- | --- |
 | PUB  start(eDisplayType, eClickBasePin) : ok | Specify the eval board connect location for the EINK click and start SPI</br>** eDisplayType** is [DS\_eink154, DS\_eink200, DS\_eink213, or DS\_eink290]</br>**eClickBasePin** is [PINS\_P0\_P15, PINS\_P16\_P31, or PINS\_P32\_P47]
 | PUB  stop() | Stop the EINK Click SPI Object
 | PUB  resetDevice() | Reset the EINK device
-| <pre>PUB setOrientation(eRotation)</pre> | Once your device is mounted, the connector will be above, below, left or right of the display. Use this call notify the drawing routines which corner is now at top left (0, 0) in your hardware set up. See [Orientation Pictures](orientation.md) for more detail.</br>This affects all subsequent drawing calls<\BR> NOTE: selectFont() rotation is in addition to this device orientation</br>** eRotation** is [ROTATE\_0, \_90,, \_180, or \*_270 enum value]
+| <pre>PUB setOrientation(eRotation)</pre> | Once your device is mounted, the connector will be above, below, left or right of the display. Use this call notify the drawing routines which corner is now at top left (0, 0) in your hardware set up. See [Orientation Pictures](Orientation.md) for more detail.</br>This affects all subsequent drawing calls<\BR> NOTE: selectFont() rotation is in addition to this device orientation</br>** eRotation** is [ROTATE\_0, \_90,, \_180, or \*_270 enum value]
 | PUB displaySize() : widthInPix, heightInPix | Return display size in pixels</br>**NOTE**: only valid is device is successfully started!</br>(ensure start() is called, first and that it is successful!)
 | PUB displayType() : eDisplayType| Return display size in pixels</br>**NOTE**: only valid is device is successfully started!</br>(ensure start() is called, first and that it is successful!)</br>**eDisplayType** is [DS\_* enum value]
 | PUB waitForDisplayComplete() |Wait for eINK display to indicate that last update is complete</br>**NOTE**: use this before a driver stop() to ensure the display is completely written.
