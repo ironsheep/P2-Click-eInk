@@ -21,7 +21,11 @@ CON { Public Interface Constants }
 
 
     '  Type of eInk display (Enum)
-    #$40, DS_eink154, DS_eink200, DS_eink213, DS_eink290, DSWS_2in13BV3, DS_PD_370Tch
+    '   *gs = w/ 1of more grayscale colors
+    '   *WS_* = fm WaveShare
+    '   *PS_ = fm WaveShare
+    '   *Tch = eINK w/Touch
+    #$40, DS_eink154, DS_eink200gs, DS_eink213, DS_eink290, DSWS_2in13BV3, DSPD_370Tch
     ' return value when user makes bad choice
     INVALID_DISPLAY_TYPE = -1
 
@@ -165,7 +169,7 @@ CON { eInk Constants }
 ' ------------- NO USER ADJUSTABLE VALUES BELOW HERE -------------
 ' ================================================================
 ' INTERNAL device color names/values
-    ' DS_eink200: $FF=white, $00=black, $55=gray 1, $AA=gray 2
+    ' DS_eink200gs: $FF=white, $00=black, $55=gray 1, $AA=gray 2
     EINKDS_COLOR_WHITE            = $FF
     EINKDS_COLOR_BLACK            = $00
     EINKDS_COLOR_LIGHT_GREY       = $AA
@@ -182,7 +186,7 @@ CON { eInk Constants }
     FO_VERTICAL_COLUMN          = $02
 
 ' display_commands Display Commands
-'   DS_eink154, DS_eink200, DS_eink213, DS_eink290 commands
+'   DS_eink154, DS_eink200gs, DS_eink213, DS_eink290 commands
     CMD_DRIVER_OUTPUT_CTRL          = $01
     CMD_BOOSTER_SOFT_START_CTRL     = $0C
     CMD_GATE_SCAN_START_POSN        = $0F
@@ -215,7 +219,7 @@ CON { eInk Constants }
     CMD_RESOLUTION_SETTINGS         = $61
     CMD_GET_STATUS                  = $71
 
-    ' DS_PD_370Tch commands
+    ' DSPD_370Tch commands
 
     ' SPI Communication Freq w/EINK Board
     EINK_SPI_CLK_MHZ = 20_000
@@ -258,7 +262,7 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
             displayWidthInPix   := EINK154_DISPLAY_WIDTH
             displayHeightInPix  := EINK154_DISPLAY_HEIGHT
 
-        DS_eink200:
+        DS_eink200gs:
             eInkPhysWidth        := EINK_DISPLAY_WIDTH
             eInkPhysHeight       := EINK_DISPLAY_HEIGHT
             frameSizeInBytes    := EINK_DISPLAY_RESOLUTION
@@ -290,7 +294,7 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
             displayWidthInPix   := EINKWS213B_DISPLAY_WIDTH
             displayHeightInPix  := EINKWS213B_DISPLAY_HEIGHT
 
-        DS_PD_370Tch:
+        DSPD_370Tch:
             eInkPhysWidth        := EINKPD370T_DISPLAY_WIDTH
             eInkPhysHeight       := EINKPD370T_DISPLAY_HEIGHT
             frameSizeInBytes    := EINKPD370T_DISPLAY_RESOLUTION
@@ -437,7 +441,7 @@ PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
     '    NOTE: will likely be a 2bpp image file when we get it supported
     else
         ' set memory area to full display
-        if deviceType <> DS_eink200
+        if deviceType <> DS_eink200gs
             ' setMemoryArea(xStart, yStart, xEnd, yEnd)
             setMemoryArea(0, 0, eInkPhysWidth - 1, eInkPhysHeight - 1)
         else
@@ -447,7 +451,7 @@ PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
         ' write image to memory
         if deviceType <> DS_eink213
             ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
-            if deviceType == DS_eink200
+            if deviceType == DS_eink200gs
                 setMemoryPointer(0, $AB)
             else
                 setMemoryPointer(0, 0)
@@ -466,7 +470,7 @@ PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
                     imgIdx := xCtr +(yCtr * (eInkPhysWidth / 8))
                     writeData(BYTE [pImageBffr][imgIdx])
 
-        if deviceType == DS_eink200
+        if deviceType == DS_eink200gs
             writeCmd(CMD_MASTER_ACTIVATION)
 
         ' memory loaded update display hardware
@@ -602,7 +606,7 @@ PUB fillBuffer(color) | xCtr, yCtr, fillColor, byteCtr
         writeBufferWS213BV3()
     else
         waitForDeviceIdle()
-        if deviceType <> DS_eink200
+        if deviceType <> DS_eink200gs
             ' setMemoryArea(xStart, yStart, xEnd, yEnd)
             setMemoryArea(0, 0, eInkPhysWidth - 1, eInkPhysHeight - 1)
         else
@@ -611,7 +615,7 @@ PUB fillBuffer(color) | xCtr, yCtr, fillColor, byteCtr
 
         if deviceType <> DS_eink213
             ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
-            if deviceType == DS_eink200
+            if deviceType == DS_eink200gs
                 setMemoryPointer(0, $AB)
             else
                 setMemoryPointer(0, 0)
@@ -628,7 +632,7 @@ PUB fillBuffer(color) | xCtr, yCtr, fillColor, byteCtr
                 repeat xCtr from 0 to (eInkPhysWidth / 8) - 1   ' our 122 width is really 128 bits with last 6 ignored!
                     writeData(fillColor)
 
-        if deviceType == DS_eink200
+        if deviceType == DS_eink200gs
             writeCmd(CMD_MASTER_ACTIVATION)
 
 PUB setTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
@@ -845,6 +849,46 @@ PUB circleAtXY(xc, yc, diameter, color) | x, y, vXc, vYc, lineColor
         setPixelAtXY(vXc + y, vYc - x, lineColor)
         setPixelAtXY(vXc - y, vYc - x, lineColor)
 
+PUB arrowAtXY(x, y, width, length, rotation, color) | endX1, endY1, endX2, endY2
+'' Draw an arrow at x,y with width, height, and color in device frame for later display
+''
+'' @param x - horizontal pixel position
+'' @param y - vertical pixel position
+'' @param width - of bounding box for arrow head
+'' @param length - of bounding box for arrow head
+'' @param rotation - angle of arrow head rotation 0, 90, 180, 270 (use ROTATE_* enum values)
+'' @param color - pixel color, specific to eInk device
+
+' Local Variables:
+' @local endX1 -
+' @local endY1 -
+' @local endX2 -
+' @local endY2 -
+    case rotation
+        ROTATE_0:
+            endX1 := x - width / 2
+            endY1 := y + length
+            endX2 := x + width / 2
+            endY2 := y + length
+        ROTATE_90:
+            endX1 := x - width
+            endY1 := y - length / 2
+            endX2 := x - width
+            endY2 := y + length / 2
+        ROTATE_180:
+            endX1 := x - width / 2
+            endY1 := y - length
+            endX2 := x + width / 2
+            endY2 := y - length
+        ROTATE_270:
+            endX1 := x + width
+            endY1 := y - length / 2
+            endX2 := x + width
+            endY2 := y + length / 2
+
+    lineAtXY(x, y, endX1, endY1, color)
+    lineAtXY(x, y, endX2, endY2, color)
+
 PUB setPixelAtXY(inX, inY, color) | bitColor, bitInByte, byteIdx, pBlkBffr, pRedBffr, blkBit, redBit, x, y
 '' place colored pixel in device frame for later display
 ''
@@ -882,7 +926,7 @@ PUB setPixelAtXY(inX, inY, color) | bitColor, bitInByte, byteIdx, pBlkBffr, pRed
         BYTE [pRedBffr][byteIdx] &= !($01 << bitInByte)
         BYTE [pRedBffr][byteIdx] |= ((redBit & $01) << bitInByte)
 
-    elseif deviceType <> DS_eink200
+    elseif deviceType <> DS_eink200gs
         ' for 1.54", 2.13" and 2.90" displays
         ' monochrome (black/white) - 1 bit / pixel!
         byteIdx := (y * (eInkPhysWidth / 8)) + (x / 8)
@@ -1040,7 +1084,7 @@ PUB flushToDisplay() | byteCtr, yCtr, xCtr
         writeBufferWS213BV3()
     else
         waitForDeviceIdle()
-        if deviceType <> DS_eink200
+        if deviceType <> DS_eink200gs
             ' setMemoryArea(xStart, yStart, xEnd, yEnd)
             setMemoryArea(0, 0, eInkPhysWidth - 1, eInkPhysHeight - 1)
         else
@@ -1049,7 +1093,7 @@ PUB flushToDisplay() | byteCtr, yCtr, xCtr
 
         if deviceType <> DS_eink213
             ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
-            if deviceType == DS_eink200
+            if deviceType == DS_eink200gs
                 setMemoryPointer(0, $AB)
             else
                 setMemoryPointer(0, 0)
@@ -1068,10 +1112,15 @@ PUB flushToDisplay() | byteCtr, yCtr, xCtr
                     byteCtr := xCtr + (yCtr * (eInkPhysWidth / 8))
                     writeData(BYTE [@deviceFrame][ byteCtr ])
 
-        if deviceType == DS_eink200
+        if deviceType == DS_eink200gs
             writeCmd(CMD_MASTER_ACTIVATION)
 
     updateDisplay()
+
+PUB waitForDisplayComplete()
+'' Wait for display to indicate that last update is complete
+''
+    waitForDeviceIdle()
 
 VAR { -- PRIVATE Instance Variables -- }
 
@@ -1133,7 +1182,7 @@ PRI startConfig()
             displayDelay()
             setDeviceLut(@EINK154_LUT_TABLE, 30)    ' waits for 1sec at end
 
-        DS_eink200:
+        DS_eink200gs:
             writeCmd(CMD_DEEP_SLEEP_MODE)
             writeData ($00)
             writeCmd(CMD_DATA_ENTRY_MODE_SETTING)
@@ -1263,9 +1312,9 @@ PRI setMemoryPointer(x, y)
         writeData(((x >> 3) & $FF))
         writeCmd(CMD_SET_RAM_Y_ADDR_CTR)
         writeData((y & $FF))
-        if deviceType <> DS_eink200
+        if deviceType <> DS_eink200gs
             writeData(((y >> 8) & $FF))
-        if deviceType == DS_eink200 or deviceType == DS_eink154
+        if deviceType == DS_eink200gs or deviceType == DS_eink154
             ' hmm ds_ws_2in13b doesn't have this need
             waitForDeviceIdle()
 
@@ -1273,7 +1322,7 @@ PRI setMemoryPointer(x, y)
 PRI setMemoryArea(xStart, yStart, xEnd, yEnd)
 ' set region of RAM
     if deviceType <> DSWS_2in13BV3
-        if deviceType == DS_eink200
+        if deviceType == DS_eink200gs
             writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
             writeData((xStart >> 3) & $FF)
             writeData((((xEnd + 1) >> 2) - 1) & $FF)
@@ -1308,7 +1357,7 @@ PRI updateDisplay() | cmdValue
         case deviceType
             DS_eink154:
                 cmdValue := $C4
-            DS_eink200:
+            DS_eink200gs:
                 cmdValue := $02
             DS_eink213:
                 cmdValue := $C7
@@ -1323,7 +1372,7 @@ PRI updateDisplay() | cmdValue
         writeData(cmdValue)
         writeCmd(CMD_MASTER_ACTIVATION) ' raises BUSY must wait for end!
 
-        if deviceType <> DS_eink200
+        if deviceType <> DS_eink200gs
             writeCmd(CMD_TERMINATE_FRAME_READ_WRITE)
 
     ' NO waitForDeviceIdle() will DO SO before we attempt next write
@@ -1359,7 +1408,7 @@ PRI validColor(rawColor) : valColor
                 EINKDS_COLOR_BLACK:
                 OTHER:
                     valColor := EINKDS_COLOR_BLACK    ' default
-        DS_eink200:
+        DS_eink200gs:
             case rawColor
                 EINK_COLOR_WHITE:
                     valColor := EINKDS_COLOR_WHITE

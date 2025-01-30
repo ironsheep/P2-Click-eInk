@@ -32,7 +32,7 @@ CON { click module io pins }
     EINK_CLICK_PINGROUP = eInkDisplay.PINS_P32_P47
 
     ' we are using a 2.13" eInk display
-    EINK_DISPLAY_TYPE = eInkDisplay.DSWS_2in13BV3
+    EINK_DISPLAY_TYPE = eInkDisplay.DS_eink290
 
 OBJ { the object being demo'd }
 
@@ -56,7 +56,7 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
 
     'repeat ' hold here - when prepping the display for storage (no image on it)
 
-    if eInkDisplay.displayType() == eInkDisplay.DSWS_2in13BV3
+    'if eInkDisplay.displayType() == eInkDisplay.DSWS_2in13BV3
 
 {
         ' make our orientation display set
@@ -77,7 +77,7 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
 '}
 
 
-'{
+{
         text_demo()             ' Text
         waitms(2_000)
 
@@ -137,7 +137,7 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
         repeat
 '}
 
-    else
+    'else
         text_demo()             ' Text
         waitms(2_000)
 
@@ -151,6 +151,8 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
 
         ' end with our device P2 Logo image
         p2_demoRegionImage()
+
+        eInkDisplay.waitForDisplayComplete()
 
     debug("* stopped")
     eInkDisplay.stop()
@@ -170,7 +172,7 @@ PRI drawOrientationDisplay(rotation) | dsplyWidthInPix, dsplyHeightInPix, startX
     case einkDisplay.displayType()
         eInkDisplay.DSWS_2in13BV3:
             detailColor := eInkDisplay.EINK_COLOR_RED
-        eInkDisplay.DS_eink200:
+        eInkDisplay.DS_eink200gs:
             detailColor := eInkDisplay.EINK_COLOR_DARK_GREY
 
     pTitle := @"ROTATE ???"
@@ -201,13 +203,13 @@ PRI drawOrientationDisplay(rotation) | dsplyWidthInPix, dsplyHeightInPix, startX
     endX := startX + lineLen
     endY := 20
     eInkDisplay.lineAtXY(startX, startY, endX, endY, eInkDisplay.EINK_COLOR_BLACK)
-    arrowAtXY(endX, endY, 6, 8, eInkDisplay.ROTATE_90, detailColor)
+    eInkDisplay.arrowAtXY(endX, endY, 6, 8, eInkDisplay.ROTATE_90, detailColor)
     eInkDisplay.setTextAtXY(endX - 5, endY + 5, @"X")
     ' draw vertical line, with arrow at end with label
     endX := 20
     endY := startY + lineLen
     eInkDisplay.lineAtXY(startX, startY, endX, endY, eInkDisplay.EINK_COLOR_BLACK)
-    arrowAtXY(endX, endY, 6, 8, eInkDisplay.ROTATE_180, detailColor)
+    eInkDisplay.arrowAtXY(endX, endY, 6, 8, eInkDisplay.ROTATE_180, detailColor)
     eInkDisplay.setTextAtXY(endX + 6, endY - 10, @"Y")
 
     ' draw DOT (filled circle) at junction of lines
@@ -256,37 +258,6 @@ PRI drawOrientationDisplay(rotation) | dsplyWidthInPix, dsplyHeightInPix, startX
         eInkDisplay.fillRegionAtXY(startX, startY, detailColor, lineLen, 20)
 
     eInkDisplay.flushToDisplay()
-
-PRI arrowAtXY(x, y, width, length, rotation, color) | endX1, endY1, endX2, endY2
-    ' draw an arrow at x,y with width, height, and color
-    ' where x,y is the point of the arrow
-    ' width, length is the size of the bounding box containing the arrow head
-    ' rotation is the angle of the arrow head rotation 0, 90, 180, 270
-    ' color is the color of the arrow head
-    case rotation
-        einkDisplay.ROTATE_0:
-            endX1 := x - width / 2
-            endY1 := y + length
-            endX2 := x + width / 2
-            endY2 := y + length
-        einkDisplay.ROTATE_90:
-            endX1 := x - width
-            endY1 := y - length / 2
-            endX2 := x - width
-            endY2 := y + length / 2
-        einkDisplay.ROTATE_180:
-            endX1 := x - width / 2
-            endY1 := y - length
-            endX2 := x + width / 2
-            endY2 := y - length
-        einkDisplay.ROTATE_270:
-            endX1 := x + width
-            endY1 := y - length / 2
-            endX2 := x + width
-            endY2 := y + length / 2
-
-    einkDisplay.lineAtXY(x, y, endX1, endY1, color)
-    einkDisplay.lineAtXY(x, y, endX2, endY2, color)
 
 pri sin(angle): sinAngle
     sinAngle := angle
@@ -471,8 +442,8 @@ PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWid
                 eInkDisplay.setTextAtXY(firstLine + lineSpacing * 2, leftEdge, @recr_text34)
                 eInkDisplay.setTextAtXY(firstLine + lineSpacing * 3, leftEdge, @recr_text35)
 
-            eInkDisplay.DS_eink200:
-                debug(" - filling DS_eink200")
+            eInkDisplay.DS_eink200gs:
+                debug(" - filling DS_eink200gs")
                 ' place display banner to right of P2
                 eInkDisplay.fillRegionAtXY(4, 4, eInkDisplay.EINK_COLOR_LIGHT_GREY, 15, 64)
                 ' place display label
@@ -525,7 +496,7 @@ PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWid
 
     debug("and flush to screen")
     eInkDisplay.flushToDisplay()
-
+    waitms(5000)
 
 PRI text_demoRegionImage() | pImageBits, imgWidth, imgHeight
     debug("* write border, filled region, and place small cup")
@@ -607,7 +578,7 @@ PRI text_demo() | dsplyWidthInPix, dsplyHeightInPix, detailColor
 
     detailColor := eInkDisplay.EINK_COLOR_BLACK
     case eInkDisplay.displayType()
-        eInkDisplay.DS_eink200:
+        eInkDisplay.DS_eink200gs:
             detailColor := eInkDisplay.EINK_COLOR_LIGHT_GREY
         eInkDisplay.DSWS_2in13BV3:
             detailColor := eInkDisplay.EINK_COLOR_RED
@@ -617,7 +588,7 @@ PRI text_demo() | dsplyWidthInPix, dsplyHeightInPix, detailColor
 
     ' place text at various locations and orientations
     case eInkDisplay.displayType()
-        eInkDisplay.DS_eink200:
+        eInkDisplay.DS_eink200gs:
             eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_18)
             eInkDisplay.setTextAtXY(5, 70, @demo_text)
 
@@ -655,7 +626,6 @@ PRI text_demo() | dsplyWidthInPix, dsplyHeightInPix, detailColor
             eInkDisplay.setTextAtXY(5, 140, @demo_text4)
 
     eInkDisplay.flushToDisplay()
-
     waitms(5000)
 
 
@@ -726,7 +696,7 @@ PRI region_image_demo() | pImageBits, imgWidth, imgHeight, dsplyWidthInPix, dspl
                 ' ROTATION 270
                 placeRotatedImageAtXY(35, 178, 270, pImageBits, imgWidth, imgHeight, @"270 degr")
 
-            eInkDisplay.DS_eink200:
+            eInkDisplay.DS_eink200gs:
                 ' ROTATION 0
                 'placeRotatedImageAtXY(4, 4, 0, pImageBits, imgWidth, imgHeight, @"0 degr")
 
@@ -740,7 +710,7 @@ PRI region_image_demo() | pImageBits, imgWidth, imgHeight, dsplyWidthInPix, dspl
                 placeRotatedImageAtXY(8, 124, 270, pImageBits, imgWidth, imgHeight, @"270 degr")
 
     eInkDisplay.flushToDisplay()
-
+    waitms(5000)
 
 PRI placeRotatedImageAtXY(x, y, rotation, pImgBits, imgWidth, imgHeight, pLabel) | rotHeight, rotWidth
 ' utility to bound images so we can validate rotation an pixel placement
