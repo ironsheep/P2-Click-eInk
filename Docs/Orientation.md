@@ -16,34 +16,38 @@ To demonstrate here are pictures of the possible orientations:
 ### Enum value: ROTATE_0 -or- PORTRAIT
 
 <p align="center">
-  <img src="../Images/rot_0.jpg" height="275">
+  <img src="../Images/ROT_0.jpg" height="275"><br>
+    <caption><B>Connector is BELOW the display!</B></caption><br>
 </p>
 
-**NOTE**: Connector is BELOW the display
+
 
 ### Enum value: ROTATE_90 -or- LANDSCAPE
 
 <p align="center">
-  <img src="../Images/rot_90.jpg" width="275">
+  <img src="../Images/ROT_90.jpg" width="275"><br>
+    <caption><B>Connector is to the RIGHT of the display!</B></caption><br>
 </p>
 
-**NOTE**: Connector is to the RIGHT of the display
+
 
 ### Enum value: ROTATE_180 -or- PORTRAIT\_FLIP
 
 <p align="center">
-  <img src="../Images/rot_180.jpg" height ="275">
+  <img src="../Images/ROT_180.jpg" height ="275"><br>
+    <caption><B>Connector is ABOVE the display!</B></caption><br>
 </p>
 
-**NOTE**: Connector is ABOVE the display
+
 
 ### Enum value: ROTATE_270 -or- LANDSCAPE\_FLIP
 
 <p align="center">
-  <img src="../Images/rot_270.jpg" width="275">
+  <img src="../Images/ROT_270.jpg" width="275"><br>
+    <caption><B>Connector is to the LEFT of the display!</B></caption><br>
 </p>
 
-**NOTE**: Connector is to the LEFT of the display
+
 
 Additional pages:
 
