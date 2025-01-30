@@ -3,11 +3,11 @@
 ''   File....... isp_eInk_click.spin2
 ''   Purpose.... Interface to the Mikroe eInk Click module w/display
 ''   Authors.... Stephen M Moraco
-''               -- Copyright(c) 2022 Iron Sheep Productions, LLC
+''               -- Copyright(c) 2025 Iron Sheep Productions, LLC
 ''               -- see below for terms of use
 ''   E-mail..... stephen@ironsheep.biz
 ''   Started.... Jun 2022
-''   Updated.... 08 Jun 2022
+''   Updated.... 30 Jan 2025
 ''
 '' =================================================================================================
 
@@ -333,6 +333,7 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
 
 PUB stop()
 '' Stop the EINK Click SPI Object
+''
     spi.stop()
 
 
@@ -386,9 +387,9 @@ PUB enterSleepMode()
 
 PUB displaySize() : widthInPix, heightInPix
 '' Return display size in pixels
-''  NOTE: only valid is device is successfully started!
+''  NOTE: only valid if device is successfully started!
 ''   (is subject to rotation)
-''  (ensure start() is called, first and that it is successful!)
+''  (ensure start() is called, first, and that it is successful!)
 ''
 '' @returns widthInPix - device width in pixels
 '' @returns heightInPix - device height in pixels
@@ -398,8 +399,8 @@ PUB displaySize() : widthInPix, heightInPix
 
 PUB displayType() : eDisplayType
 '' Return display size in pixels
-''  NOTE: only valid is device is successfully started!
-''  (ensure start() is called, first and that it is successful!)
+''  NOTE: only valid if device is successfully started!
+''  (ensure start() is called, first, and that it is successful!)
 ''
 '' @returns eDisplayType - the current device type enum value
 
@@ -414,7 +415,7 @@ PUB clearScreen()
     fillScreen(EINK_COLOR_WHITE)
 
 PUB fillScreen(eColor)
-'' write color to the entire eInk display
+'' Write color to the entire eInk display
 ''  NOTE: this is immediately displayed
 ''
 '' @param eColor - fill color, specific to eInk device
@@ -476,7 +477,7 @@ PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
         updateDisplay()
 
 PUB displayTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
-'' Write zstr to Display at device row, column,  is immediately displayed
+'' Write zstr at {pText} to Display at device row, column,  is immediately displayed
 ''
 '' @param X - horizontal position
 '' @param Y - vertical position
@@ -638,7 +639,7 @@ PUB fillBuffer(eColor) | xCtr, yCtr, fillColor, byteCtr
             writeCmd(CMD_MASTER_ACTIVATION)
 
 PUB setTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
-'' Write zstr to Frame Buffer at row, column
+'' Write zstr at {pText} to Frame Buffer at row, column
 ''  NOTE: not immediately displayed, use flushToDisplay() to display
 ''
 '' @param X - horizontal position
@@ -700,7 +701,7 @@ PUB fillRegionAtXY(X, Y, eColor, width, height) | xCoord, yCoord, fillColor
             setPixelAtXY(xCoord, yCoord, fillColor)   ' place color bits in Frame Buffer
 
 PUB borderAtXY(X, Y, eColor, thickness, width, height) | lineCt, topRow, botRow, ltCol, rtCol, maxThickness, borderColor
-'' Draw border of thickness into Frame Buffer
+'' Draw border of thickness, color into Frame Buffer
 ''  NOTE: not immediately displayed, use flushToDisplay() to display
 ''
 '' @param X - horizontal position
@@ -757,7 +758,7 @@ PUB borderAtXY(X, Y, eColor, thickness, width, height) | lineCt, topRow, botRow,
             quit
 
 PUB lineAtXY(fmX, fmY, toX, toY, eColor) | vFmX, vFmY, vToX, vToY, xOffset, yOffset, lineColor
-'' Draw line into Frame Buffer
+'' Draw colored line into Frame Buffer
 ''  NOTE: not immediately displayed, use flushToDisplay() to display
 ''
 '' @param fmX - starting horizontal position
@@ -810,7 +811,7 @@ PUB lineAtXY(fmX, fmY, toX, toY, eColor) | vFmX, vFmY, vToX, vToY, xOffset, yOff
             setPixelAtXY(vFmX + xOffset, vFmY + yOffset, lineColor)
 
 PUB circleAtXY(xc, yc, diameter, eColor) | x, y, vXc, vYc, lineColor
-'' Draw circle into Frame Buffer
+'' Draw colored circle into Frame Buffer
 ''  NOTE: not immediately displayed, use flushToDisplay() to display
 ''
 '' @param xc - center horizontal position
@@ -847,7 +848,7 @@ PUB circleAtXY(xc, yc, diameter, eColor) | x, y, vXc, vYc, lineColor
         setPixelAtXY(vXc - y, vYc - x, lineColor)
 
 PUB arrowAtXY(x, y, width, length, rotation, eColor) | endX1, endY1, endX2, endY2, arrowColor, desiredRotation
-'' Draw an arrow at x,y with width, height, and color in device frame for later display
+'' Draw a colored arrow-head at x,y with width, height into device frame for later display
 ''
 '' @param x - horizontal pixel position
 '' @param y - vertical pixel position
@@ -902,7 +903,7 @@ PUB arrowAtXY(x, y, width, length, rotation, eColor) | endX1, endY1, endX2, endY
     lineAtXY(x, y, endX2, endY2, arrowColor)
 
 PUB setPixelAtXY(inX, inY, eColor) | bitColor, bitInByte, byteIdx, pBlkBffr, pRedBffr, blkBit, redBit, x, y
-'' place colored pixel in device frame for later display
+'' Place colored pixel into device frame for later display
 ''
 '' @param x - horizontal pixel position
 '' @param y - vertical pixel position
@@ -960,7 +961,7 @@ PUB setPixelAtXY(inX, inY, eColor) | bitColor, bitInByte, byteIdx, pBlkBffr, pRe
         BYTE [@deviceFrame][byteIdx] |= ((bitColor & $03) << bitInByte)
 
 PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, dstX, dstY, imageIdx, ltBits, rtBits, srcXinverted, srcYinverted, minX, minY, maxX, maxY
-'' overlay an image bitmap into Frame Buffer at X,Y
+'' Overlay an image bitmap into Frame Buffer at X,Y
 ''  NOTE: not immediately displayed, use flushToDisplay() to display
 ''
 '' @param X - horizontal position
@@ -1091,7 +1092,10 @@ PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
     debug("  - placed from x,y=(", udec_(minX), ", ", udec_(minY), "), to x,y=(", udec_(maxX), ", ", udec_(maxY), ")")
 
 PUB flushToDisplay() | byteCtr, yCtr, xCtr
-'' Flush Frame Buffer content to Display
+'' Flush Frame Buffer content to eINK Display
+''  NOTE: this will wait for prior display-update to complete before starting this update
+''   this allows us to build the next display while the current display is being shown
+''  NOTE2: See waitForDisplayComplete() which is needed to ensure final display is completely written before stopping the driver
     if deviceType == DSWS_2in13BV3
         writeBufferWS213BV3()
     else
@@ -1665,7 +1669,7 @@ DAT { -- PRIVATE object CLASS data -- }
                             BYTE    $00, $00, $00, $00, $00, $00, $00
 
 PRI char_wr(chrCode, textColor) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY, rowBits, mask, bitmapOffset, pChrDescriptor, pChrBitmap
-' place font character in device frame for later display
+' place font character into device frame for later display
 ' NOTE: font color and device X,Y set externally
 '       adjusts external device X,Y to value for next character
 
@@ -1794,7 +1798,7 @@ CON { license }
  -------------------------------------------------------------------------------------------------
   MIT License
 
-  Copyright(c) 2022 Iron Sheep Productions, LLC
+  Copyright(c) 2025 Iron Sheep Productions, LLC
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files(the "Software"), to deal

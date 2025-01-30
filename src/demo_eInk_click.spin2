@@ -3,11 +3,11 @@
 ''   File....... demo_eInk_click.spin2
 ''   Purpose.... Demonstrate interaction with the Mikroe eInk Click module w/display
 ''   Authors.... Stephen M Moraco
-''               -- Copyright (c) 2022 Iron Sheep Productions, LLC
+''               -- Copyright (c) 2025 Iron Sheep Productions, LLC
 ''               -- see below for terms of use
 ''   E-mail..... stephen@ironsheep.biz
 ''   Started.... Jun 2022
-''   Updated.... 05 Jun 2022
+''   Updated.... 30 Jan 2025
 ''
 '' =================================================================================================
 
@@ -56,104 +56,44 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
 
     'repeat ' hold here - when prepping the display for storage (no image on it)
 
-    'if eInkDisplay.displayType() == eInkDisplay.DSWS_2in13BV3
-
 {
-        ' make our orientation display set
-        drawOrientationDisplay(eInkDisplay.ROTATE_0)
-        waitms(22_000) ' 18 for screen paint + 2 more sec
+' enable this code so we can get pictures of the display orientations
+    ' make our orientation display set
+    drawOrientationDisplay(eInkDisplay.ROTATE_0)
+    eInkDisplay.waitForDisplayComplete()
+    waitms(5_000) ' time for pictures
 
-        drawOrientationDisplay(eInkDisplay.ROTATE_90)
-        waitms(22_000)
+    drawOrientationDisplay(eInkDisplay.ROTATE_90)
+    eInkDisplay.waitForDisplayComplete()
+    waitms(5_000) ' time for pictures
 
-        drawOrientationDisplay(eInkDisplay.ROTATE_180)
-        waitms(22_000)
+    drawOrientationDisplay(eInkDisplay.ROTATE_180)
+    eInkDisplay.waitForDisplayComplete()
+    waitms(5_000) ' time for pictures
 
-        drawOrientationDisplay(eInkDisplay.ROTATE_270)
-        waitms(22_000)
+    drawOrientationDisplay(eInkDisplay.ROTATE_270)
+    eInkDisplay.waitForDisplayComplete()
+    waitms(5_000) ' time for pictures
 
-        debug("* HOLD Here... ")
-        repeat
+    debug("* HOLD Here... ")
+    repeat
 '}
 
+    text_demo()             ' Text
+    waitms(2_000)
 
-{
-        text_demo()             ' Text
-        waitms(2_000)
+    region_image_demo()     ' Coffee Cups
+    waitms(2_000)
 
-        region_image_demo()     ' Coffee Cups
-        waitms(2_000)
+    ' full screen images
+    if eInkDisplay.displayType() == eInkDisplay.DS_eink213
+        repeat 1
+            fullScreen_image_demo()
 
-        p2_demoRegionImage()
-        debug("* HOLD Here... A ")
-        repeat
-'}
+    ' end with our device P2 Logo image
+    p2_demoRegionImage()
 
-{
-        eInkDisplay.clearBuffer()
-        eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_RED)
-        debug("- IS RED")
-        debug(" ")
-        waitms(5000)
-        eInkDisplay.clearBuffer()
-        eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_BLACK)
-        debug("- IS BLACK")
-        debug(" ")
-        waitms(5000)
-        eInkDisplay.clearBuffer()
-        eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_WHITE)
-        debug("- IS WHITE")
-        debug(" ")
-        waitms(5000)
-        eraseDisplay()
-        debug("- IS CLEARED")
-        debug(" ")
-        waitms(5000)
-
-        debug("* HOLD Here... B ")
-        repeat
-'}
-{
-        ' 104x212
-        debug("* fill buffer with line")
-        einkDisplay.clearBuffer()
-        einkDisplay.setOrientation(eInkDisplay.ROTATE_90)
-        dsplyWidthInPix, dsplyHeightInPix := eInkDisplay.displaySize()
-        debug("* getSize()  w,h=(", udec_(dsplyWidthInPix), udec_(dsplyHeightInPix), ")")
-        'eInkDisplay.lineAtXY(2, 2, 209, 2, eInkDisplay.EINK_COLOR_RED)
-
-        'eInkDisplay.lineAtXY(2, 6, 209, 6, eInkDisplay.EINK_COLOR_BLACK)
-        'eInkDisplay.fillRegionAtXY(2, 2, eInkDisplay.EINK_COLOR_RED, 75, 50)
-        'eInkDisplay.fillRegionAtXY(10, 10, eInkDisplay.EINK_COLOR_WHITE, 20, 10)
-
-        ' short distance...
-        eInkDisplay.lineAtXY(3, 3, 3, dsplyWidthInPix-6, eInkDisplay.EINK_COLOR_BLACK)
-        ' long distance...
-        eInkDisplay.lineAtXY(3, 3, dsplyHeightInPix - 6, 3, eInkDisplay.EINK_COLOR_BLACK)
-
-        eInkDisplay.flushToDisplay()
-
-        debug("* HOLD Here... C ")
-        repeat
-'}
-
-    'else
-        text_demo()             ' Text
-        waitms(2_000)
-
-        region_image_demo()     ' Coffee Cups
-        waitms(2_000)
-
-        ' full screen images
-        if eInkDisplay.displayType() == eInkDisplay.DS_eink213
-            repeat 1
-                fullScreen_image_demo()
-
-        ' end with our device P2 Logo image
-        p2_demoRegionImage()
-
-        eInkDisplay.waitForDisplayComplete()
-
+    eInkDisplay.waitForDisplayComplete()
     debug("* stopped")
     eInkDisplay.stop()
 
@@ -165,8 +105,8 @@ VAR { local variables }
     BYTE    strBuffer[20+1]
 
 PRI drawOrientationDisplay(rotation) | dsplyWidthInPix, dsplyHeightInPix, startX, startY, endX, endY, pTitle, lineLen, bLandscape, detailColor
-    einkDisplay.clearBuffer()
     einkDisplay.setOrientation(rotation)
+    eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
 
     detailColor := eInkDisplay.EINK_COLOR_BLACK
     case einkDisplay.displayType()
@@ -203,13 +143,13 @@ PRI drawOrientationDisplay(rotation) | dsplyWidthInPix, dsplyHeightInPix, startX
     endX := startX + lineLen
     endY := 20
     eInkDisplay.lineAtXY(startX, startY, endX, endY, eInkDisplay.EINK_COLOR_BLACK)
-    eInkDisplay.arrowAtXY(endX, endY, 6, 8, eInkDisplay.ROTATE_90, detailColor)
+    eInkDisplay.arrowAtXY(endX, endY, 6, 8, 90, detailColor)
     eInkDisplay.setTextAtXY(endX - 5, endY + 5, @"X")
     ' draw vertical line, with arrow at end with label
     endX := 20
     endY := startY + lineLen
     eInkDisplay.lineAtXY(startX, startY, endX, endY, eInkDisplay.EINK_COLOR_BLACK)
-    eInkDisplay.arrowAtXY(endX, endY, 6, 8, eInkDisplay.ROTATE_180, detailColor)
+    eInkDisplay.arrowAtXY(endX, endY, 6, 8, 180, detailColor)
     eInkDisplay.setTextAtXY(endX + 6, endY - 10, @"Y")
 
     ' draw DOT (filled circle) at junction of lines
@@ -754,7 +694,7 @@ CON { license }
  -------------------------------------------------------------------------------------------------
   MIT License
 
-  Copyright (c) 2022 Iron Sheep Productions, LLC
+  Copyright (c) 2025 Iron Sheep Productions, LLC
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
