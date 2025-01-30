@@ -1,0 +1,289 @@
+ =================================================================================================
+   File....... isp_eInk_click.spin2
+   Purpose.... Interface to the Mikroe eInk Click module w/display
+   Authors.... Stephen M Moraco
+               -- Copyright(c) 2022 Iron Sheep Productions, LLC
+               -- see below for terms of use
+   E-mail..... stephen@ironsheep.biz
+   Started.... Jun 2022
+   Updated.... 08 Jun 2022
+ =================================================================================================
+
+Object "isp_eInk_click" Interface:
+
+PUB null()
+PUB start(eDisplayType, eClickBasePin) : ok
+PUB stop()
+PUB enableDevice()
+PUB resetDevice()
+PUB enterSleepMode()
+PUB displaySize() : widthInPix, heightInPix
+PUB displayType() : eDisplayType
+PUB clearScreen()
+PUB fillScreen(eColor)
+PUB displayImage(pImageBffr)
+PUB displayTextAtXY(X, Y, pText)
+PUB setTextColor(eColor)
+PUB setBackground(eColor)
+PUB setOrientation(eRotation)
+PUB selectFont(eFontOrientation, eColor, eFont): validFont
+PUB clearBuffer()
+PUB fillBuffer(eColor)
+PUB setTextAtXY(X, Y, pText)
+PUB fillRegionAtXY(X, Y, eColor, width, height)
+PUB borderAtXY(X, Y, eColor, thickness, width, height)
+PUB lineAtXY(fmX, fmY, toX, toY, eColor)
+PUB circleAtXY(xc, yc, diameter, eColor)
+PUB arrowAtXY(x, y, width, length, rotation, eColor)
+PUB setPixelAtXY(inX, inY, eColor)
+PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation)
+PUB flushToDisplay()
+PUB waitForDisplayComplete()
+
+__________
+PUB null()
+
+ This is not a top-level object
+
+___________________________________________
+PUB start(eDisplayType, eClickBasePin) : ok
+
+ Specify the Eink display type and the eval board connect location for the EINK click and start SPI
+ @param eDisplayType - display from enum value
+ @param eClickBasePin - pin-group enum value
+ @returns ok - return T/F where F means invalid pin or display type
+
+__________
+PUB stop()
+
+ Stop the EINK Click SPI Object
+
+__________________
+PUB enableDevice()
+
+ Enable the EINK Device(pull it out of reset)
+
+_________________
+PUB resetDevice()
+
+ Reset the EINK device
+
+____________________
+PUB enterSleepMode()
+
+ Tell device to sleep
+
+___________________________________________
+PUB displaySize() : widthInPix, heightInPix
+
+ Return display size in pixels
+  NOTE: only valid is device is successfully started!
+   (is subject to rotation)
+  (ensure start() is called, first and that it is successful!)
+ @returns widthInPix - device width in pixels
+ @returns heightInPix - device height in pixels
+
+________________________________
+PUB displayType() : eDisplayType
+
+ Return display size in pixels
+  NOTE: only valid is device is successfully started!
+  (ensure start() is called, first and that it is successful!)
+ @returns eDisplayType - the current device type enum value
+
+_________________
+PUB clearScreen()
+
+ Clear the eInk display
+  NOTE: this is immediately displayed
+
+______________________
+PUB fillScreen(eColor)
+
+ write color to the entire eInk display
+  NOTE: this is immediately displayed
+ @param eColor - fill color, specific to eInk device
+
+____________________________
+PUB displayImage(pImageBffr)
+
+ Write image bitmap to Display
+  NOTE: MUST fit within display size
+ @param pImageBffr - pointer to the image buffer
+
+________________________________
+PUB displayTextAtXY(X, Y, pText)
+
+ Write zstr to Display at device row, column,  is immediately displayed
+ @param X - horizontal position
+ @param Y - vertical position
+ @param pText - text string to display
+
+________________________
+PUB setTextColor(eColor)
+
+ Set text color to be used in subsequent setTextAtXY() and displayTextAtXY() calls
+  NOTE: overrides color set by selectFont()
+ @param eColor - text color, specific to eInk device
+
+_________________________
+PUB setBackground(eColor)
+
+ Fill Frame Buffer with {color}
+  NOTE: not immediately displayed, use flushToDisplay() to display
+ @param eColor - background color, specific to eInk device
+
+_____________________________
+PUB setOrientation(eRotation)
+
+ Set text orientation to be used in subsequent setTextAtXY() and displayTextAtXY() calls
+  NOTE: does NOT override orientation set by selectFont()
+ @param eRotation - set orientation of physical display (use one of the ROTATE_* or PORTRAIT*/LANDSCAPE* enums)
+
+__________________________________________________________
+PUB selectFont(eFontOrientation, eColor, eFont): validFont
+
+ Set font configuration to be used in following setTextAtXY() and displayTextAtXY() calls
+ @param eFontOrientation - - orientation of text [FO_* enum values]
+ @param eColor - text color, specific to eInk device
+ @param eFont - font to use for text
+ @returns validFont - T/F - where F means font wast NOT found (is invalid)
+
+_________________
+PUB clearBuffer()
+
+ Clear the eInk display buffer
+  NOTE: this only affects the buffer not the eInk display
+
+______________________
+PUB fillBuffer(eColor)
+
+ Fill Display with {color}
+  Defaults to white if color not supported by device
+  NOTE: this only affects the buffer not the eInk display
+ @param eColor - fill color, specific to eInk device
+
+____________________________
+PUB setTextAtXY(X, Y, pText)
+
+ Write zstr to Frame Buffer at row, column
+  NOTE: not immediately displayed, use flushToDisplay() to display
+ @param X - horizontal position
+ @param Y - vertical position
+ @param pText - text string to display
+
+_______________________________________________
+PUB fillRegionAtXY(X, Y, eColor, width, height)
+
+ Fill region of Frame Buffer with color
+  NOTE: not immediately displayed, use flushToDisplay() to display
+ @param X - horizontal position
+ @param Y - vertical position
+ @param eColor - fill color, specific to eInk device
+ @param width - width of region to fill
+ @param height - height of region to fill
+
+______________________________________________________
+PUB borderAtXY(X, Y, eColor, thickness, width, height)
+
+ Draw border of thickness into Frame Buffer
+  NOTE: not immediately displayed, use flushToDisplay() to display
+ @param X - horizontal position
+ @param Y - vertical position
+ @param eColor - border color, specific to eInk device
+ @param thickness - border thickness
+ @param width - width of region to border
+ @param height - height of region to border
+
+________________________________________
+PUB lineAtXY(fmX, fmY, toX, toY, eColor)
+
+ Draw line into Frame Buffer
+  NOTE: not immediately displayed, use flushToDisplay() to display
+ @param fmX - starting horizontal position
+ @param fmY - starting vertical position
+ @param toX - ending horizontal position
+ @param toY - ending vertical position
+ @param eColor - line color, specific to eInk device
+
+________________________________________
+PUB circleAtXY(xc, yc, diameter, eColor)
+
+ Draw circle into Frame Buffer
+  NOTE: not immediately displayed, use flushToDisplay() to display
+ @param xc - center horizontal position
+ @param yc - center vertical position
+ @param diameter - diameter of circle
+ @param eColor - circle color, specific to eInk device
+
+____________________________________________________
+PUB arrowAtXY(x, y, width, length, rotation, eColor)
+
+ Draw an arrow at x,y with width, height, and color in device frame for later display
+ @param x - horizontal pixel position
+ @param y - vertical pixel position
+ @param width - of bounding box for arrow head
+ @param length - of bounding box for arrow head
+ @param rotation - set orientation of arrow head to be draw relative to 0,0 (numeric, one of four cardinals: 0, 90, 180, 270)
+ @param eColor - pixel color, specific to eInk device
+
+__________________________________
+PUB setPixelAtXY(inX, inY, eColor)
+
+ place colored pixel in device frame for later display
+ @param x - horizontal pixel position
+ @param y - vertical pixel position
+ @param eColor - pixel color, specific to eInk device
+
+_________________________________________________________________
+PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation)
+
+ overlay an image bitmap into Frame Buffer at X,Y
+  NOTE: not immediately displayed, use flushToDisplay() to display
+ @param X - horizontal position
+ @param Y - vertical position
+ @param pImgBits - pointer to image
+ @param imgWidth - image width
+ @param imgHeight - image height
+ @param rotation - image rotation (numeric, one of four cardinals: 0, 90, 180, 270)
+
+____________________
+PUB flushToDisplay()
+
+ Flush Frame Buffer content to Display
+
+____________________________
+PUB waitForDisplayComplete()
+
+ Wait for display to indicate that last update is complete
+  NOTE: use this before a driver stop() to ensure the display is completely written.
+
+
+
+
+
+
+
+ -------------------------------------------------------------------------------------------------
+  MIT License
+
+  Copyright(c) 2022 Iron Sheep Productions, LLC
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files(the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+ =================================================================================================

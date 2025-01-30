@@ -87,21 +87,24 @@ From here on, just use any of the Public Methods found in the interface descript
 | PUB  start(eDisplayType, eClickBasePin) : ok | Specify the eval board connect location for the EINK click and start SPI</br>** eDisplayType** is [DS\_eink154, DS\_eink200, DS\_eink213, or DS\_eink290]</br>**eClickBasePin** is [PINS\_P0\_P15, PINS\_P16\_P31, or PINS\_P32\_P47]
 | PUB  stop() | Stop the EINK Click SPI Object
 | PUB  resetDevice() | Reset the EINK device
+| <pre>PUB setOrientation(eRotation)</pre> | Once your device is mounted, the connector will be above, below, left or right of the display. Use this call notify the drawing routines which corner is now at top left (0, 0) in your hardware set up. See [Orientation Pictures](orientation.md) for more detail.</br>This affects all subsequent drawing calls<\BR> NOTE: selectFont() rotation is in addition to this device orientation</br>** eRotation** is [ROTATE\_0, \_90,, \_180, or \*_270 enum value]
 | PUB displaySize() : widthInPix, heightInPix | Return display size in pixels</br>**NOTE**: only valid is device is successfully started!</br>(ensure start() is called, first and that it is successful!)
-PUB displayType() : eDisplayType| Return display size in pixels</br>**NOTE**: only valid is device is successfully started!</br>(ensure start() is called, first and that it is successful!)</br>** eDisplayType** is [DS\_eink154, DS\_eink200, DS\_eink213, or DS\_eink290]
-| **WRITE DIRECTLY TO DISPLAY**
-| PUB  fillScreen(color) | Fill Display with {color}
+| PUB displayType() : eDisplayType| Return display size in pixels</br>**NOTE**: only valid is device is successfully started!</br>(ensure start() is called, first and that it is successful!)</br>**eDisplayType** is [DS\_* enum value]
+| PUB waitForDisplayComplete() |Wait for eINK display to indicate that last update is complete</br>**NOTE**: use this before a driver stop() to ensure the display is completely written.
+| **WRITE to BUFFER then immediately flush buffer to DISPLAY** 
+| PUB clearScreen() | Reset display to blank (all white)
+| PUB  fillScreen(eColor) | Fill display with {eColor}
 | PUB  displayImage(pImageBffr) | Write image bitmap to Display
 | PUB  displayTextAtXY(X, Y, pText) | Write zstr to Display at device row, column
-| **WRITE TO BUFFER** | (**NOTE:** when all buffer writes done call `flushToDisplay()` to commit)
-| PUB  setFont(orientation, color, eFont) | Set font configuration
-| PUB  setBackground(color) | Fill Frame Buffer with {color}
+| **WRITE TO BUFFER** | **NOTE:** when all buffer writes are done call `flushToDisplay()` to write to display </br>(*which can take 5-20 seconds depending up display used*)
+| PUB  selectFont(eFontOrientation, eColor, eFont) | Set font configuration
+| PUB  setBackground(eColor) | Fill Frame Buffer with {eColor}
 | PUB  setTextAtXY(X, Y, pText) | Write zstr to Frame Buffer at device row, column
-| PUB  fillRegionAt(X, Y, color, width, height) | Fill region of Frame Buffer with color
-| PUB  borderAtXY(X, Y, color, thickness, width, height) | Draw border of thinkness* into Frame Buffer
-| PUB  lineAtXY(fmX, fmY, toX, toY, color) | Draw line into Frame Buffer
-| PUB  circleAtXY(X, Y, diameter, color) | Draw circle into Frame Buffer
-| PUB  placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | Overlay image bits* of color into Frame Buffer
+| PUB  fillRegionAt(X, Y, eColor, width, height) | Fill region of Frame Buffer with eColor
+| PUB  borderAtXY(X, Y, eColor, thickness, width, height) | Draw border of thinkness* into Frame Buffer
+| PUB  lineAtXY(fmX, fmY, toX, toY, eColor) | Draw line into Frame Buffer
+| PUB  circleAtXY(X, Y, diameter, eColor) | Draw circle into Frame Buffer
+| PUB  placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, eRotation) | Overlay image bits* of color into Frame Buffer
 | PUB  flushToDisplay() | Flush Frame Buffer content to Display
 
 * *thickness - of the `borderAtXY()` method may not yet be working...*
