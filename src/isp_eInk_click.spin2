@@ -25,7 +25,7 @@ CON { Public Interface Constants }
     '   *WS_* = fm WaveShare
     '   *PS_ = fm WaveShare
     '   *Tch = eINK w/Touch
-    #$40, DS_eink154, DS_eink200gs, DS_eink213, DS_eink290, DSWS_2in13BV3, DSPD_370Tch
+    #$40, DS_eink154, DS_eink200gs, DS_eink213, DS_eink290, DSWS_2in13BV3, DSPD_370Tch, DSWS_5in65F
     ' return value when user makes bad choice
     INVALID_DISPLAY_TYPE = -1
 
@@ -38,6 +38,7 @@ CON { Public Interface Constants }
 
     ' Color constants so user can select a color (Enum)
     #$70, EINK_COLOR_BLACK, EINK_COLOR_WHITE, EINK_COLOR_LIGHT_GREY, EINK_COLOR_DARK_GREY, EINK_COLOR_RED, EINK_COLOR_YELLOW
+    #$76, EINK_COLOR_BLUE, EINK_COLOR_ORANGE, EINK_COLOR_GREEN
 
     ' forward the Font constants so user can select an internal font
     FONT_Tahoma_6 = eInkFonts.FONT_Tahoma_6
@@ -122,8 +123,8 @@ CON { eInk Constants }
 
 ' ---------------------------------------
 ' 2.00" rectangular eInk display 72x172 (??mm x ??mm)
-' black/white/2 levels of gray
 ' resolution 172-gate, 72-source
+'  4-color: black, white, and 2 levels of gray
 
     EINK_DISPLAY_WIDTH = 72
     EINK_DISPLAY_HEIGHT = 172
@@ -147,13 +148,13 @@ CON { eInk Constants }
 '
 ' ---------------------------------------
 ' 2.13"(b, v3) WaveShare rectangular eInk display 104x212 (29.06mm x 66.90mm)
-'  BLack/White/Red: 3-color display
 ' resolution 212-gate, 104-source
+'  3-color display: BLack, White, and Red:
 
     EINKWS213B_DISPLAY_WIDTH = 104
     EINKWS213B_DISPLAY_HEIGHT = 212
     ' x2 cuz black buffer followed by red buffer
-    EINKWS213B_DISPLAY_RESOLUTION = 5512   ' = (104 * 212 / 8) * 2
+    EINKWS213B_DISPLAY_RESOLUTION = 5_512   ' = (104 * 212 / 8) * 2
 '
 ' ---------------------------------------
 ' 3.7 PervasiveDisplays rectangular eInk display 240x416 (53.00mm x 92.99mm)
@@ -161,13 +162,22 @@ CON { eInk Constants }
 
     EINKPD370T_DISPLAY_WIDTH = 240
     EINKPD370T_DISPLAY_HEIGHT = 416
-    EINKPD370T_DISPLAY_RESOLUTION = 12480   ' = 240 * 416 / 8
+    EINKPD370T_DISPLAY_RESOLUTION = 12_480   ' = 240 * 416 / 8
+
+' ---------------------------------------
+' 5.61 PervasiveDisplays rectangular eInk display 600x448 (53.00mm x 92.99mm)
+' resolution 448-gate, 500-source
+'  7-color display: black, white, blue, orange, yellow, green and red
+
+    EINKWS565F_DISPLAY_WIDTH = 600
+    EINKWS565F_DISPLAY_HEIGHT = 448
+    EINKWS565F_DISPLAY_RESOLUTION = 134_400   ' = 600 * 448 / 2 (4 bits per pixel)
 
 ' =======================================
 
 ' you can reduce this if you are not using the larger displays
 '   just set it to the one you are using to save memory
-    LARGEST_FRAME_SIZE_IN_BYTES = EINKPD370T_DISPLAY_RESOLUTION
+    LARGEST_FRAME_SIZE_IN_BYTES = EINKWS565F_DISPLAY_RESOLUTION
 
 ' ================================================================
 ' ------------- NO USER ADJUSTABLE VALUES BELOW HERE -------------
@@ -183,6 +193,19 @@ CON { eInk Constants }
     EINK213B_COLOR_WHITE        = $03' internal-use values
     EINK213B_COLOR_BLACK        = $00
     EINK213B_COLOR_RED          = $02
+
+    EINK5in65F_COLOR_BLACK        = $00 ' 000 internal-use values
+    EINK5in65F_COLOR_WHITE        = $01 ' 001
+    EINK5in65F_COLOR_GREEN        = $02 ' 010
+    EINK5in65F_COLOR_BLUE         = $03 ' 011
+    EINK5in65F_COLOR_RED          = $04 ' 100
+    EINK5in65F_COLOR_YELLOW       = $05 ' 101
+    EINK5in65F_COLOR_ORANGE       = $06 ' 110
+    ' Fm DOCs, not sure how true this is as example code doesn't do clean the color.
+    ' The waveform to show image is designed such that every update must comprise a
+    '  clean and a color. No update should be performed without clean or there would
+    '  be noticeable ghosting. Show image flow in sec 5.2 comprises the clean.
+    EINK5in65F_COLOR_CLEAN        = $07 ' 111 erase prior?!
 
 ' display_commands Display Commands
 '   DS_eink154, DS_eink200gs, DS_eink213, DS_eink290 commands
@@ -220,6 +243,21 @@ CON { eInk Constants }
 
     ' DSPD_370Tch commands
 
+    ' DSWS_5in65F commands
+    CMD_NO_CMD                      = -1
+    CMD_PANEL_SETTING_REG           = $00
+    CMD_POWER_SETTING_REG           = $01
+    CMD_POWER_OFF_CMD               = $02
+    CMD_POWER_OFF_SEQ_SETTING       = $03
+    CMD_POWER_ON_CMD                = $04
+    CMD_BOOSTER_SOFT_START          = $06
+    'CMD_DATA_START_XMIT_1           = $10  ' image bits, or CLEAN
+    'CMD_DISPLAY_REFRESH             = $12
+    CMD_PLL_CONTROL                 = $30
+    CMD_TEMP_SENSOR_ENABLE          = $41
+    'CMD_VCOM_DATA_INTERVAL        = $50
+    CMD_RESOLUTION_SETTING          = $61
+
     ' SPI Communication Freq w/EINK Board
     EINK_SPI_CLK_MHZ = 20_000
 
@@ -254,52 +292,60 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
     deviceType := eDisplayType
     case eDisplayType
         DS_eink154:
-            eInkPhysWidth        := EINK154_DISPLAY_WIDTH
-            eInkPhysHeight       := EINK154_DISPLAY_HEIGHT
+            eInkPhysWidth       := EINK154_DISPLAY_WIDTH
+            eInkPhysHeight      := EINK154_DISPLAY_HEIGHT
             frameSizeInBytes    := EINK154_DISPLAY_RESOLUTION
 
             displayWidthInPix   := EINK154_DISPLAY_WIDTH
             displayHeightInPix  := EINK154_DISPLAY_HEIGHT
 
         DS_eink200gs:
-            eInkPhysWidth        := EINK_DISPLAY_WIDTH
-            eInkPhysHeight       := EINK_DISPLAY_HEIGHT
+            eInkPhysWidth       := EINK_DISPLAY_WIDTH
+            eInkPhysHeight      := EINK_DISPLAY_HEIGHT
             frameSizeInBytes    := EINK_DISPLAY_RESOLUTION
 
             displayWidthInPix   := EINK_DISPLAY_WIDTH
             displayHeightInPix  := EINK_DISPLAY_HEIGHT
 
         DS_eink213:
-            eInkPhysWidth        := EINK213_DISPLAY_WIDTH
-            eInkPhysHeight       := EINK213_DISPLAY_HEIGHT
+            eInkPhysWidth       := EINK213_DISPLAY_WIDTH
+            eInkPhysHeight      := EINK213_DISPLAY_HEIGHT
             frameSizeInBytes    := EINK213_DISPLAY_RESOLUTION
 
             displayWidthInPix   := EINK213_DISPLAY_WIDTH - 6    ' 6 extra bytes per row!
             displayHeightInPix  := EINK213_DISPLAY_HEIGHT
 
         DS_eink290:
-            eInkPhysWidth        := EINK290_DISPLAY_WIDTH
-            eInkPhysHeight       := EINK290_DISPLAY_HEIGHT
+            eInkPhysWidth       := EINK290_DISPLAY_WIDTH
+            eInkPhysHeight      := EINK290_DISPLAY_HEIGHT
             frameSizeInBytes    := EINK290_DISPLAY_RESOLUTION
 
             displayWidthInPix   := EINK290_DISPLAY_WIDTH
             displayHeightInPix  := EINK290_DISPLAY_HEIGHT
 
         DSWS_2in13BV3:
-            eInkPhysWidth        := EINKWS213B_DISPLAY_WIDTH
-            eInkPhysHeight       := EINKWS213B_DISPLAY_HEIGHT
+            eInkPhysWidth       := EINKWS213B_DISPLAY_WIDTH
+            eInkPhysHeight      := EINKWS213B_DISPLAY_HEIGHT
             frameSizeInBytes    := EINKWS213B_DISPLAY_RESOLUTION
 
             displayWidthInPix   := EINKWS213B_DISPLAY_WIDTH
             displayHeightInPix  := EINKWS213B_DISPLAY_HEIGHT
 
         DSPD_370Tch:
-            eInkPhysWidth        := EINKPD370T_DISPLAY_WIDTH
-            eInkPhysHeight       := EINKPD370T_DISPLAY_HEIGHT
+            eInkPhysWidth       := EINKPD370T_DISPLAY_WIDTH
+            eInkPhysHeight      := EINKPD370T_DISPLAY_HEIGHT
             frameSizeInBytes    := EINKPD370T_DISPLAY_RESOLUTION
 
             displayWidthInPix   := EINKPD370T_DISPLAY_WIDTH
             displayHeightInPix  := EINKPD370T_DISPLAY_HEIGHT
+
+        DSWS_5in65F:
+            eInkPhysWidth       := EINKWS565F_DISPLAY_WIDTH
+            eInkPhysHeight      := EINKWS565F_DISPLAY_HEIGHT
+            frameSizeInBytes    := EINKWS565F_DISPLAY_RESOLUTION
+
+            displayWidthInPix   := EINKWS565F_DISPLAY_WIDTH
+            displayHeightInPix  := EINKWS565F_DISPLAY_HEIGHT
 
         OTHER:
             deviceType := INVALID_DISPLAY_TYPE
@@ -353,6 +399,9 @@ PUB resetDevice()
 
     if deviceType == DSWS_2in13BV3
         resetDS213BV3()
+    elseif deviceType == DSWS_5in65F
+        resetDS565F()
+        wrCmdWtDesiredBusyWS565F(CMD_NO_CMD, 1)
     else
         pinhigh(pinbase + CLICK_OFST_RST)   ' toggle reset
         waitms(1)
@@ -419,7 +468,7 @@ PUB fillScreen(eColor)
 ''  NOTE: this is immediately displayed
 ''
 '' @param eColor - fill color, specific to eInk device
-    debug("* fillScreen(", udec_byte_(eColor), ")")
+    debug("* fillScreen(", uhex_byte_(eColor), ")")
 
     fillBuffer(eColor)
     ' memory loaded update display hardware
@@ -607,6 +656,9 @@ PUB fillBuffer(eColor) | xCtr, yCtr, fillColor, byteCtr
     if deviceType == DSWS_2in13BV3
         fillBufferWS213BV3(fillColor)
         writeBufferWS213BV3()
+    elseif deviceType == DSWS_5in65F
+        fillBufferWS565F(fillColor)
+        writeBufferWS565F()
     else
         waitForDeviceIdle()
         if deviceType <> DS_eink200gs
@@ -902,7 +954,7 @@ PUB arrowAtXY(x, y, width, length, rotation, eColor) | endX1, endY1, endX2, endY
     lineAtXY(x, y, endX1, endY1, arrowColor)
     lineAtXY(x, y, endX2, endY2, arrowColor)
 
-PUB setPixelAtXY(inX, inY, eColor) | bitColor, bitInByte, byteIdx, pBlkBffr, pRedBffr, blkBit, redBit, x, y
+PUB setPixelAtXY(inX, inY, eColor) | bitColor, bitInByte, nibbleMask, colorBits, byteIdx, pBlkBffr, pRedBffr, blkBit, redBit, x, y
 '' Place colored pixel into device frame for later display
 ''
 '' @param x - horizontal pixel position
@@ -939,9 +991,17 @@ PUB setPixelAtXY(inX, inY, eColor) | bitColor, bitInByte, byteIdx, pBlkBffr, pRe
         BYTE [pRedBffr][byteIdx] &= !($01 << bitInByte)
         BYTE [pRedBffr][byteIdx] |= ((redBit & $01) << bitInByte)
 
+    elseif deviceType == DSWS_5in65F
+        ' 7-color, 3-bits / pixel (2 pix / byte)
+        byteIdx := (y * (eInkPhysWidth / 2)) + (x / 2)
+        bitInByte := (x & 1 == 0) ? 0 : 4 ' lsBit of 4bit field
+
+        BYTE [@deviceFrame][byteIdx] &= !($0f << bitInByte)             ' Clear the nibble at bitInByte position
+        BYTE [@deviceFrame][byteIdx] |= ((bitColor & $07) << bitInByte) ' Set the nibble to the desired color
+
     elseif deviceType <> DS_eink200gs
         ' for 1.54", 2.13" and 2.90" displays
-        ' monochrome (black/white) - 1 bit / pixel!
+        ' monochrome (black/white) - 1 bit / pixel! (8 pix / byte)
         byteIdx := (y * (eInkPhysWidth / 8)) + (x / 8)
         bitInByte := 7 - (x +// 8)
 
@@ -1098,6 +1158,8 @@ PUB flushToDisplay() | byteCtr, yCtr, xCtr
 ''  NOTE2: See waitForDisplayComplete() which is needed to ensure final display is completely written before stopping the driver
     if deviceType == DSWS_2in13BV3
         writeBufferWS213BV3()
+    elseif deviceType == DSWS_5in65F
+        writeBufferWS565F()
     else
         waitForDeviceIdle()
         if deviceType <> DS_eink200gs
@@ -1175,7 +1237,7 @@ VAR { -- PRIVATE Instance Variables -- }
 
 CON ' ---- PRIVATE Utility Methods ----
 
-PRI startConfig()
+PRI startConfig() | flashFrameRate, VCOM
 ' configure our display
     case deviceType
         DS_eink154:
@@ -1294,20 +1356,10 @@ PRI startConfig()
             setDeviceLut(@EINK290_LUT_TABLE, 70)    ' waits for 1sec at end
 
         DSWS_2in13BV3:
-            ' panel setting
-            writeCmd(CMD_PANEL_SETTINGS)
-            writeData($0f)   ' LUT from OTP,128x296 (want $8f?)
-            ' following not in datasheet?!
-            writeData($89)   ' Temperature sensor, boost and other related timing settings
-            ' resolution setting
-            writeCmd(CMD_RESOLUTION_SETTINGS)
-            writeData($68)   ' horiz 104
-            writeData($00)
-            writeData($D4)   ' vert 212
-
-            writeCmd(CMD_VCOM_DATA_INTERVAL) ' VCOM AND DATA INTERVAL SETTING
-            writeData($77)   ' WBmode:VBDF 17|D7 VBDW 97 VBDB 57
-                             ' WBRmode:VBDF F7 VBDW 77 VBDB 37  VBDR B7
+            initDS213BV3()
+        DSWS_5in65F:
+            ' already did reset and checked for busy HIGH
+            initDS565F()
         OTHER:
             debug("sc() ERROR unknown display size")
 
@@ -1370,6 +1422,8 @@ PRI updateDisplay() | cmdValue
         writeCmd(CMD_DISPLAY_REFRESH) ' refresh
         waitms(100) ' partial wait for display to update
 
+    elseif deviceType == DSWS_5in65F
+        ' updateDisplayWS565F() already done by writeBufferWS565F()
     else
         case deviceType
             DS_eink154:
@@ -1400,6 +1454,9 @@ PRI waitForDeviceIdle() | state
     state := pinread(pinbase + CLICK_OFST_BSY)
     if deviceType == DSWS_2in13BV3
         waitDeviceIdleDS213BV3()
+    elseif deviceType == DSWS_5in65F
+    ' already done for us?
+        'wrCmdWtDesiredBusyWS565F(CMD_NO_CMD, 0) ' not busy
     else
         Debug("* wait idle - ENTRY: ", udec(state))
         ' wait for busy to go low
@@ -1424,7 +1481,7 @@ PRI validColor(eColor) : valColor
 
     ' override color if it is not one of the supported by the device!
     case deviceType
-        DS_eink154, DS_eink213, DS_eink290:
+        DS_eink154, DS_eink213, DS_eink290, DSPD_370Tch:
             case eColor
                 EINK_COLOR_WHITE:
                     valColor := EINKDS_COLOR_WHITE
@@ -1463,6 +1520,33 @@ PRI validColor(eColor) : valColor
                 EINK213B_COLOR_BLACK:
                 OTHER:
                     valColor := EINK213B_COLOR_BLACK    ' default
+        DSWS_5in65F:
+          ' 7 color display
+            case eColor
+                EINK_COLOR_WHITE:
+                    valColor := EINK5in65F_COLOR_WHITE
+                EINK_COLOR_BLACK:
+                    valColor := EINK5in65F_COLOR_BLACK
+                EINK_COLOR_RED:
+                    valColor := EINK5in65F_COLOR_RED
+                EINK_COLOR_YELLOW:
+                    valColor := EINK5in65F_COLOR_YELLOW
+                EINK_COLOR_BLUE:
+                    valColor := EINK5in65F_COLOR_BLUE
+                EINK_COLOR_GREEN:
+                    valColor := EINK5in65F_COLOR_GREEN
+                EINK_COLOR_ORANGE:
+                    valColor := EINK5in65F_COLOR_ORANGE
+                EINK5in65F_COLOR_WHITE:
+                EINK5in65F_COLOR_BLACK:
+                EINK5in65F_COLOR_RED:
+                EINK5in65F_COLOR_YELLOW:
+                EINK5in65F_COLOR_BLUE:
+                EINK5in65F_COLOR_GREEN:
+                EINK5in65F_COLOR_ORANGE:
+                EINK5in65F_COLOR_CLEAN:
+                OTHER:
+                    valColor := EINK5in65F_COLOR_BLACK    ' default
         OTHER:
             valColor := EINKDS_COLOR_BLACK                ' default
 
@@ -1503,6 +1587,24 @@ PRI min(a,b) : minValue
 
 
 CON ' --- PRIVATE (DS)WS_2in13BV3 Display Methods ---
+
+PRI initDS213BV3()
+' Initialize our 2.13" display (WS213BV3)
+'
+    ' panel setting
+    writeCmd(CMD_PANEL_SETTINGS)
+    writeData($0f)   ' LUT from OTP,128x296 (want $8f?)
+    ' following not in datasheet?!
+    writeData($89)   ' Temperature sensor, boost and other related timing settings
+    ' resolution setting
+    writeCmd(CMD_RESOLUTION_SETTINGS)
+    writeData($68)   ' horiz 104
+    writeData($00)
+    writeData($D4)   ' vert 212
+
+    writeCmd(CMD_VCOM_DATA_INTERVAL) ' VCOM AND DATA INTERVAL SETTING
+    writeData($77)   ' WBmode:VBDF 17|D7 VBDW 97 VBDB 57
+                     ' WBRmode:VBDF F7 VBDW 77 VBDB 37  VBDR B7
 
 PRI resetDS213BV3()
 ' Hard-reset WS213BV3 followed by soft-reset and wait for idle
@@ -1621,6 +1723,188 @@ PRI bitsForColorWS213BV3(color): blkBit, redBit | showDebug
     if showDebug <> false
         debug("bfc(",uhex_byte_(color),")  blk=", uhex_byte_(blkBit), " red=", uhex_byte_(redBit))
         debug("  --bfc()  showDebug=", uhex_byte_(showDebug), " dbgRed=", uhex_byte_(dbgRed), " dbgWhite=", uhex_byte_(dbgWhite), " dbgBlack=", uhex_byte_(dbgBlack))
+
+CON ' --- PRIVATE DSWS_5in65F Display Methods ---
+
+PRI initDS565F()
+' Initialize our 7-color display
+'
+    ' panel settings, scan direction, DC-DC conv, reset
+    writeCmd(CMD_PANEL_SETTING_REG) ' $00
+    writeData($ef) ' (asserts busy, but short) Scan UP $08, shift right $04, SD-DC-Conv-on $02 RST_N $01(no effect)
+    writeData($08) ' fixed value ending the sequence
+
+    ' power settings
+    writeCmd(CMD_POWER_SETTING_REG) ' $01
+    writeData($37) ' $30 not in docs, $07 internal DC function for VDH/VDL, VGH/VGL
+    writeData($00) ' fixed value
+    ' example code has
+    writeData($23) ' fixed value (not in docs)
+    writeData($23) ' fixed value (not in docs)
+    ' data sheet has
+    'writeData($05) ' fixed value (not in docs)
+    'writeData($05) ' fixed value (not in docs)
+
+    ' Power off sequence setting
+    writeCmd(CMD_POWER_OFF_SEQ_SETTING) ' $03
+    writeData($00) ' 1 frame (default)
+
+    ' Booster soft start
+    writeCmd(CMD_BOOSTER_SOFT_START) ' $06
+    writeData($C7) ' fixed value
+    writeData($C7) ' fixed value
+    writeData($1D) ' fixed value
+
+    ' PLL control
+    writeCmd(CMD_PLL_CONTROL) ' $30
+    writeData($3C) ' flash frame rate - 50 Hz
+
+    ' Temperature sensor enable
+    writeCmd(CMD_TEMP_SENSOR_ENABLE) '$41
+    writeData($00)  ' $80=0 Internal Temp Sensor enable, $7f=00 +0 offset, DEFAULT
+
+    ' VCOM and DataInterval setting
+    'writeCmd(CMD_VCOM_DATA_INTERVAL) ' $50
+    writeCmd($82) ' $50
+    writeData($37) ' 001,1 WHITE DDX=1, 10 HSync DEFAULT
+
+    ' Not documented?! (from example code and datasheet)
+    writeCmd($60)
+    writeData($22)
+
+    ' ????
+    writeCmd(CMD_RESOLUTION_SETTING) ' $61
+    writeData((displayWidthInPix >> 8) & $ff)
+    writeData(displayWidthInPix & $ff)
+    writeData((displayHeightInPix >> 8) & $ff)
+    writeData(displayHeightInPix & $ff) ' (asserts busy but short!)
+
+    ' ????
+    writeCmd($E3)
+    writeData($AA)
+
+    ' ????
+    waitms(100)
+    ' fm Data Sheet: 0x82 to set VCOM (wrong on example code!)
+    writeCmd($82) ' $50
+    writeData($37)
+
+
+PRI resetDS565F()
+' Reset our 7-color display
+'
+    pinlow(pinbase + CLICK_OFST_RST)
+    waitms(1)
+    pinhigh(pinbase + CLICK_OFST_RST)
+    waitms(200)
+
+PRI sleepDS565F()
+' Put our 7-color display to sleep
+'
+'   After this command is transmitted, the chip would enter the
+'   deep-sleep mode to save power.
+'   The deep sleep mode would return to standby by hardware reset.
+'   The only one parameter is a check code, the command would be
+'   You can use EPD_Reset() to awaken
+
+    waitms(100)
+    writeCmd($07)
+    writeData($A5)
+    waitms(100)
+    pinlow(pinbase + CLICK_OFST_RST) ' reset
+
+PRI clearWS565F()
+' Clear the WS565F display
+'
+    fillBufferWS565F(EINK5in65F_COLOR_WHITE)
+    writeBufferWS565F()
+
+PRI fillBufferWS565F(color) | byteIdx, dualPixelColor
+' Fill the WS565F buffer with color
+'  we have two pixels per byte, upper and lower nibbles
+    dualPixelColor := color << 4 | color
+    repeat byteIdx from 0 to frameSizeInBytes - 1
+        BYTE [@deviceFrame][byteIdx] := dualPixelColor
+
+PRI wrCmdWtDesiredBusyWS565F(cmd, endState) | state, stateStr
+' Write command to devise then wait for busy to be desired state
+'
+' @param cmd - command byte to write
+' @param state - desired ending state of busy pin
+
+' Local Variables:
+' @local state -
+    state := pinread(pinbase + CLICK_OFST_BSY)
+    stateStr := busyStrWS565F(state)
+    Debug("* wait idle - ENTRY: ", zstr_(stateStr), ", cmd=", uhex_byte_(cmd))
+    if cmd <> CMD_NO_CMD
+        writeCmd(cmd)
+    repeat
+        state := pinread(pinbase + CLICK_OFST_BSY)
+        if state <> endState
+            'writeCmd(CMD_GET_STATUS)
+            'waitms(1)
+            'statusByte := readData()
+            waitms(100)
+    until state == endState
+    stateStr := busyStrWS565F(state)
+    Debug("* wait idle - EXIT: ", zstr_(stateStr))
+
+PRI busyStrWS565F(state) : stateStr
+' Return a string for the busy state
+'
+    stateStr := state == 0 ? @"BUSY" : @"NotBusy"
+
+
+PRI writeBufferWS565F() | byteIdx, pRedBffr, pBlkBffr, dualPixelColor
+' Write the buffer to the WS565F display black half then red half
+'
+'   IS PRECLEAN REALLY NEEDED? not used in demo code!
+    ' cmd to ...?
+    writeCmd(CMD_RESOLUTION_SETTING)
+    writeData((displayWidthInPix >> 8) & $ff)
+    writeData(displayWidthInPix & $ff)
+    writeData((displayHeightInPix >> 8) & $ff)
+    writeData(displayHeightInPix & $ff)
+
+    ' clean up after prior display
+    dualPixelColor := EINK5in65F_COLOR_CLEAN << 4 | EINK5in65F_COLOR_CLEAN
+
+    writeCmd(CMD_DATA_START_XMIT_1)
+    repeat byteIdx from 0 to frameSizeInBytes - 1
+        writeData(dualPixelColor)
+
+    updateDisplayWS565F()
+
+    ' cmd to ...?
+    writeCmd(CMD_RESOLUTION_SETTING)
+    writeData((displayWidthInPix >> 8) & $ff)
+    writeData(displayWidthInPix & $ff)
+    writeData((displayHeightInPix >> 8) & $ff)
+    writeData(displayHeightInPix & $ff)
+
+    ' write our new display values
+    writeCmd(CMD_DATA_START_XMIT_1)
+    repeat byteIdx from 0 to frameSizeInBytes - 1
+        writeData(BYTE [@deviceFrame][byteIdx])
+
+    updateDisplayWS565F()
+
+    ' follow this with updateDisplay() to show changes
+
+PRI updateDisplayWS565F()
+    ' issue cmd, wait for busy/=HIGH (not busy)
+    '   busy for ~95 mSec
+    wrCmdWtDesiredBusyWS565F(CMD_POWER_ON_CMD, 1)
+
+    ' issue cmd, wait for busy/=HIGH (not busy)
+    '   busy for ~45 Sec
+    wrCmdWtDesiredBusyWS565F(CMD_DISPLAY_REFRESH, 1)
+
+    ' issue cmd, wait for busy/=LOW (is busy)
+    '   busy for ~60 mSec
+    wrCmdWtDesiredBusyWS565F(CMD_POWER_OFF_CMD, 0)
+    waitms(200)
 
 DAT { -- PRIVATE object CLASS data -- }
 ' test code variables

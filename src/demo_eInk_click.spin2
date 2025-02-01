@@ -32,7 +32,7 @@ CON { click module io pins }
     EINK_CLICK_PINGROUP = eInkDisplay.PINS_P32_P47
 
     ' we are using a 2.13" eInk display
-    EINK_DISPLAY_TYPE = eInkDisplay.DS_eink290
+    EINK_DISPLAY_TYPE = eInkDisplay.DSWS_5in65F
 
 OBJ { the object being demo'd }
 
@@ -55,14 +55,33 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
     eraseDisplay()
 
     'repeat ' hold here - when prepping the display for storage (no image on it)
+{
+    eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_GREEN)
+    eInkDisplay.waitForDisplayComplete()
+    debug("* GREEN?? ... ")
+    waitms(5_000) ' time for pictures
 
+    eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_RED)
+    eInkDisplay.waitForDisplayComplete()
+    debug("* RED?? ... ")
+    waitms(5_000) ' time for pictures
+
+    eInkDisplay.clearScreen()
+    eInkDisplay.waitForDisplayComplete()
+    debug("* HOLD Here... ")
+    repeat
+'}
+
+    demo7Color()
+    debug("* HOLD Here... ")
+    repeat
 {
 ' enable this code so we can get pictures of the display orientations
     ' make our orientation display set
     drawOrientationDisplay(eInkDisplay.ROTATE_0)
     eInkDisplay.waitForDisplayComplete()
     waitms(5_000) ' time for pictures
-
+{
     drawOrientationDisplay(eInkDisplay.ROTATE_90)
     eInkDisplay.waitForDisplayComplete()
     waitms(5_000) ' time for pictures
@@ -74,7 +93,7 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
     drawOrientationDisplay(eInkDisplay.ROTATE_270)
     eInkDisplay.waitForDisplayComplete()
     waitms(5_000) ' time for pictures
-
+'}
     debug("* HOLD Here... ")
     repeat
 '}
@@ -104,12 +123,62 @@ VAR { local variables }
 
     BYTE    strBuffer[20+1]
 
+PRI demo7Color() | xOffset, yOffset, lineWidth
+    'einkDisplay.setOrientation(eInkDisplay.ROTATE_0)
+    eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
+
+    eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_18)
+    eInkDisplay.setTextAtXY(20, 45, @"5.65inch e-Paper (F)")
+
+    eInkDisplay.fillRegionAtXY(0, 150, eInkDisplay.EINK_COLOR_BLACK, 600, 149)
+    xOffset := 69
+    yOffset := 149 + 64
+    ' skip black tile, it is the background
+    xOffset += 66
+    eInkDisplay.fillRegionAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_WHITE, 66, 60)
+    xOffset += 66
+    eInkDisplay.fillRegionAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_GREEN, 66, 60)
+    xOffset += 66
+    eInkDisplay.fillRegionAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_BLUE, 66, 60)
+    xOffset += 66
+    eInkDisplay.fillRegionAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_RED, 66, 60)
+    xOffset += 66
+    eInkDisplay.fillRegionAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_YELLOW, 66, 60)
+    xOffset += 66
+    eInkDisplay.fillRegionAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_ORANGE, 66, 60)
+
+    ' now white border around each color
+    lineWidth := 5
+    xOffset := 69
+    eInkDisplay.borderAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_WHITE, lineWidth, 66, 60)
+    xOffset := 69
+    eInkDisplay.borderAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_WHITE, lineWidth, 66, 60)
+    xOffset := 69
+    eInkDisplay.borderAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_WHITE, lineWidth, 66, 60)
+    xOffset := 69
+    eInkDisplay.borderAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_WHITE, lineWidth, 66, 60)
+    xOffset := 69
+    eInkDisplay.borderAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_WHITE, lineWidth, 66, 60)
+    xOffset := 69
+    eInkDisplay.borderAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_WHITE, lineWidth, 66, 60)
+    xOffset := 69
+    eInkDisplay.borderAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_WHITE, lineWidth, 66, 60)
+
+    eInkDisplay.setTextAtXY(20, 45+149+149, @"600 x 448 Pixels")
+
+    eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_WHITE, eInkDisplay.FONT_Tahoma_14)
+    eInkDisplay.setTextAtXY(20, 22+149, @"7-Color ACeP Display")
+
+    eInkDisplay.flushToDisplay()
+
 PRI drawOrientationDisplay(rotation) | dsplyWidthInPix, dsplyHeightInPix, startX, startY, endX, endY, pTitle, lineLen, bLandscape, detailColor
     einkDisplay.setOrientation(rotation)
     eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
 
     detailColor := eInkDisplay.EINK_COLOR_BLACK
     case einkDisplay.displayType()
+        eInkDisplay.DSWS_5in65F:
+            detailColor := eInkDisplay.EINK_COLOR_GREEN
         eInkDisplay.DSWS_2in13BV3:
             detailColor := eInkDisplay.EINK_COLOR_RED
         eInkDisplay.DS_eink200gs:
