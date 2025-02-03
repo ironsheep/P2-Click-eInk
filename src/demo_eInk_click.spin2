@@ -71,8 +71,10 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
     debug("* HOLD Here... ")
     repeat
 '}
-
-    demo7Color()
+    borderDemo()
+    'lineWidthDemo()
+    'text_demo()
+    'demo7Color()
     debug("* HOLD Here... ")
     repeat
 {
@@ -591,6 +593,8 @@ PRI text_demo() | dsplyWidthInPix, dsplyHeightInPix, detailColor
             detailColor := eInkDisplay.EINK_COLOR_LIGHT_GREY
         eInkDisplay.DSWS_2in13BV3:
             detailColor := eInkDisplay.EINK_COLOR_RED
+        eInkDisplay.DSWS_5in65F:
+            detailColor := eInkDisplay.EINK_COLOR_ORANGE
 
     eInkDisplay.borderAtXY(0, 0, detailColor, 1, dsplyWidthInPix, dsplyHeightInPix)
     eInkDisplay.borderAtXY(0+2, 0+4, eInkDisplay.EINK_COLOR_BLACK, 1, dsplyWidthInPix-4, dsplyHeightInPix-8)
@@ -621,6 +625,18 @@ PRI text_demo() | dsplyWidthInPix, dsplyHeightInPix, detailColor
 
             eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL_COLUMN, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
             eInkDisplay.setTextAtXY(5, 140, @demo_text4)
+        eInkDisplay.DSWS_5in65F:
+            eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_18)
+            eInkDisplay.setTextAtXY(5, 70, @demo_text)
+
+            eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+            eInkDisplay.setTextAtXY(20, 60, @demo_text3)
+
+            eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_18)
+            eInkDisplay.setTextAtXY(30, 240, @demo_text)
+
+            eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL_COLUMN, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+            eInkDisplay.setTextAtXY(5, 140, @demo_text4)
         other:
             eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_18)
             eInkDisplay.setTextAtXY(5, 70, @demo_text)
@@ -637,6 +653,83 @@ PRI text_demo() | dsplyWidthInPix, dsplyHeightInPix, detailColor
     eInkDisplay.flushToDisplay()
     waitms(5000)
 
+PRI borderDemo() |dsplyWidthInPix, dsplyHeightInPix, detailColor, borderInset, minLength, thickness, pColorSet, maxColors, colorIndex
+    einkDisplay.setOrientation(eInkDisplay.ROTATE_0)
+    eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
+
+    dsplyWidthInPix, dsplyHeightInPix := eInkDisplay.displaySize()
+    debug("* getSize()  w,h=(", udec_(dsplyWidthInPix), udec_(dsplyHeightInPix), ")")
+
+    ' draw borders around the display
+    '  inset each successive border by 2 pixels from outer border
+    '  randomize the thickness of the border
+    '  randomize the color of the border
+
+    '  x := GETRND() +// 100 'Get a random number between 0 and 99
+    thickness := getrnd() +// 4 'Get a random number between 0 and 3
+    if thickness < 1
+        thickness := 1 ' ensure not zero!
+
+    pColorSet := einkDisplay.colorSet()
+    maxColors := BYTE[pColorSet] ' first is number of colors in set
+    colorIndex := getrnd() +// maxColors 'Get a random number between 0 and maxColors - 1
+
+    detailColor := eInkDisplay.EINK_COLOR_RED
+    borderInset := 10
+    thickness := 10
+    eInkDisplay.borderAtXY(borderInset, borderInset, detailColor, thickness, dsplyWidthInPix-borderInset, dsplyHeightInPix-borderInset)
+{
+    minLength := min(dsplyWidthInPix, dsplyHeightInPix)
+    borderInset := 0
+    repeat
+        thickness := getrnd() +// 4 'Get a random number between 0 and 3
+        if thickness < 1
+            thickness := 1  ' ensure not zero!
+        thickness *= 2      ' more pronounced, please
+        colorIndex := getrnd() +// maxColors 'Get a random number between 0 and maxColors - 1
+        detailColor := BYTE[pColorSet + 1 + colorIndex]
+        eInkDisplay.borderAtXY(borderInset, borderInset, detailColor, thickness, dsplyWidthInPix-borderInset, dsplyHeightInPix-borderInset)
+        borderInset += 2 + thickness
+        if borderInset > minLength/2 - 4
+            quit
+'}
+    eInkDisplay.flushToDisplay()
+    waitms(5000)
+
+PRI lineWidthDemo() |dsplyWidthInPix, dsplyHeightInPix, detailColor
+
+    einkDisplay.setOrientation(eInkDisplay.ROTATE_0)
+    eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
+
+    dsplyWidthInPix, dsplyHeightInPix := eInkDisplay.displaySize()
+    debug("* getSize()  w,h=(", udec_(dsplyWidthInPix), udec_(dsplyHeightInPix), ")")
+
+    detailColor := eInkDisplay.EINK_COLOR_BLACK
+    case eInkDisplay.displayType()
+        eInkDisplay.DS_eink200gs:
+            detailColor := eInkDisplay.EINK_COLOR_LIGHT_GREY
+        eInkDisplay.DSWS_2in13BV3:
+            detailColor := eInkDisplay.EINK_COLOR_RED
+        eInkDisplay.DSWS_5in65F:
+            detailColor := eInkDisplay.EINK_COLOR_GREEN
+
+    ' vertical lines
+    eInkDisplay.lineWidthAtXY(10, 10, 10, dsplyHeightInPix-10, 1, eInkDisplay.EINK_COLOR_BLACK)
+    eInkDisplay.lineWidthAtXY(20, 10, 20, dsplyHeightInPix-10, 2, detailColor)
+    eInkDisplay.lineWidthAtXY(30, 10, 30, dsplyHeightInPix-10, 3, eInkDisplay.EINK_COLOR_BLACK)
+
+    ' horizontal lines
+    eInkDisplay.lineWidthAtXY(10, 10, dsplyWidthInPix-10, 10, 1, eInkDisplay.EINK_COLOR_BLACK)
+    eInkDisplay.lineWidthAtXY(10, 20, dsplyWidthInPix-10, 20, 2, detailColor)
+    eInkDisplay.lineWidthAtXY(10, 30, dsplyWidthInPix-10, 30, 3, eInkDisplay.EINK_COLOR_BLACK)
+
+    ' diagonal lines
+    eInkDisplay.lineWidthAtXY(20, 20, dsplyWidthInPix-60, dsplyHeightInPix-60, 1, eInkDisplay.EINK_COLOR_BLACK)
+    eInkDisplay.lineWidthAtXY(40, 40, dsplyWidthInPix-40, dsplyHeightInPix-40, 2, detailColor)
+    eInkDisplay.lineWidthAtXY(60, 60, dsplyWidthInPix-20, dsplyHeightInPix-20, 3, eInkDisplay.EINK_COLOR_BLACK)
+
+    eInkDisplay.flushToDisplay()
+    waitms(5000)
 
 PRI region_image_demo() | pImageBits, imgWidth, imgHeight, dsplyWidthInPix, dsplyHeightInPix
     debug("* write border, place marker for image corner, place small cup, then border around image")
