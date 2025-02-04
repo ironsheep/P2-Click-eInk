@@ -549,11 +549,11 @@ PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
         ' memory loaded update display hardware
         updateDisplay()
 
-PUB displayTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
+PUB displayTextAtXY(x, y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
 '' Write zstr at {pText} to Display at device row, column,  is immediately displayed
 ''
-'' @param X - horizontal position
-'' @param Y - vertical position
+'' @param x - horizontal position
+'' @param y - vertical position
 '' @param pText - text string to display
 
 ' Local Variables:
@@ -563,13 +563,13 @@ PUB displayTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
 ' @local nChar -
 ' @local byteCtr -
 ''
-    if (X >= displayWidthInPix) || (Y >= displayHeightInPix)
+    if (x >= displayWidthInPix) || (y >= displayHeightInPix)
         return
 
     nChar := strsize(pText)
 
-    textPosnX := X
-    textPosnY := Y
+    textPosnX := x
+    textPosnY := y
 
     repeat strIdx from 0 to nChar - 1
         char_wr(BYTE [pText][strIdx], fontColor)   ' place chars in Frame Buffer
@@ -731,12 +731,12 @@ PUB fillBuffer(eColor) | xCtr, yCtr, fillColor, byteCtr
         if deviceType == DS_eink200gs
             writeCmd(CMD_MASTER_ACTIVATION)
 
-PUB setTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
+PUB setTextAtXY(x, y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
 '' Write zstr at {pText} to Frame Buffer at row, column
 ''  NOTE: not immediately displayed, use flushToDisplay() to display
 ''
-'' @param X - horizontal position
-'' @param Y - vertical position
+'' @param x - horizontal position
+'' @param y - vertical position
 '' @param pText - text string to display
 
 ' Local Variables:
@@ -746,25 +746,25 @@ PUB setTextAtXY(X, Y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
 ' @local nChar -
 ' @local byteCtr -
 ''
-    if (X >= displayWidthInPix) || (Y >= displayHeightInPix)
+    if (x >= displayWidthInPix) || (y >= displayHeightInPix)
         debug("setTextAtXY(", udec_(x), "x", udec_(y), "): out of bounds")
         return
 
     nChar := strsize(pText)
 
-    textPosnX := X
-    textPosnY := Y
+    textPosnX := x
+    textPosnY := y
 
     repeat strIdx from 0 to nChar - 1
         char_wr(BYTE [pText][strIdx], fontColor)   ' place chars in Frame Buffer
 
 
-PUB fillRegionAtXY(X, Y, eColor, width, height) | xCoord, yCoord, fillColor
+PUB fillRegionAtXY(x, y, eColor, width, height) | xCoord, yCoord, fillColor
 '' Fill region of Frame Buffer with color
 ''  NOTE: not immediately displayed, use flushToDisplay() to display
 ''
-'' @param X - horizontal position
-'' @param Y - vertical position
+'' @param x - horizontal position
+'' @param y - vertical position
 '' @param eColor - fill color, specific to eInk device
 '' @param width - width of region to fill
 '' @param height - height of region to fill
@@ -782,23 +782,23 @@ PUB fillRegionAtXY(X, Y, eColor, width, height) | xCoord, yCoord, fillColor
     ' ensure we have a valid color
     fillColor := validColor(eColor)
 
-    debug("fillRegionAtXY(", udec_(X), ", ", udec_(Y), ", ", uhex_byte_(eColor), ", [", udec_(width), " x ", udec_(height), "])")
+    debug("fillRegionAtXY(", udec_(x), ", ", udec_(y), ", ", uhex_byte_(eColor), ", [", udec_(width), " x ", udec_(height), "])")
     debug("  -- hwColor=(", uhex_byte_(fillColor), ")")
 
     ' limit region to displayable area
-    vX, vY, vWidth, vHeight := validXYWidthHeight(X, Y, width, height)
+    vX, vY, vWidth, vHeight := validXYWidthHeight(x, y, width, height)
 
     ' fill the limited area
     repeat yCoord from vY to vY + vHeight - 1
         repeat xCoord from vX to vX + vWidth - 1
             setPixelAtXY(xCoord, yCoord, fillColor)   ' place color bits in Frame Buffer
 
-PUB borderAtXY(X, Y, eColor, thickness, width, height) | lineCt, topRow, botRow, ltCol, rtCol, maxThickness, borderColor, lineLengthH, lineLengthV
+PUB borderAtXY(x, y, eColor, thickness, width, height) | lineCt, topRow, botRow, ltCol, rtCol, maxThickness, borderColor, lineLengthH, lineLengthV
 '' Draw border of thickness, color into Frame Buffer
 ''  NOTE: not immediately displayed, use flushToDisplay() to display
 ''
-'' @param X - horizontal position
-'' @param Y - vertical position
+'' @param x - horizontal position
+'' @param y - vertical position
 '' @param eColor - border color, specific to eInk device
 '' @param thickness - border thickness
 '' @param width - width of region to border
@@ -813,6 +813,7 @@ PUB borderAtXY(X, Y, eColor, thickness, width, height) | lineCt, topRow, botRow,
 ' @local maxThickness -
 
     borderColor := validColor(eColor)
+    debug("borderAtXY([", udec_(x), ", ", udec_(y), "], sz=", udec_(thickness), ", [", udec_(width), " x ", udec_(height), "])")
 
     ' if object not visible (zero or neg. size) abort
     if thickness <= 0 or width <= 0 or height <= 0
@@ -824,20 +825,21 @@ PUB borderAtXY(X, Y, eColor, thickness, width, height) | lineCt, topRow, botRow,
         thickness := maxThickness
 
     ' limit region to displayable object
-    vX, vY, vWidth, vHeight := validXYWidthHeight(X, Y, width, height)
+    vX, vY, vWidth, vHeight := validXYWidthHeight(x, y, width, height)
     ' color validated by underlying code
 
     lineLengthH := vWidth - thickness
     lineLengthV := vHeight - thickness
-
+    debug("  -- lineLen=[", udec_(lineLengthH), ", ", udec_(lineLengthV), "]")
     topRow := vY
-    botRow := vY + vHeight - 1 - thickness
+    botRow := vY + lineLengthV
     ltCol := vX
-    rtCol := vX + vWidth - 1 - thickness
-    lineWidthAtXY(ltCol, topRow, ltCol + lineLengthH - 1, topRow, thickness, borderColor)                          ' top horiz
-    lineWidthAtXY(ltCol + thickness, botRow, ltCol + thickness + lineLengthH - 1, botRow, thickness, borderColor)  ' bottom horiz
-    lineWidthAtXY(ltCol, topRow + thickness, ltCol, topRow + thickness + lineLengthV - 1, thickness, borderColor)      ' left vert
-    lineWidthAtXY(rtCol, topRow, rtCol, topRow + lineLengthV - 1, thickness, borderColor)                              ' right vert
+    rtCol := vX + lineLengthH
+    debug("  -- rows=[", udec_(topRow), ", ", udec_(botRow), "], cols=[", udec_(ltCol), ", ", udec_(rtCol), "]")
+    lineWidthAtXY(ltCol, topRow, ltCol + lineLengthH - 1, topRow, thickness, borderColor)                               ' top horiz
+    lineWidthAtXY(ltCol + thickness, botRow, ltCol + thickness + lineLengthH - 1, botRow, thickness, borderColor)       ' bottom horiz
+    lineWidthAtXY(ltCol, topRow + thickness, ltCol, topRow + thickness + lineLengthV - 1, thickness, borderColor)       ' left vert
+    lineWidthAtXY(rtCol, topRow, rtCol, topRow + lineLengthV - 1, thickness, borderColor)                               ' right vert
 
 PUB lineAtXY(fmX, fmY, toX, toY, eColor)
 '' Draw colored line into Frame Buffer
@@ -864,7 +866,8 @@ PUB lineAtXY(fmX, fmY, toX, toY, eColor)
 VAR
     LONG  dx, dy, sx, sy, err, e2, widthIdx
 
-PUB lineWidthAtXY(fmX, fmY, toX, toY, width, eColor) | vFmX, vFmY, vToX, vToY, xOffset, yOffset, lineColor, lineWidth
+
+PUB lineWidthAtXY(fmX, fmY, toX, toY, width, eColor) | vFmX, vFmY, vToX, vToY, xOffset, yOffset, lineColor, lineWidth, distance, stepValue, lineX, lineY
 '' Draw colored line of width into Frame Buffer
 ''  NOTE: not immediately displayed, use flushToDisplay() to display
 ''
@@ -890,25 +893,30 @@ PUB lineWidthAtXY(fmX, fmY, toX, toY, width, eColor) | vFmX, vFmY, vToX, vToY, x
 
     ' limit locations to displayable area
     vFmX, vFmY := validXY(fmX, fmY)
+    debug("lineWidthAtXY:  fm(", udec_(vFmX), ", ", udec_(vFmY), ")")
     vToX, vToY := validXY(toX, toY)
-
+    debug("                to(", udec_(vToX), ", ", udec_(vToY), ")")
     if vFmX == vToX
         ' simple vertical
-        repeat width
-            repeat yOffset from 0 to vToY - vFmY
-                setPixelAtXY(vFmX, vFmY + yOffset, lineColor)
-            vFmX++
+        distance := vToY - vFmY
+        stepValue := (distance > 0) ? 1 : -1
+        debug("                distance=", udec_(distance), ", step=", udec_(stepValue))
+        repeat lineX from vFmX to vFmX + width - 1
+            repeat yOffset from 0 to distance step stepValue
+                setPixelAtXY(lineX, vFmY + yOffset, lineColor)
 
-        debug("lineAtXY: vert(", udec_(vFmX), ", ", udec_(vFmY), " -> ", udec_(vToX), ", ", udec_(vToY), "), thk=", udec_(width))
+        debug("               vert(", udec_(vFmX), ", ", udec_(vFmY), " -> ", udec_(vToX), ", ", udec_(vToY), "), thk=", udec_(width))
 
     elseif vFmY == vToY
-        ' simple horizontal
-        repeat width
-            repeat xOffset from 0 to vToY - vFmY
-                setPixelAtXY(vFmX + xOffset, vFmY, lineColor)
-            vFmY++
+        ' simple horizontal XYZZY
+        distance := vToX - vFmX
+        stepValue := (distance > 0) ? 1 : -1
+        debug("                distance=", udec_(distance), ", step=", udec_(stepValue))
+        repeat lineY from vFmY to vFmY + width - 1
+            repeat xOffset from 0 to distance step stepValue
+                setPixelAtXY(vFmX + xOffset, lineY, lineColor)
 
-        debug("lineAtXY: horz(", udec_(vFmX), ", ", udec_(vFmY), " -> ", udec_(vToX), ", ", udec_(vToY), "), thk=", udec_(width))
+        debug("               horz(", udec_(vFmX), ", ", udec_(vFmY), " -> ", udec_(vToX), ", ", udec_(vToY), "), thk=", udec_(width))
     else
         ' diagonal (maybe issues with endpoint lengths!)
         '  plot incrementing x axis
@@ -931,6 +939,7 @@ PUB lineWidthAtXY(fmX, fmY, toX, toY, width, eColor) | vFmX, vFmY, vToX, vToY, x
             if e2 < dx
                 err := err + dx
                 vFmY := vFmY + sy
+        debug("               diag(", udec_(vFmX), ", ", udec_(vFmY), " -> ", udec_(vToX), ", ", udec_(vToY), "), thk=", udec_(width))
 
 PUB circleAtXY(xc, yc, diameter, eColor) | x, y, vXc, vYc, lineColor
 '' Draw colored circle into Frame Buffer
@@ -1047,6 +1056,9 @@ PUB setPixelAtXY(inX, inY, eColor) | bitColor, bitInByte, nibbleMask, colorBits,
 ' @local y -
     x, y := rotateXY(inX, inY)  ' rotate x,y based on orientation
 
+    if  x < 10 or y < 10 or x > rotWidthInPix - 10 or y > rotHeightInPix - 10
+        debug("setPixelAtXY(", udec_(inX), ", ", udec_(inY), ") (", udec_(x), ", ", udec_(y), ") in border")
+
     bitColor := validColor(eColor)
     if deviceType == DSWS_2in13BV3
         ' for 2.13" displays V3 & V4
@@ -1091,7 +1103,7 @@ PUB setPixelAtXY(inX, inY, eColor) | bitColor, bitInByte, nibbleMask, colorBits,
         ' for 2.00" display with 2-bit grey-scale
         '  4bits packed into each byte - 2-bits / pixel
         '
-        ' AUGH!  orientation of display is Y inverted
+        ' AUGH!  orientation of display is y inverted
         '  let's counter this so 0,0 is same on all 4 displays
         y := (eInkPhysHeight - 1) - y
         byteIdx := (y * (eInkPhysWidth / 4)) + (x / 4)
@@ -1100,12 +1112,12 @@ PUB setPixelAtXY(inX, inY, eColor) | bitColor, bitInByte, nibbleMask, colorBits,
         BYTE [@deviceFrame][byteIdx] &= !($03 << bitInByte)
         BYTE [@deviceFrame][byteIdx] |= ((bitColor & $03) << bitInByte)
 
-PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, dstX, dstY, imageIdx, ltBits, rtBits, srcXinverted, srcYinverted, minX, minY, maxX, maxY
-'' Overlay an image bitmap into Frame Buffer at X,Y
+PUB placeImageAtXY(x, y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, dstX, dstY, imageIdx, ltBits, rtBits, srcXinverted, srcYinverted, minX, minY, maxX, maxY
+'' Overlay an image bitmap into Frame Buffer at x,y
 ''  NOTE: not immediately displayed, use flushToDisplay() to display
 ''
-'' @param X - horizontal position
-'' @param Y - vertical position
+'' @param x - horizontal position
+'' @param y - vertical position
 '' @param pImgBits - pointer to image
 '' @param imgWidth - image width
 '' @param imgHeight - image height
@@ -1126,11 +1138,11 @@ PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
 ' @local maxX -
 ' @local maxY -
 ' NOTE image must be left-right flipped
-    debug("* placeImageAtXY() x,y=(", udec_byte_(X), udec_byte_(Y), ") ", uhex_long(pImgBits), udec(imgWidth), udec(imgHeight), udec_byte(rotation))
+    debug("* placeImageAtXY() x,y=(", udec_byte_(x), udec_byte_(y), ") ", uhex_long(pImgBits), udec(imgWidth), udec(imgHeight), udec_byte(rotation))
     minX := minY := 65535
     maxX := maxY := -1
     ' limit region to displayable area
-    vX, vY, vImgWidth, vImgHeight := validXYWidthHeight(X, Y, imgWidth, imgHeight)
+    vX, vY, vImgWidth, vImgHeight := validXYWidthHeight(x, y, imgWidth, imgHeight)
 
     if rotation == 0
         ' for each column... (2-px values/byte)
@@ -1385,13 +1397,13 @@ PRI startConfig() | flashFrameRate, VCOM
             writeData($0B)                                  ' doc 0x0C vs. 0x0B
 
             writeCmd(CMD_DATA_ENTRY_MODE_SETTING)       ' 0x11
-            writeData($01)                                  ' AM=0, ID=01 -  addr ctr incr in X direction: -y decr, x incr
+            writeData($01)                                  ' AM=0, ID=01 -  addr ctr incr in x direction: -y decr, x incr
 
             writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)     ' 0x44
             writeData($00)                                  ' start
-            writeData((eInkPhysWidth / 8) - 1)              ' end   16 -1   NOTE: X is normal indexed  $00 -> $0F
+            writeData((eInkPhysWidth / 8) - 1)              ' end   16 -1   NOTE: x is normal indexed  $00 -> $0F
             writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)     ' 0x45
-            writeData(eInkPhysHeight - 1)                   ' start 250 - 1 NOTE: Y is reverse indexed  $f9 -> $00
+            writeData(eInkPhysHeight - 1)                   ' start 250 - 1 NOTE: y is reverse indexed  $f9 -> $00
             writeData($00)                                  ' end
 
             writeCmd(CMD_WRITE_VCOM_REGISTER)           ' 0x2C
@@ -1441,6 +1453,8 @@ PRI startConfig() | flashFrameRate, VCOM
         DSWS_5in65F:
             ' already did reset and checked for busy HIGH
             initDS565F()
+        DSPD_370Tch:
+            'initPD370Tch()
         OTHER:
             debug("sc() ERROR unknown display size")
 
@@ -1631,22 +1645,26 @@ PRI validColor(eColor) : valColor
         OTHER:
             valColor := EINKDS_COLOR_BLACK                ' default
 
-PRI validXY(X, Y) : valX, valY
+PRI validXY(x, y) : valX, valY
     ' limit region to displayable area
-    valX := 0 #> X <# rotWidthInPix - 1
-    valY := 0 #> Y <# rotHeightInPix - 1
+    valX := 0 #> x <# rotWidthInPix - 1
+    valY := 0 #> y <# rotHeightInPix - 1
+    if valX <> x or valY <> y
+        debug("validXY() ", udec(x), udec(y))
+        debug("    valid ", udec(valX), udec(valY))
 
-PRI validXYWidthHeight(X, Y, width, height) : valX, valY, valWidth, valHeight
+PRI validXYWidthHeight(x, y, width, height) : valX, valY, valWidth, valHeight
     ' limit region to displayable area
-    valX := 0 #> X <# rotWidthInPix - width
-    valY := 0 #> Y <# rotHeightInPix - height
-    valWidth := 1 #> width <# rotWidthInPix - X
-    valHeight := 1 #> height <# rotHeightInPix - Y
-    'debug("validXYWidthHeight() ", udec(X), udec(Y), udec(width), udec(height))
-    'debug("               valid ", udec(valX), udec(valY), udec(valWidth), udec(valHeight))
+    valX := 0 #> x <# rotWidthInPix - width
+    valY := 0 #> y <# rotHeightInPix - height
+    valWidth := 1 #> width <# rotWidthInPix - x
+    valHeight := 1 #> height <# rotHeightInPix - y
+    if valX <> x or valY <> y or valWidth <> width or valHeight <> height
+        debug("validXYWidthHeight() ", udec(x), udec(y), udec(width), udec(height))
+        debug("               valid ", udec(valX), udec(valY), udec(valWidth), udec(valHeight))
 
 PRI rotateXY(x, y): rotX, rotY
-' rotate X,Y to display orientation
+' rotate x,y to display orientation
     rotX := x ' ROTATE_0 and OTHER
     rotY := y
     case dvcRotation
@@ -1797,19 +1815,19 @@ PRI bitsForColorWS213BV3(color): blkBit, redBit | showDebug
         redBit := 0
         if dbgRed <> false
             dbgRed := false
-            showDebug := true
+            'showDebug := true
     elseif color == EINK213B_COLOR_BLACK
         blkBit := 0
         redBit := 1
         if dbgBlack <> false
             dbgBlack := false
-            showDebug := true
+            'showDebug := true
     else ' EINK213B_COLOR_WHITE
         blkBit := 1
         redBit := 1
         if dbgWhite <> false
             dbgWhite := false
-            showDebug := true
+            'showDebug := true
 
     if showDebug <> false
         debug("bfc(",uhex_byte_(color),")  blk=", uhex_byte_(blkBit), " red=", uhex_byte_(redBit))
@@ -1987,6 +2005,8 @@ PRI writeBufferWS565F() | byteIdx, pRedBffr, pBlkBffr, dualPixelColor
     ' follow this with updateDisplay() to show changes
 
 PRI updateDisplayWS565F()
+' Request display update
+'
     ' issue cmd, wait for busy/=HIGH (not busy)
     '   busy for ~95 mSec
     wrCmdWtDesiredBusyWS565F(CMD_POWER_ON_CMD, 1)
@@ -1999,6 +2019,80 @@ PRI updateDisplayWS565F()
     '   busy for ~60 mSec
     wrCmdWtDesiredBusyWS565F(CMD_POWER_OFF_CMD, 0)
     waitms(200)
+
+CON ' --- PRIVATE DSPD_370Tch Display Methods ---
+
+PUB getDataOTP() | ui8, _readBytes, u_flagOTP, s_flag50, offsetA5, offsetPSR, bank, pSummary
+ ' here so we can do setup verify with LogicAnalyzer
+    s_flag50 := true
+
+    resetDevicePD370Tch()
+
+    _readBytes := 2
+    ui8 := 0
+    offsetA5 := 0
+    offsetPSR := 0
+
+    writeCmd($A2)
+    waitms(10)
+
+    ui8 := readData()  ' Dummy
+    debug("hV . Dummy read ", uhex_byte(ui8))
+    ui8 := readData()  ' First byte to be checked
+    debug("hV . Actual read ", uhex_byte(ui8))
+
+    bank := ((ui8 == $A5) ? 0 : 1)
+    offsetPSR := $004B
+    offsetA5 := $0000
+    pSummary := (bank == 0) ? @"as expected" : @"not checked"
+    debug("hV . OTP check passed - Bank ", udec_(bank), ", first ", uhex_byte_(ui8), " ", zstr_(pSummary))
+
+PRI initPD370Tch()
+
+PRI resetDevicePD370Tch()
+' Reset our 2-color display w/Touch
+'
+
+' NOTE: fm Screen_EPD_EXT3_Fast::COG_SmallKP_reset 5, 5, 10, 5, 5
+    waitms(5) ' Wait for power stabilization
+    pinhigh(pinbase + CLICK_OFST_RST) ' RESET = HIGH
+    waitms(5)
+    pinlow(pinbase + CLICK_OFST_RST) ' RESET = LOW
+    waitms(10)
+    pinhigh(pinbase + CLICK_OFST_RST) ' RESET = HIGH
+    waitms(5)
+    pinhigh(pinbase + CLICK_OFST_CS)  ' CS = HIGH, unselect
+    waitms(5)
+
+PRI waitDeviceIdlePD370Tch() | state ', statusByte
+' Wait for WS213BV3 busy to go high
+'
+    state := pinread(pinbase + CLICK_OFST_BSY)
+    Debug("* wait idle - ENTRY: ", uhex(state))
+    repeat
+        state := pinread(pinbase + CLICK_OFST_BSY)
+        if state == 0
+            waitms(32)
+    until state <> 0
+    Debug("* wait idle - EXIT: ", uhex(state))
+
+
+PRI updateDisplayPD370Tch()
+' ...
+'
+    waitDeviceIdlePD370Tch()
+
+    writeCmd(CMD_POWER_ON_CMD) ' $04 Power on
+    waitDeviceIdlePD370Tch()
+
+    writeCmd(CMD_DISPLAY_REFRESH) ' $12 Display Refresh
+    waitDeviceIdlePD370Tch()
+
+PRI powerOffPD370Tch()
+' Power off the PD370Tch display
+'
+    writeCmd(CMD_POWER_OFF_CMD) ' $02 Power off
+    waitDeviceIdlePD370Tch()
 
 DAT { -- PRIVATE object CLASS data -- }
 ' test code variables
@@ -2048,8 +2142,8 @@ DAT { -- PRIVATE object CLASS data -- }
 
 PRI char_wr(chrCode, textColor) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY, rowBits, mask, bitmapOffset, pChrDescriptor, pChrBitmap, tempStr, bmIdx
 ' place font character into device frame for later display
-' NOTE: font color and device X,Y set externally
-'       adjusts external device X,Y to value for next character
+' NOTE: font color and device x,y set externally
+'       adjusts external device x,y to value for next character
 
     ' exit if FONT doesn't have this chrCode
     if(chrCode < first_char)
