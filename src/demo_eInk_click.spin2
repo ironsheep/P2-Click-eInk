@@ -52,6 +52,10 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
     else
         debug("* SPI started OK")
 
+    'eInkDisplay.getDataOTP()
+    'debug("* HOLD Here... ")
+    'repeat
+
     eraseDisplay()
 
     'repeat ' hold here - when prepping the display for storage (no image on it)
@@ -71,8 +75,8 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
     debug("* HOLD Here... ")
     repeat
 '}
-    borderDemo()
-    'lineWidthDemo()
+    'borderDemo()
+    lineWidthDemo()
     'text_demo()
     'demo7Color()
     debug("* HOLD Here... ")
@@ -655,7 +659,7 @@ PRI text_demo() | dsplyWidthInPix, dsplyHeightInPix, detailColor
 
 PRI borderDemo() |dsplyWidthInPix, dsplyHeightInPix, detailColor, borderInset, minLength, thickness, pColorSet, maxColors, colorIndex
     einkDisplay.setOrientation(eInkDisplay.ROTATE_0)
-    eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
+    eInkDisplay.clearBuffer()
 
     dsplyWidthInPix, dsplyHeightInPix := eInkDisplay.displaySize()
     debug("* getSize()  w,h=(", udec_(dsplyWidthInPix), udec_(dsplyHeightInPix), ")")
@@ -674,21 +678,20 @@ PRI borderDemo() |dsplyWidthInPix, dsplyHeightInPix, detailColor, borderInset, m
     maxColors := BYTE[pColorSet] ' first is number of colors in set
     colorIndex := getrnd() +// maxColors 'Get a random number between 0 and maxColors - 1
 
-    detailColor := eInkDisplay.EINK_COLOR_RED
-    borderInset := 10
-    thickness := 10
-    eInkDisplay.borderAtXY(borderInset, borderInset, detailColor, thickness, dsplyWidthInPix-borderInset, dsplyHeightInPix-borderInset)
-{
+    'detailColor := eInkDisplay.EINK_COLOR_RED
+    'borderInset := 10
+    'thickness := 10
+    'eInkDisplay.borderAtXY(borderInset, borderInset, detailColor, thickness, dsplyWidthInPix-borderInset*2, dsplyHeightInPix-borderInset*2)
+'{
     minLength := min(dsplyWidthInPix, dsplyHeightInPix)
     borderInset := 0
     repeat
-        thickness := getrnd() +// 4 'Get a random number between 0 and 3
+        thickness := getrnd() +// 3 'Get a random number between 0 and 2
         if thickness < 1
             thickness := 1  ' ensure not zero!
-        thickness *= 2      ' more pronounced, please
         colorIndex := getrnd() +// maxColors 'Get a random number between 0 and maxColors - 1
         detailColor := BYTE[pColorSet + 1 + colorIndex]
-        eInkDisplay.borderAtXY(borderInset, borderInset, detailColor, thickness, dsplyWidthInPix-borderInset, dsplyHeightInPix-borderInset)
+        eInkDisplay.borderAtXY(borderInset, borderInset, detailColor, thickness, dsplyWidthInPix-borderInset*2, dsplyHeightInPix-borderInset*2)
         borderInset += 2 + thickness
         if borderInset > minLength/2 - 4
             quit
@@ -699,7 +702,7 @@ PRI borderDemo() |dsplyWidthInPix, dsplyHeightInPix, detailColor, borderInset, m
 PRI lineWidthDemo() |dsplyWidthInPix, dsplyHeightInPix, detailColor
 
     einkDisplay.setOrientation(eInkDisplay.ROTATE_0)
-    eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
+    eInkDisplay.clearBuffer()
 
     dsplyWidthInPix, dsplyHeightInPix := eInkDisplay.displaySize()
     debug("* getSize()  w,h=(", udec_(dsplyWidthInPix), udec_(dsplyHeightInPix), ")")

@@ -383,7 +383,7 @@ PUB stop()
     spi.stop()
 
 
-CON ' ---- PUBLIC interface Methods ----
+CON ' --- PUBLIC interface Methods ---
 
 
 PUB enableDevice()
@@ -460,6 +460,9 @@ DAT  { color lists }
     threeColor  BYTE    3, EINK_COLOR_BLACK, EINK_COLOR_WHITE, EINK_COLOR_RED
     fourColor   BYTE    4, EINK_COLOR_BLACK, EINK_COLOR_WHITE, EINK_COLOR_LIGHT_GREY, EINK_COLOR_DARK_GREY
     sevenColor  BYTE    7, EINK_COLOR_BLACK, EINK_COLOR_WHITE, EINK_COLOR_BLUE, EINK_COLOR_ORANGE, EINK_COLOR_YELLOW, EINK_COLOR_GREEN, EINK_COLOR_RED
+
+    ' some debug stuff
+    dbgMsgCt BYTE 10
 
 PUB colorSet() : pColorSet
 '' Return the number and list of color values for the current display
@@ -592,14 +595,7 @@ PUB setBackground(eColor)
 ''
 '' @param eColor - background color, specific to eInk device
 ''
-    bkgndColor := validColor(eColor)
-    if deviceType == DSWS_2in13BV3
-        fillBufferWS213BV3(bkgndColor) ' 2 bit-buffers to fill
-    if deviceType == DSWS_5in65F
-        fillBufferWS565F(bkgndColor) ' 4-bit pixels to fill
-    else
-        ' preset background color
-        bytefill(@deviceFrame, bkgndColor, frameSizeInBytes)
+    fillBuffer(eColor)
 
 PUB setOrientation(eRotation)
 '' Set text orientation to be used in subsequent setTextAtXY() and displayTextAtXY() calls
@@ -863,10 +859,6 @@ PUB lineAtXY(fmX, fmY, toX, toY, eColor)
     lineWidthAtXY(fmX, fmY, toX, toY, 1, eColor)
 
 
-VAR
-    LONG  dx, dy, sx, sy, err, e2, widthIdx
-
-
 PUB lineWidthAtXY(fmX, fmY, toX, toY, width, eColor) | vFmX, vFmY, vToX, vToY, xOffset, yOffset, lineColor, lineWidth, distance, stepValue, lineX, lineY
 '' Draw colored line of width into Frame Buffer
 ''  NOTE: not immediately displayed, use flushToDisplay() to display
@@ -1033,10 +1025,6 @@ PUB arrowAtXY(x, y, width, length, rotation, eColor) | endX1, endY1, endX2, endY
     lineAtXY(x, y, endX1, endY1, arrowColor)
     lineAtXY(x, y, endX2, endY2, arrowColor)
 
-DAT
-
-    dbgMsgCt BYTE 10
-
 PUB setPixelAtXY(inX, inY, eColor) | bitColor, bitInByte, nibbleMask, colorBits, byteIdx, pBlkBffr, pRedBffr, blkBit, redBit, x, y, mskValue, updValue
 '' Place colored pixel into device frame for later display
 ''
@@ -1055,9 +1043,6 @@ PUB setPixelAtXY(inX, inY, eColor) | bitColor, bitInByte, nibbleMask, colorBits,
 ' @local x -
 ' @local y -
     x, y := rotateXY(inX, inY)  ' rotate x,y based on orientation
-
-    if  x < 10 or y < 10 or x > rotWidthInPix - 10 or y > rotHeightInPix - 10
-        debug("setPixelAtXY(", udec_(inX), ", ", udec_(inY), ") (", udec_(x), ", ", udec_(y), ") in border")
 
     bitColor := validColor(eColor)
     if deviceType == DSWS_2in13BV3
@@ -1293,7 +1278,7 @@ PUB waitForDisplayComplete()
 ''
     waitForDeviceIdle()
 
-VAR { -- PRIVATE Instance Variables -- }
+VAR ' --- PRIVATE Instance Variables ---
 
     LONG    frameSizeInBytes
     LONG    pinbase
@@ -1327,8 +1312,10 @@ VAR { -- PRIVATE Instance Variables -- }
     BYTE    filler[1000]   ' 1K of filler to keep below from overriting other data???!!
     BYTE    deviceFrame[LARGEST_FRAME_SIZE_IN_BYTES]
 
+    ' line draw support
+    LONG  dx, dy, sx, sy, err, e2, widthIdx
 
-CON ' ---- PRIVATE Utility Methods ----
+CON ' --- PRIVATE Utility Methods ---
 
 PRI startConfig() | flashFrameRate, VCOM
 ' configure our display
@@ -2094,7 +2081,7 @@ PRI powerOffPD370Tch()
     writeCmd(CMD_POWER_OFF_CMD) ' $02 Power off
     waitDeviceIdlePD370Tch()
 
-DAT { -- PRIVATE object CLASS data -- }
+DAT ' --- PRIVATE object CLASS data ---
 ' test code variables
     dbgRed              BYTE    true
     dbgWhite            BYTE    true
@@ -2216,7 +2203,7 @@ PRI char_wr(chrCode, textColor) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, 
 
         textPosnY := frmX - 1    ' move to next char position vertically
 
-CON ' ---- PRIVATE eINK I/O Methods ----
+CON ' --- PRIVATE Click SPI I/O Methods ---
 
 PRI writeCmd(data)
 ' write command byte(DC low = command)
