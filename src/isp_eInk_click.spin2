@@ -403,6 +403,7 @@ PUB resetDevice()
         resetDS565F()
         ' wait for not busy after reset
         wrCmdWtDesiredBusyWS565F(CMD_NO_CMD, 1)
+    elseif deviceType == DSPD_370Tch
     else
         pinhigh(pinbase + CLICK_OFST_RST)   ' toggle reset
         waitms(1)
@@ -427,6 +428,7 @@ PUB enterSleepMode()
         sleepDS213BV3()
     elseif deviceType == DSWS_5in65F
         sleepDS565F()
+    elseif deviceType == DSPD_370Tch
     else
         writeCmd(CMD_DEEP_SLEEP_MODE)
         waitForDeviceIdle()
@@ -515,6 +517,7 @@ PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
     '    NOTE: will likely be a 2bpp image file when we get it supported
     elseif deviceType == DSWS_5in65F
     ' NOT supported on this device
+    elseif deviceType == DSPD_370Tch
     else
         ' set memory area to full display
         if deviceType <> DS_eink200gs
@@ -696,6 +699,7 @@ PUB fillBuffer(eColor) | xCtr, yCtr, fillColor, byteCtr
     elseif deviceType == DSWS_5in65F
         fillBufferWS565F(fillColor)
         writeBufferWS565F()
+    elseif deviceType == DSPD_370Tch
     else
         waitForDeviceIdle()
         if deviceType <> DS_eink200gs
@@ -1076,6 +1080,7 @@ PUB setPixelAtXY(inX, inY, eColor) | bitColor, bitInByte, nibbleMask, colorBits,
             dbgMsgCt--
             debug("setPixelAtXY(", udec_(inX), ", ", udec_(inY), ") (", udec_(x), ", ", udec_(y), ") ds=", uhex_byte_(bitColor), " @ ", uhex_byte_(byteIdx), ":", uhex_byte_(bitInByte), ", ",  uhex_byte_(mskValue), "->", uhex_byte_(updValue))
 
+    elseif deviceType == DSPD_370Tch
     elseif deviceType <> DS_eink200gs
         ' for 1.54", 2.13" and 2.90" displays
         ' monochrome (black/white) - 1 bit / pixel! (8 pix / byte)
@@ -1237,6 +1242,7 @@ PUB flushToDisplay() | byteCtr, yCtr, xCtr
         writeBufferWS213BV3()
     elseif deviceType == DSWS_5in65F
         writeBufferWS565F()
+    elseif deviceType == DSPD_370Tch
     else
         waitForDeviceIdle()
         if deviceType <> DS_eink200gs
@@ -1449,46 +1455,59 @@ PRI startConfig() | flashFrameRate, VCOM
 
 PRI setDeviceLut(pLut, nBytes) | nIdx
 ' write the device LUT data - waits for 1sec at end
-    if(deviceType <> DSWS_2in13BV3)
-        writeCmd(CMD_WRITE_LUT_REGISTER)
-        repeat nIdx from 0 to nBytes - 1
-            writeData(BYTE [pLut][nIdx])
+    case deviceType
+        DSWS_2in13BV3:
+        DSWS_5in65F:
+        DSPD_370Tch:
+        OTHER:
+            if(deviceType <> DSWS_2in13BV3)
+                writeCmd(CMD_WRITE_LUT_REGISTER)
+                repeat nIdx from 0 to nBytes - 1
+                    writeData(BYTE [pLut][nIdx])
 
-        waitms(1000)    ' let device settle
+                waitms(1000)    ' let device settle
 
 PRI setMemoryPointer(x, y)
 ' set pointer to RAM
-    if(deviceType <> DSWS_2in13BV3)
-        writeCmd(CMD_SET_RAM_X_ADDR_CTR)
-        writeData(((x >> 3) & $FF))
-        writeCmd(CMD_SET_RAM_Y_ADDR_CTR)
-        writeData((y & $FF))
-        if deviceType <> DS_eink200gs
-            writeData(((y >> 8) & $FF))
-        if deviceType == DS_eink200gs or deviceType == DS_eink154
-            ' hmm ds_ws_2in13b doesn't have this need
-            waitForDeviceIdle()
+    case deviceType
+        DSWS_2in13BV3:
+        DSWS_5in65F:
+        DSPD_370Tch:
+        OTHER:
+            writeCmd(CMD_SET_RAM_X_ADDR_CTR)
+            writeData(((x >> 3) & $FF))
+            writeCmd(CMD_SET_RAM_Y_ADDR_CTR)
+            writeData((y & $FF))
+            if deviceType <> DS_eink200gs
+                writeData(((y >> 8) & $FF))
+            if deviceType == DS_eink200gs or deviceType == DS_eink154
+                ' hmm ds_ws_2in13b doesn't have this need
+                waitForDeviceIdle()
 
 
 PRI setMemoryArea(xStart, yStart, xEnd, yEnd)
 ' set region of RAM
-    if deviceType <> DSWS_2in13BV3
-        if deviceType == DS_eink200gs
-            writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
-            writeData((xStart >> 3) & $FF)
-            writeData((((xEnd + 1) >> 2) - 1) & $FF)
-            writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
-            writeData(yStart & $FF)
-            writeData(yEnd & $FF)
-        else
-            writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
-            writeData((xStart >> 3) & $FF)
-            writeData((xEnd >> 3) & $FF)
-            writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
-            writeData(yStart & $FF)
-            writeData((yStart >> 8) & $FF)
-            writeData(yEnd & $FF)
-            writeData((yEnd >> 8) & $FF)
+    case deviceType
+        DSWS_2in13BV3:
+        DSWS_5in65F:
+        DSPD_370Tch:
+        OTHER:
+            if deviceType == DS_eink200gs
+                writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
+                writeData((xStart >> 3) & $FF)
+                writeData((((xEnd + 1) >> 2) - 1) & $FF)
+                writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
+                writeData(yStart & $FF)
+                writeData(yEnd & $FF)
+            else
+                writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
+                writeData((xStart >> 3) & $FF)
+                writeData((xEnd >> 3) & $FF)
+                writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
+                writeData(yStart & $FF)
+                writeData((yStart >> 8) & $FF)
+                writeData(yEnd & $FF)
+                writeData((yEnd >> 8) & $FF)
 
 
 PRI displayDelay()
@@ -1506,6 +1525,7 @@ PRI updateDisplay() | cmdValue
 
     elseif deviceType == DSWS_5in65F
         ' updateDisplayWS565F() already done by writeBufferWS565F()
+    elseif deviceType == DSPD_370Tch
     else
         case deviceType
             DS_eink154:
@@ -1539,6 +1559,8 @@ PRI waitForDeviceIdle() | state
     elseif deviceType == DSWS_5in65F
     ' already done for us?
         'wrCmdWtDesiredBusyWS565F(CMD_NO_CMD, 0) ' not busy
+    elseif deviceType == DSPD_370Tch
+        ' coe here
     else
         Debug("* wait idle - ENTRY: ", udec(state))
         ' wait for busy to go low

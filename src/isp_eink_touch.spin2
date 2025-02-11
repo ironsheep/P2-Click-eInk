@@ -1,0 +1,488 @@
+'' =================================================================================================
+''
+''   File....... isp_eink_touch.spin2
+''   Purpose.... Driver for i2c_bus touch hardware as front of e-ink display
+''   Authors.... Stephen M Moraco
+''               -- Copyright (c) 2025 Iron Sheep Productions, LLC
+''               -- see below for terms of use
+''   E-mail..... stephen@ironsheep.biz
+''   Started.... Feb 2025
+''   Updated.... 19 Feb 2025
+''
+'' =================================================================================================
+
+
+CON { Public Interface Constants }
+
+    '  ID where the P2 Eval Click Adapter for eInk Click is plugged in (Enum)
+    ' (Names of supported PinGroups)
+    #0[8], PINS_P0_P7, PINS_P8_P15, PINS_P16_P23, PINS_P24_P31, PINS_P32_P39, PINS_P40_P47, PINS_P48_P55, PINS_P56_P63
+    ' return value when user makes bad choice
+    INVALID_PIN_BASE = -1
+
+    '  Type of eInk display (Enum)
+    '   *gs = w/ 1of more grayscale colors
+    '   *WS_* = fm WaveShare
+    '   *PS_ = fm WaveShare
+    '   *Tch = eINK w/Touch
+    #$40[1], DS_eink154, DS_eink200gs, DS_eink213, DS_eink290, DSWS_2in13BV3, DSPD_370Tch, DSWS_5in65F
+    ' return value when user makes bad choice
+    INVALID_DISPLAY_TYPE = -1
+
+    ' Rotation constants so user can select a touch-screen orientation (Enum)
+    ' NOTE: both ROTATE_* or PORTRAIT/LANDSCAPE enums work
+    #$60[1], ROTATE_0, ROTATE_90, ROTATE_180, ROTATE_270
+    #$60[1], PORTRAIT, LANDSCAPE, PORTRAIT_FLIP, LANDSCAPE_FLIP
+    ' return value when user makes bad choice
+    INVALID_ORIENTATION = -1
+
+    DVC_NOT_FOUND = -1
+    MODE_READ  = %0000_0001
+    MODE_WRITE = %0000_0000
+
+' ---------------------------------------
+' 3.7 PervasiveDisplays rectangular eInk display 240x416 (53.00mm locnX 92.99mm)
+' resolution 416-gate, 240-source
+
+    EINKPD370T_DISPLAY_WIDTH = 240
+    EINKPD370T_DISPLAY_HEIGHT = 416
+
+    EINKPD271T_I2C_ADDR = $41
+    EINKPD343T_I2C_ADDR = $4A
+    EINKPD370T_I2C_ADDR = $38
+
+OBJ { Objects / constants included by this object }
+
+    i2c_bus     : "isp_i2c_singleton"            '   smart pin mode 0 i2c_bus coms
+    term        : "isp_serial_singleton"
+
+CON { Pin offsets }
+ {
+    P2 Eval Adapter IO Assignments
+    * - used by eInk Touch circuit
+
+               ┌─────────────────────────────┐
+         3.3V  │(*) 3.3V               5V () │  5V
+               │                             │
+     Base + 7  │() N/C                N/C () │  Base + 6
+               │                             │
+     Base + 5  │() N/C                N/C () │  Base + 4
+               │                             │
+     Base + 3  │(*) RST  <--     <-- INT (*) │  Base + 2
+               │                             │
+     Base + 1  │(*) SCL <--      <-> SDA (*) │  Base + 0
+               │                             │
+          GND  │() GND               GND (*) │  GND
+               └─────────────────────────────/
+}
+
+    ' specs for touch controller circuit
+   TOUCH_OFST_RST = 3     ' { O } Reset the touch controller
+   TOUCH_OFST_INT = 2     ' { I } interrupt from touch controller
+   TOUCH_OFST_SCL = 1     ' { O } i2c_bus clock
+   TOUCH_OFST_SDA = 0     ' { I/O } i2c_bus data
+
+   TOUCH_I2C_CLK_KHZ = 100   ' 100 kHz
+   'TOUCH_I2C_CLK_KHZ = 408   ' 150 kHz (or maybe 400?)
+   ' 400 @270MHz -> ~390kHz, 410 @270MHz -> ~401kHz
+
+   #0, TOUCH_EVENT_NONE, TOUCH_EVENT_PRESS, TOUCH_EVENT_RELEASE, TOUCH_EVENT_MOVE
+
+VAR ' --- PRIVATE Instance Variables ---
+
+    LONG    pinbase
+    LONG    deviceType
+
+    LONG    eInkPhysWidth
+    LONG    eInkPhysHeight
+    LONG    touchOrientation
+
+    LONG    touchI2CAddr
+    LONG    slaveAddress
+
+    LONG    touchYMin
+    LONG    touchYMax
+    LONG    touchXMin
+    LONG    touchXMax
+
+    LONG    touchTrim
+    LONG    touchPrevious
+    LONG    touchX
+    LONG    touchY
+
+    LONG    stopRequested
+
+    LONG    bShowDebug
+
+    LONG cogStack[64]
+
+pub null()
+
+'' This is not a top object
+
+PUB start(eDisplayType, eTouchBasePin, eOrientation) : ok | legalBase, legalOrientation
+'' Specify the Eink display type and the eval board connect location for the EINK click and start SPI
+    ' if legal base-pin then start cog
+   ' ensure we only use legal values
+    debug("start(", udec_(eDisplayType), ", ", udec_(eTouchBasePin), ")")
+
+    legalBase := eTouchBasePin
+    case eTouchBasePin
+        PINS_P0_P7:
+        PINS_P8_P15:
+        PINS_P16_P23:
+        PINS_P24_P31:
+        PINS_P32_P39:
+        PINS_P40_P47:
+        PINS_P48_P55:
+        PINS_P56_P63:
+        OTHER:
+            legalBase := INVALID_PIN_BASE
+            pinbase := INVALID_PIN_BASE
+
+    legalOrientation := eOrientation
+    case eOrientation
+        ROTATE_0:
+        ROTATE_90:
+        ROTATE_180:
+        ROTATE_270:
+        PORTRAIT:
+        LANDSCAPE:
+        PORTRAIT_FLIP:
+        LANDSCAPE_FLIP:
+        OTHER:
+            legalOrientation := INVALID_ORIENTATION
+
+    deviceType := eDisplayType
+    case eDisplayType
+        DSPD_370Tch:
+            eInkPhysWidth       := EINKPD370T_DISPLAY_WIDTH
+            eInkPhysHeight      := EINKPD370T_DISPLAY_HEIGHT
+            touchI2CAddr        := EINKPD370T_I2C_ADDR
+
+        OTHER:
+            deviceType := INVALID_DISPLAY_TYPE
+
+    touchYMin := 0
+    touchYMax := eInkPhysHeight -1
+    touchXMin := 0
+    touchXMax := eInkPhysWidth -1
+
+    touchPrevious := TOUCH_EVENT_NONE
+    touchTrim := 0
+    touchOrientation := ROTATE_0
+
+    debug("  -- now:[", udec_(deviceType), ", ", udec_(legalBase), "]")
+
+    ok := false
+    if legalBase <> INVALID_PIN_BASE and deviceType <> INVALID_DISPLAY_TYPE and legalOrientation <> INVALID_ORIENTATION
+        pinbase := legalBase                    ' record base pin number
+        touchOrientation := legalOrientation    ' record orientation
+
+        ok := cogspin(NEWCOG, touchDriverTask(), @cogStack)       ' start the touch driver cog
+
+PUB stop()
+'' Stop the Touch I2C Object
+''
+    stopRequested := true
+
+PRI initPins()
+    ' configure inputs
+    pinfloat(pinbase + TOUCH_OFST_SDA)
+    pinfloat(pinbase + TOUCH_OFST_INT)
+    ' de-assert clock
+    pinlow(pinbase + TOUCH_OFST_SCL)
+    ' don'eTchEvent assert reset while starting up
+    pinhigh(pinbase + TOUCH_OFST_RST)
+
+PRI resetTouch()
+' Reset the touch controller
+'
+    pinhigh(pinbase + TOUCH_OFST_RST)
+    waitms(10)
+    pinlow(pinbase + TOUCH_OFST_RST)
+    waitms(10)
+    pinhigh(pinbase + TOUCH_OFST_RST)
+    waitms(1_000)
+
+
+PRI touchDriverTask() : ok | intBit, locnX, locnY, tchZ, eTchEvent, pStr
+' COG task to handle touch events
+'
+' @returns ok -
+
+' Local Variables:
+' @local intBit -
+' @local locnX -
+' @local locnY -
+' @local tchZ -
+' @local eTchEvent -
+' @local pStr -
+'
+'
+    debug("* touchDriverTask() Started...")
+    initPins()
+
+    stopRequested := false
+
+    ' start the smart pins                            ' select Touch I2C
+    i2c_bus.setup(pinbase + TOUCH_OFST_SCL, pinbase + TOUCH_OFST_SDA, TOUCH_I2C_CLK_KHZ, i2c_bus.PU_1K5)
+
+    'idDevice(touchI2CAddr)
+    huntTouch()
+
+    resetTouch()
+    ' init controller
+    ' FIXME: init controller
+    ' handle interrupts from controller
+    i2c_bus.start()
+    repeat while stopRequested == false
+        ' wait for touch interrupt
+        if interruptPending()
+            ' read touch data
+            locnX, locnY, tchZ, eTchEvent := getRawTouchData()
+            pStr := touchTypeString(eTchEvent)
+            debug("Touch: ", udec_(locnX), ", ", udec_(locnY), ", ", udec_(tchZ), ", ", udec_(eTchEvent))
+
+        ' place touch event into queue
+        ' FIXME: place touch event into queue
+
+    i2c_bus.stop()
+
+PRI touchTypeString(eTouchType) : pInterp
+' return string for touch event type
+'
+' @param type - the event type (enum)
+' @returns pInterp -
+
+    case eTouchType
+        TOUCH_EVENT_NONE:
+            pInterp := @"NONE"
+        TOUCH_EVENT_PRESS:
+            pInterp := @"PRESS"
+        TOUCH_EVENT_RELEASE:
+            pInterp := @"RELEASE"
+        TOUCH_EVENT_MOVE:
+            pInterp := @"MOVE"
+        OTHER:
+            pInterp := @"UNKNOWN"
+
+PRI clearTouch() : bIsTouch | tx, ty, tz, tt
+
+    repeat while getTouch(tx, ty, tz, tt)
+        ' while getTouchInterrupt()
+        waitms(10)
+
+    touchPrevious := TOUCH_EVENT_NONE
+
+PRI checkRange(value, min, max) : limitValue | actualMin, actualMax
+' return value limited to min/max
+'
+' @param value - value to check
+' @param min - lower value limit
+' @param max - upper value limit
+' @returns limitValue - possibly adjusted value
+
+' Local Variables:
+' @local actualMin -
+' @local actualMax -
+
+' * ensure min/max are in correct order
+' * if value < valueMin, return valueMin
+' * if value > valueMax, return valueMax
+    actualMin := min > max ? max : min
+    actualMax := min > max ? min : max
+    limitValue := actualMin #> value <# actualMax
+
+PRI map(value, fromLow, fromHigh, toLow, toHigh) : scaledValue
+' map a value from one range to another
+'
+' @param value - given value
+' @param fromLow - current range lower value
+' @param fromHigh - current range upper value
+' @param toLow - new range lower value
+' @param toHigh - new range upper value
+' @returns scaledValue - value mapped to new range
+'
+
+
+PRI getTouch(pTx, pTy, pTz, pTt) : bIsTouch | locnX, locnY, tchZ, eTchEvent, rngX, rngY, rotX, rotY
+
+    locnX, locnY, tchZ, eTchEvent := getRawTouchData()
+
+    if tchZ > touchTrim
+        rngX := checkRange(locnX, touchXmin, touchXmax)
+        rngY := checkRange(locnY, touchYmin, touchYmax)
+
+        case touchOrientation
+            ROTATE_0:
+
+                rotX := map(rngX, touchXmin, touchXmax, 0, eInkPhysWidth)
+                rotY := map(rngY, touchYmin, touchYmax, 0, eInkPhysHeight)
+
+            ROTATE_90:
+
+                rotX := map(rngY, touchYmin, touchYmax, 0, eInkPhysHeight)
+                rotY := map(rngX, touchXmin, touchXmax, eInkPhysWidth, 0)
+
+            ROTATE_180:
+
+                rotX := map(rngX, touchXmin, touchXmax, eInkPhysWidth, 0)
+                rotY := map(rngY, touchYmin, touchYmax, eInkPhysHeight, 0)
+
+            ROTATE_270:
+
+                rotX := map(rngY, touchYmin, touchYmax, eInkPhysHeight, 0)
+                rotY := map(rngX, touchXmin, touchXmax, 0, eInkPhysWidth)
+
+        LONG[pTx] := rotX
+        LONG[pTy] := rotY
+        LONG[pTz] := tchZ
+        LONG[pTt] := eTchEvent
+
+        bIsTouch := true
+    else
+        bIsTouch := false
+
+PRI getRawTouchData() : locnX, locnY, tchZ, eTchEvent | bDidInterrupt, flagValid, BYTE rdBuffer[9], id, pStr
+
+    debug("* getRawTouchData()")
+    flagValid := false
+    bDidInterrupt := interruptPending()
+    waitms(10)
+
+    eTchEvent := TOUCH_EVENT_NONE
+    tchZ := 0
+
+    if bDidInterrupt
+        ' have interrupt, read number touches
+        readTouchBytes($00, 9, @rdBuffer)
+        debug("  -- rdBuffer=[", uhex_byte_array_(@rdBuffer, 9), "]")
+
+        id := BYTE[@rdBuffer][2] >> 4
+        flagValid := (id < $0f) ? 1 : 0
+        debug("  --   id: ", udec_(id), ", flagValid: ", udec_(flagValid))
+
+        if flagValid
+            locnX := (BYTE[@rdBuffer][0] & $0f << 8) | BYTE[@rdBuffer][1]
+            locnY := (BYTE[@rdBuffer][2] & $0f << 8) | BYTE[@rdBuffer][3]
+
+            eTchEvent := touchPrevious <> TOUCH_EVENT_NONE ? TOUCH_EVENT_MOVE : TOUCH_EVENT_PRESS
+
+            ' Keep position for next release
+            touchPrevious := TOUCH_EVENT_PRESS
+            touchX := locnX
+            touchY := locnY
+            tchZ := $16
+        else
+            ' is release after move/press
+            eTchEvent := TOUCH_EVENT_RELEASE
+    else
+        ' no interrupt
+        if touchPrevious == TOUCH_EVENT_NONE
+            eTchEvent := TOUCH_EVENT_NONE
+            tchZ := 0
+        else
+            ' use previous position for release
+            touchPrevious := TOUCH_EVENT_NONE
+            eTchEvent := TOUCH_EVENT_RELEASE
+            locnX := touchX
+            locnY := touchY
+            tchZ := $16
+
+    pStr := touchTypeString(eTchEvent)
+    debug("  -- locnXY (", udec_(locnX), ", ", udec_(locnY), "), tchZ=", udec_byte_(tchZ), ", eTchEvent: ", zstr_(pStr))
+    waitms(5) ' add extra delay - - is needed why 4 events back to back???
+
+PRI interruptPending() : bDidInterrupt
+' check if the touch controller has an interrupt pending
+'
+    bDidInterrupt := pinread(pinbase + TOUCH_OFST_INT) == 0 ? 1 : 0
+    if bDidInterrupt
+        debug(" - interruptPending() - bDidInterrupt: ", udec_(bDidInterrupt))
+
+
+CON ' --- Device I/O Methods ---
+
+PRI huntTouch()
+    idDevice(EINKPD271T_I2C_ADDR) ' known touch controller ID's
+    idDevice(EINKPD343T_I2C_ADDR)
+    idDevice(EINKPD370T_I2C_ADDR)
+
+PRI idDevice(possAddr) : bFound | bFoundAddr
+    ' Identify the address our device is at on the i2c_bus bus
+    bFoundAddr := false
+    if i2c_bus.present(possAddr << 1)
+        bFoundAddr := true
+
+    bFound := false
+    slaveAddress := DVC_NOT_FOUND
+    if(bFoundAddr)
+        bFound := true
+        slaveAddress := possAddr
+
+    if (bFoundAddr)
+        debug("tch- idDevice() found at Addr ", uhex_(slaveAddress))
+    else
+        debug("tch- idDevice(", uhex_byte_(possAddr), ") NOT found")
+
+    if bShowDebug
+        if (bFoundAddr)
+            term.fstr1(string("tch- idDevice() found at Addr 0x%.02x\r\n"), slaveAddress)
+        else
+            term.fstr0(string("tch- idDevice() NOT found\r\n"))
+
+    i2c_bus.stop()  ' ensure we are in stable state
+
+PUB readTouchBytes(regAddr, byteCount, pByteStore) : ok | ackbit, byteIndex, endAckNak, result8
+    '' Read {result16} from register {regAddr}
+    ''  return 0 if success
+    debug("* readTouchBytes(", uhex_(regAddr), ", ", udec_(byteCount), ")")
+    if bShowDebug
+        term.fstr2(string("tch- readTouchBytes(0x%.02x, ct=%d)\r\n"), regAddr, byteCount)
+    i2c_bus.start()
+    ok := ackBit := i2c_bus.write((slaveAddress << 1) | MODE_WRITE)
+    ackBit := i2c_bus.write(regAddr)
+    ok |= ackbit
+    i2c_bus.start()
+    ackBit := i2c_bus.write((slaveAddress << 1) | MODE_READ)
+    ok |= ackbit
+    repeat byteIndex from 0 to byteCount - 1
+        endAckNak := (byteIndex == byteCount - 1) ? i2c_bus.NAK : i2c_bus.ACK
+        result8 := i2c_bus.read(endAckNak)
+        result8 := result8 signx 7
+        BYTE [pByteStore][byteIndex] := result8
+        if bShowDebug
+            term.fstr5(string(" -- readTouchBytes(0x%.02x) ok:%d, BYTE[%d]ret 0x%.02x(%d)\r\n"), regAddr + byteIndex, ok, byteIndex, result8, result8)
+    i2c_bus.stop()
+    if bShowDebug
+        term.fstr3(string(" -- readTouchBytes(0x%.02x, ct=%d) ok:%d\r\n"), regAddr, byteCount, ok)
+    waitms(10)
+
+CON { license }
+{{
+
+ -------------------------------------------------------------------------------------------------
+  MIT License
+
+  Copyright (c) 2025 Iron Sheep Productions, LLC
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+ =================================================================================================
+}}
