@@ -32,7 +32,7 @@ CON { click module io pins }
     EINK_CLICK_PINGROUP = eInkDisplay.PINS_P32_P47
 
     ' we are using a 2.13" eInk display
-    EINK_DISPLAY_TYPE = eInkDisplay.DSWS_5in65F
+    EINK_DISPLAY_TYPE = eInkDisplay.DSPD_370Tch
 
 OBJ { the object being demo'd }
 
@@ -52,42 +52,31 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
     else
         debug("* SPI started OK")
 
-    'eInkDisplay.getDataOTP()
-    'debug("* HOLD Here... ")
-    'repeat
+    eInkDisplay.getDataOTP()
+    debug("* HOLD Here... ")
+    repeat
 
     eraseDisplay()
 
+    'debug("* ERASED, ready for storing")
     'repeat ' hold here - when prepping the display for storage (no image on it)
-{
-    eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_GREEN)
-    eInkDisplay.waitForDisplayComplete()
-    debug("* GREEN?? ... ")
-    waitms(5_000) ' time for pictures
 
-    eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_RED)
-    eInkDisplay.waitForDisplayComplete()
-    debug("* RED?? ... ")
-    waitms(5_000) ' time for pictures
-
-    eInkDisplay.clearScreen()
-    eInkDisplay.waitForDisplayComplete()
-    debug("* HOLD Here... ")
-    repeat
-'}
+'{   Small tests while bringing up a new display
     'borderDemo()
     lineWidthDemo()
     'text_demo()
     'demo7Color()
     debug("* HOLD Here... ")
     repeat
+'}
+
 {
 ' enable this code so we can get pictures of the display orientations
     ' make our orientation display set
     drawOrientationDisplay(eInkDisplay.ROTATE_0)
     eInkDisplay.waitForDisplayComplete()
     waitms(5_000) ' time for pictures
-{
+
     drawOrientationDisplay(eInkDisplay.ROTATE_90)
     eInkDisplay.waitForDisplayComplete()
     waitms(5_000) ' time for pictures
@@ -99,7 +88,7 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
     drawOrientationDisplay(eInkDisplay.ROTATE_270)
     eInkDisplay.waitForDisplayComplete()
     waitms(5_000) ' time for pictures
-'}
+
     debug("* HOLD Here... ")
     repeat
 '}
