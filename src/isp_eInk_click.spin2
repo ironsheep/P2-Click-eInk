@@ -23,9 +23,10 @@ CON { Public Interface Constants }
     '  Type of eInk display (Enum)
     '   *gs = w/ 1of more grayscale colors
     '   *WS_* = fm WaveShare
-    '   *PS_ = fm WaveShare
+    '   *PD_ = fm Pervasive Displays (doesn't work with click)! REMOVED!
+    '   *GD_ = fm Good Display (Dalian Good Display, LTD)
     '   *Tch = eINK w/Touch
-    #$40, DS_eink154, DS_eink200gs, DS_eink213, DS_eink290, DSWS_2in13BV3, DSPD_370Tch, DSWS_5in65F
+    #$40, DS_eink154, DS_eink200gs, DS_eink213, DS_eink290, DSWS_2in13BV3, DSWS_5in65F, DSGD_370Tch
     ' return value when user makes bad choice
     INVALID_DISPLAY_TYPE = -1
 
@@ -92,18 +93,19 @@ CON { Click Module offsets }
 
     ' specs for Click EINK board
    CLICK_OFST_MOSI = 11     ' Mikroe pin 6  - SPI Data - Out
-   CLICK_OFST_MISO = 10     ' N/C  Mikroe pin 5
+   CLICK_OFST_MISO = 10     ' Mikroe pin 5  - SPI Data - In
    CLICK_OFST_SCK = 9       ' Mikroe pin 4  - SPI Clock - Out
    CLICK_OFST_CS = 8        ' Mikroe pin 3  - SPI Chip Select - Out
    CLICK_OFST_RST = 7       ' Mikroe pin 2  - Reset - Out
-   'CLICK_OFST_AN = 6       ' N/C  Mikroe pin 1
+   CLICK_OFST_AN = 6        ' Mikroe pin 1  - ??? - In
+   CLICK_OFST_PWM = 5       ' Mikroe pin 16 - ??? - Out
+   CLICK_OFST_INT = 4       ' Mikroe pin 15 - Interrupt - In
+   CLICK_OFST_RX = 3       ' N/C  Mikroe pin 14
+   CLICK_OFST_TX = 2       ' N/C  Mikroe pin 13
+   CLICK_OFST_SCL = 1      ' N/C  Mikroe pin 12
+   CLICK_OFST_SDA = 0      ' N/C  Mikroe pin 11
 
-   CLICK_OFST_DC = 5       ' Mikroe pin 16 - D/C - Out Data Config(normally CLICK_OFST_PWM)
-   CLICK_OFST_BSY = 4       ' Mikroe pin 15 - Busy - In(normally CLICK_OFST_INT)
-   'CLICK_OFST_RX = 3       ' N/C  Mikroe pin 14
-   'CLICK_OFST_TX = 2       ' N/C  Mikroe pin 13
-   'CLICK_OFST_SCL = 1      ' N/C  Mikroe pin 12
-   'CLICK_OFST_SDA = 0      ' N/C  Mikroe pin 11
+   PIN_NOT_USED = -1
 
 CON { eInk Constants }
 
@@ -157,12 +159,12 @@ CON { eInk Constants }
     EINKWS213B_DISPLAY_RESOLUTION = 5_512   ' = (104 * 212 / 8) * 2
 '
 ' ---------------------------------------
-' 3.7 PervasiveDisplays rectangular eInk display 240x416 (53.00mm x 92.99mm)
+' 3.7" Good Display rectangular eInk display 240x416 (53.00mm x 92.99mm)
 ' resolution 416-gate, 240-source
 
-    EINKPD370T_DISPLAY_WIDTH = 240
-    EINKPD370T_DISPLAY_HEIGHT = 416
-    EINKPD370T_DISPLAY_RESOLUTION = 12_480   ' = 240 * 416 / 8
+    EINKGD370T_DISPLAY_WIDTH = 240
+    EINKGD370T_DISPLAY_HEIGHT = 416
+    EINKGD370T_DISPLAY_RESOLUTION = 12_480   ' = 240 * 416 / 8
 
 ' ---------------------------------------
 ' 5.61 PervasiveDisplays rectangular eInk display 600x448 (53.00mm x 92.99mm)
@@ -241,7 +243,34 @@ CON { eInk Constants }
     CMD_RESOLUTION_SETTINGS         = $61
     CMD_GET_STATUS                  = $71
 
-    ' DSPD_370Tch commands
+    ' DSGD_370Tch commands
+    'CMD_PANEL_SETTING_REG           = $00
+    'CMD_POWER_SETTING_REG           = $01
+    'CMD_POWER_OFF_CMD               = $02
+    'CMD_POWER_OFF_SEQ_SETTING       = $03
+    'CMD_POWER_ON_CMD                = $04
+    CMD_POWER_ON_MEASURE_CMD        = $05
+    'CMD_BOOSTER_SOFT_START          = $06
+    CMD_DEEP_SLEEP                  = $07
+    CMD_DISPLAY_START_OLD           = $10
+    CMD_DISPLAY_STOP                = $11
+    'CMD_DISPLAY_REFRESH             = $12
+    CMD_DISPLAY_START               = $13
+    CMD_DISPLAY_SEQ_AUTO            = $17
+    CMD_VCOM_LUT                    = $20
+    CMD_W2W_LUT                     = $21
+    CMD_K2W_LUT                     = $22
+    CMD_W2K_LUT                     = $23
+    CMD_K2K_LUT                     = $24
+    CMD_LUT_OPTION                  = $2A ' +5 DATA
+    'CMD_PLL_CONTROL                 = $30
+    CMD_TEMP_SENSOR_CALIBR          = $40 ' +2 DATA
+    CMD_TEMP_SENSOR_SELECT          = $41 ' +1 DATA
+    CMD_TEMP_SENSOR_WRITE           = $42 ' +3 DATA
+    CMD_TEMP_SENSOR_READ            = $43 ' +2 DATA {IN}
+    CMD_PNL_BRK_CHECK               = $44 ' +1 DATA {IN}
+    CMD_VCOM_DATA_INTRVL            = $50 ' +1 DATA
+    ' + more... to be added if used
 
     ' DSWS_5in65F commands
     CMD_NO_CMD                      = -1
@@ -331,13 +360,13 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
             displayWidthInPix   := EINKWS213B_DISPLAY_WIDTH
             displayHeightInPix  := EINKWS213B_DISPLAY_HEIGHT
 
-        DSPD_370Tch:
-            eInkPhysWidth       := EINKPD370T_DISPLAY_WIDTH
-            eInkPhysHeight      := EINKPD370T_DISPLAY_HEIGHT
-            frameSizeInBytes    := EINKPD370T_DISPLAY_RESOLUTION
+        DSGD_370Tch:
+            eInkPhysWidth       := EINKGD370T_DISPLAY_WIDTH
+            eInkPhysHeight      := EINKGD370T_DISPLAY_HEIGHT
+            frameSizeInBytes    := EINKGD370T_DISPLAY_RESOLUTION
 
-            displayWidthInPix   := EINKPD370T_DISPLAY_WIDTH
-            displayHeightInPix  := EINKPD370T_DISPLAY_HEIGHT
+            displayWidthInPix   := EINKGD370T_DISPLAY_WIDTH
+            displayHeightInPix  := EINKGD370T_DISPLAY_HEIGHT
 
         DSWS_5in65F:
             eInkPhysWidth       := EINKWS565F_DISPLAY_WIDTH
@@ -352,6 +381,26 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
 
    debug("  -- now:[", udec_(deviceType), ", ", udec_(legalBase), "]")
 
+   ' init our pin variables
+   if eDisplayType == DSGD_370Tch
+        ' pins of click adapter w/o Click Module
+        eiPinBUSY := pinbase + CLICK_OFST_AN   ' + 6
+        eiPinRST  := pinbase + CLICK_OFST_RST  ' + 7
+        eiPinCSb  := pinbase + CLICK_OFST_CS   ' + 8
+        eiPinSCLK := pinbase + CLICK_OFST_SCK  ' + 9
+        eiPinDCb  := pinbase + CLICK_OFST_MISO ' + 10
+        eiPinSDO  := pinbase + CLICK_OFST_MOSI ' + 11
+        eiPinSDI  := PIN_NOT_USED ' no input from GD eInk display
+   else
+        ' pins of Microe Click EINK module
+        eiPinBUSY := pinbase + CLICK_OFST_INT
+        eiPinRST := pinbase + CLICK_OFST_RST
+        eiPinCSb := pinbase + CLICK_OFST_CS
+        eiPinDCb := pinbase + CLICK_OFST_PWM
+        eiPinSCLK := pinbase + CLICK_OFST_SCK
+        eiPinSDI := pinbase + CLICK_OFST_MISO
+        eiPinSDO := pinbase + CLICK_OFST_MOSI
+
     ' DEFAULTS
     setOrientation(ROTATE_0)
     bkgndColor := validColor(EINK_COLOR_WHITE)
@@ -362,20 +411,20 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
     if legalBase <> INVALID_PIN_BASE and deviceType <> INVALID_DISPLAY_TYPE
         pinbase := legalBase                    ' record base pin number
         ' configure inputs
-        pinfloat(pinbase + CLICK_OFST_BSY)
-        'pinfloat(pinbase + CLICK_OFST_MOSI)
+        pinfloat(eiPinBUSY)
+        'pinfloat(eiPinSDO)
         ' assert reset while starting up
-        pinlow(pinbase + CLICK_OFST_RST)
+        pinlow(eiPinRST)
         ' Deselect the click SPI device
-        pinhigh(pinbase + CLICK_OFST_CS)
+        pinhigh(eiPinCSb)
         ' start the smart pins                            ' select EINK Click
-        ok := spi.start(pinbase + CLICK_OFST_MISO, pinbase + CLICK_OFST_MOSI, pinbase + CLICK_OFST_SCK, EINK_SPI_CLK_MHZ)                     ' spi to EINK @ 3MHz(can run at 20MHz)
+        ok := spi.start(eiPinSDI, eiPinSDO, eiPinSCLK, EINK_SPI_CLK_MHZ)                     ' spi to EINK @ 3MHz(can run at 20MHz)
 
         ' reset device
         resetDevice()
 
         '  Click initialization based on display size
-        startConfig()
+        configDevice()
 
 PUB stop()
 '' Stop the EINK Click SPI Object
@@ -387,15 +436,15 @@ CON ' --- PUBLIC interface Methods ---
 
 
 PUB enableDevice()
-'' Enable the EINK Device(pull it out of reset)
+'' Enable the EINK Device (pull it out of reset)
 ''
-    pinhigh(pinbase + CLICK_OFST_RST)                       ' de-assert reset
+    pinhigh(eiPinRST)                       ' de-assert reset
 
 PUB resetDevice()
 '' Reset the EINK device
 ''
-    pinhigh(pinbase + CLICK_OFST_CS)    ' CS idle=1
-    pinlow(pinbase + CLICK_OFST_SCK)    ' SCLK idle=0
+    pinhigh(eiPinCSb)    ' CS idle=1
+    pinlow(eiPinSCLK)    ' SCLK idle=0
 
     if deviceType == DSWS_2in13BV3
         resetDS213BV3()
@@ -403,20 +452,22 @@ PUB resetDevice()
         resetDS565F()
         ' wait for not busy after reset
         wrCmdWtDesiredBusyWS565F(CMD_NO_CMD, 1)
-    elseif deviceType == DSPD_370Tch
+    elseif deviceType == DSGD_370Tch
+        ' this is done by init
+        'resetDeviceGD370Tch()
     else
-        pinhigh(pinbase + CLICK_OFST_RST)   ' toggle reset
+        pinhigh(eiPinRST)   ' toggle reset
         waitms(1)
-        pinlow(pinbase + CLICK_OFST_RST)
+        pinlow(eiPinRST)
         waitms(2)
-        pinhigh(pinbase + CLICK_OFST_RST)
+        pinhigh(eiPinRST)
         waitms(3)
 
 {PRI reset()
 ' from library source
-    pinlow(pinbase + CLICK_OFST_RST)
+    pinlow(eiPinRST)
     waitms(200)
-    pinhigh(pinbase + CLICK_OFST_RST)
+    pinhigh(eiPinRST)
     waitms(200)
 }
 
@@ -428,7 +479,8 @@ PUB enterSleepMode()
         sleepDS213BV3()
     elseif deviceType == DSWS_5in65F
         sleepDS565F()
-    elseif deviceType == DSPD_370Tch
+    elseif deviceType == DSGD_370Tch
+        sleepGD370Tch()
     else
         writeCmd(CMD_DEEP_SLEEP_MODE)
         waitForDeviceIdle()
@@ -513,11 +565,12 @@ PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
 ' @local imgIdx -
 
     if deviceType == DSWS_2in13BV3
-    ' NOT supported on this device
-    '    NOTE: will likely be a 2bpp image file when we get it supported
+        ' NOT supported on this device
+        '    NOTE: will likely be a 2bpp image file when we get it supported
     elseif deviceType == DSWS_5in65F
-    ' NOT supported on this device
-    elseif deviceType == DSPD_370Tch
+        ' NOT supported on this device
+    elseif deviceType == DSGD_370Tch
+        ' NOT supported on this device
     else
         ' set memory area to full display
         if deviceType <> DS_eink200gs
@@ -699,7 +752,8 @@ PUB fillBuffer(eColor) | xCtr, yCtr, fillColor, byteCtr
     elseif deviceType == DSWS_5in65F
         fillBufferWS565F(fillColor)
         writeBufferWS565F()
-    elseif deviceType == DSPD_370Tch
+    elseif deviceType == DSGD_370Tch
+        fillBufferGD370Tch(fillColor) ' fill only
     else
         waitForDeviceIdle()
         if deviceType <> DS_eink200gs
@@ -1080,7 +1134,6 @@ PUB setPixelAtXY(inX, inY, eColor) | bitColor, bitInByte, nibbleMask, colorBits,
             dbgMsgCt--
             debug("setPixelAtXY(", udec_(inX), ", ", udec_(inY), ") (", udec_(x), ", ", udec_(y), ") ds=", uhex_byte_(bitColor), " @ ", uhex_byte_(byteIdx), ":", uhex_byte_(bitInByte), ", ",  uhex_byte_(mskValue), "->", uhex_byte_(updValue))
 
-    elseif deviceType == DSPD_370Tch
     elseif deviceType <> DS_eink200gs
         ' for 1.54", 2.13" and 2.90" displays
         ' monochrome (black/white) - 1 bit / pixel! (8 pix / byte)
@@ -1242,7 +1295,8 @@ PUB flushToDisplay() | byteCtr, yCtr, xCtr
         writeBufferWS213BV3()
     elseif deviceType == DSWS_5in65F
         writeBufferWS565F()
-    elseif deviceType == DSPD_370Tch
+    elseif deviceType == DSGD_370Tch
+        writeBufferGD370Tch()
     else
         waitForDeviceIdle()
         if deviceType <> DS_eink200gs
@@ -1286,8 +1340,17 @@ PUB waitForDisplayComplete()
 
 VAR ' --- PRIVATE Instance Variables ---
 
-    LONG    frameSizeInBytes
     LONG    pinbase
+
+    LONG    eiPinBUSY
+    LONG    eiPinDCb
+    LONG    eiPinCSb
+    LONG    eiPinRST
+    LONG    eiPinSCLK
+    LONG    eiPinSDI
+    LONG    eiPinSDO
+
+    LONG    frameSizeInBytes
     LONG    fontAddr
 
     WORD    eInkPhysWidth
@@ -1317,13 +1380,14 @@ VAR ' --- PRIVATE Instance Variables ---
     BYTE    fontOrientation
     BYTE    filler[1000]   ' 1K of filler to keep below from overriting other data???!!
     BYTE    deviceFrame[LARGEST_FRAME_SIZE_IN_BYTES]
+    BYTE    deviceFramePrior[EINKGD370T_DISPLAY_RESOLUTION] ' only for DSGD_370Tch driver
 
     ' line draw support
     LONG  dx, dy, sx, sy, err, e2, widthIdx
 
 CON ' --- PRIVATE Utility Methods ---
 
-PRI startConfig() | flashFrameRate, VCOM
+PRI configDevice() | flashFrameRate, VCOM
 ' configure our display
     case deviceType
         DS_eink154:
@@ -1349,21 +1413,21 @@ PRI startConfig() | flashFrameRate, VCOM
 
         DS_eink200gs:
             writeCmd(CMD_DEEP_SLEEP_MODE)
-            writeData ($00)
+            writeData($00)
             writeCmd(CMD_DATA_ENTRY_MODE_SETTING)
-            writeData ($01)
+            writeData($01)
 
             writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
-            writeData ($00)
-            writeData ($11)
+            writeData($00)
+            writeData($11)
             writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS)
-            writeData ($00)
-            writeData ($AB)
+            writeData($00)
+            writeData($AB)
 
             writeCmd(CMD_SET_RAM_X_ADDR_CTR)
-            writeData ($00)
+            writeData($00)
             writeCmd(CMD_SET_RAM_Y_ADDR_CTR)
-            writeData ($00)
+            writeData($00)
 
             writeCmd(CMD_BOOSTER_FEEDBACK_SELECTION)
             writeData($1F)
@@ -1446,8 +1510,8 @@ PRI startConfig() | flashFrameRate, VCOM
         DSWS_5in65F:
             ' already did reset and checked for busy HIGH
             initDS565F()
-        DSPD_370Tch:
-            'initPD370Tch()
+        DSGD_370Tch:
+            initGD370Tch()
         OTHER:
             debug("sc() ERROR unknown display size")
 
@@ -1458,7 +1522,7 @@ PRI setDeviceLut(pLut, nBytes) | nIdx
     case deviceType
         DSWS_2in13BV3:
         DSWS_5in65F:
-        DSPD_370Tch:
+        DSGD_370Tch:
         OTHER:
             if(deviceType <> DSWS_2in13BV3)
                 writeCmd(CMD_WRITE_LUT_REGISTER)
@@ -1472,7 +1536,7 @@ PRI setMemoryPointer(x, y)
     case deviceType
         DSWS_2in13BV3:
         DSWS_5in65F:
-        DSPD_370Tch:
+        DSGD_370Tch:
         OTHER:
             writeCmd(CMD_SET_RAM_X_ADDR_CTR)
             writeData(((x >> 3) & $FF))
@@ -1490,7 +1554,7 @@ PRI setMemoryArea(xStart, yStart, xEnd, yEnd)
     case deviceType
         DSWS_2in13BV3:
         DSWS_5in65F:
-        DSPD_370Tch:
+        DSGD_370Tch:
         OTHER:
             if deviceType == DS_eink200gs
                 writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
@@ -1525,7 +1589,8 @@ PRI updateDisplay() | cmdValue
 
     elseif deviceType == DSWS_5in65F
         ' updateDisplayWS565F() already done by writeBufferWS565F()
-    elseif deviceType == DSPD_370Tch
+    elseif deviceType == DSGD_370Tch
+        ' updateDisplayGD370Tch() already done by writeBufferGD370Tch()
     else
         case deviceType
             DS_eink154:
@@ -1553,19 +1618,19 @@ PRI updateDisplay() | cmdValue
 
 PRI waitForDeviceIdle() | state
     ' wait until BUSY is de-asserted
-    state := pinread(pinbase + CLICK_OFST_BSY)
+    state := pinread(eiPinBUSY)
     if deviceType == DSWS_2in13BV3
         waitDeviceIdleDS213BV3()
     elseif deviceType == DSWS_5in65F
     ' already done for us?
         'wrCmdWtDesiredBusyWS565F(CMD_NO_CMD, 0) ' not busy
-    elseif deviceType == DSPD_370Tch
-        ' coe here
+    elseif deviceType == DSGD_370Tch
+        waitDeviceIdleGD370Tch()
     else
         Debug("* wait idle - ENTRY: ", udec(state))
         ' wait for busy to go low
         repeat
-            state := pinread(pinbase + CLICK_OFST_BSY)
+            state := pinread(eiPinBUSY)
             if state
                 waitms(100)
         until state == 0
@@ -1585,7 +1650,7 @@ PRI validColor(eColor) : valColor
 
     ' override color if it is not one of the supported by the device!
     case deviceType
-        DS_eink154, DS_eink213, DS_eink290, DSPD_370Tch:
+        DS_eink154, DS_eink213, DS_eink290, DSGD_370Tch:
             case eColor
                 EINK_COLOR_WHITE:
                     valColor := EINKDS_COLOR_WHITE
@@ -1724,11 +1789,11 @@ PRI resetDS213BV3()
 PRI resetDeviceDS213BV3()
 ' Hard-reset the WS213BV3  device
 '
-    pinwrite(pinbase + CLICK_OFST_RST, 1)
+    pinwrite(eiPinRST, 1)
     waitms(200)
-    pinwrite(pinbase + CLICK_OFST_RST, 0)
+    pinwrite(eiPinRST, 0)
     waitms(2)
-    pinwrite(pinbase + CLICK_OFST_RST, 1)
+    pinwrite(eiPinRST, 1)
     waitms(200)
 
 PRI sleepDS213BV3()
@@ -1744,10 +1809,10 @@ PRI sleepDS213BV3()
 PRI waitDeviceIdleDS213BV3() | state ', statusByte
 ' Wait for WS213BV3 busy to go high
 '
-    state := pinread(pinbase + CLICK_OFST_BSY)
+    state := pinread(eiPinBUSY)
     Debug("* wait idle - ENTRY: ", uhex(state))
     repeat
-        state := pinread(pinbase + CLICK_OFST_BSY)
+        state := pinread(eiPinBUSY)
         if state == 0
             'writeCmd(CMD_GET_STATUS)
             'waitms(1)
@@ -1914,9 +1979,9 @@ PRI initDS565F()
 PRI resetDS565F()
 ' Reset our 7-color display
 '
-    pinlow(pinbase + CLICK_OFST_RST)
+    pinlow(eiPinRST)
     waitms(1)
-    pinhigh(pinbase + CLICK_OFST_RST)
+    pinhigh(eiPinRST)
     waitms(200)
 
 PRI sleepDS565F()
@@ -1932,7 +1997,7 @@ PRI sleepDS565F()
     writeCmd($07)
     writeData($A5)
     waitms(100)
-    pinlow(pinbase + CLICK_OFST_RST) ' reset
+    pinlow(eiPinRST) ' reset
 
 PRI clearWS565F()
 ' Clear the WS565F display
@@ -1955,13 +2020,13 @@ PRI wrCmdWtDesiredBusyWS565F(cmd, endState) | state, stateStr
 
 ' Local Variables:
 ' @local state -
-    state := pinread(pinbase + CLICK_OFST_BSY)
+    state := pinread(eiPinBUSY)
     stateStr := busyStrWS565F(state)
     Debug("* wait idle - ENTRY: ", zstr_(stateStr), ", cmd=", uhex_byte_(cmd))
     if cmd <> CMD_NO_CMD
         writeCmd(cmd)
     repeat
-        state := pinread(pinbase + CLICK_OFST_BSY)
+        state := pinread(eiPinBUSY)
         if state <> endState
             'writeCmd(CMD_GET_STATUS)
             'waitms(1)
@@ -2029,79 +2094,240 @@ PRI updateDisplayWS565F()
     wrCmdWtDesiredBusyWS565F(CMD_POWER_OFF_CMD, 0)
     waitms(200)
 
-CON ' --- PRIVATE DSPD_370Tch Display Methods ---
+CON ' --- PRIVATE DSGD_370Tch Display Methods ---
 
-PUB getDataOTP() | ui8, _readBytes, u_flagOTP, s_flag50, offsetA5, offsetPSR, bank, pSummary
- ' here so we can do setup verify with LogicAnalyzer
-    s_flag50 := true
+PRI initGD370Tch()
+' Initialize our 3.7" display
+    debug("initGD370Tch() - ENTRY")
+    resetDeviceGD370Tch() ' EPD init
+    clearGD370Tch()     ' EPD Clear
+    sleepGD370Tch()     ' EPD_sleep,Sleep instruction is necessary, please do not delete!!!
+    waitms(1000)        ' 1s
+    initGD370TchFast()  ' EPD init Fast
+    ' ready to draw
+    debug("initGD370Tch() - EXIT")
 
-    resetDevicePD370Tch()
+PRI initGD370TchBasic()
+' short init
+    resetDeviceGD370Tch()
 
-    _readBytes := 2
-    ui8 := 0
-    offsetA5 := 0
-    offsetPSR := 0
+    writeCmd(CMD_POWER_ON_CMD)  ' $04 power on
+    waitDeviceIdleGD370Tch()
 
-    writeCmd($A2)
-    waitms(10)
+    writeCmd(CMD_VCOM_DATA_INTRVL)  ' $50 VCOM Data Intervl
+    writeData($97) ' WBmode:VBDF 17|D7 VBDW 97 VBDB 57    WBRmode:VBDF F7 VBDW 77 VBDB 37  VBDR B7
 
-    ui8 := readData()  ' Dummy
-    debug("hV . Dummy read ", uhex_byte(ui8))
-    ui8 := readData()  ' First byte to be checked
-    debug("hV . Actual read ", uhex_byte(ui8))
+    debug("initGD370TchBasic() done")
 
-    bank := ((ui8 == $A5) ? 0 : 1)
-    offsetPSR := $004B
-    offsetA5 := $0000
-    pSummary := (bank == 0) ? @"as expected" : @"not checked"
-    debug("hV . OTP check passed - Bank ", udec_(bank), ", first ", uhex_byte_(ui8), " ", zstr_(pSummary))
+PRI initGD370TchFast()
+' alternate init (for fast mode?)
+    resetDeviceGD370Tch()
 
-PRI initPD370Tch()
+    writeCmd(CMD_POWER_ON_CMD)  ' $04 power on
+    waitDeviceIdleGD370Tch()  ' waiting for the electronic paper IC to release the idle signal
 
-PRI resetDevicePD370Tch()
+    writeCmd($e0)   ' cascade setting
+    writeData($02)   ' cascade setting
+
+    writeCmd($e5)   ' force temperature sensor
+    writeData($32)   ' force temperature sensor
+
+    writeCmd(CMD_VCOM_DATA_INTRVL)  ' $50 VCOM Data Intervl
+    writeData($97) ' WBmode:VBDF 17|D7 VBDW 97 VBDB 57    WBRmode:VBDF F7 VBDW 77 VBDB 37  VBDR B7
+
+    debug("initGD370TchFast() done")
+
+PRI initGD370TchPart()
+' longer init (partial write support?)
+    resetDeviceGD370Tch()  ' Electronic paper IC reset
+
+    writeCmd($04)  ' POWER ON
+    waitDeviceIdleGD370Tch()  ' waiting for the electronic paper IC to release the idle signal
+
+    writeCmd($00)  ' Panel Setting
+    writeData($B7)  ' LUT FROM MCU
+    writeData($8D)  '    SHL   SHD_N  RST_N  0xFF=LUT from register,0xDF=LUT from OTP. (Default)
+
+    writeCmd($01)  '  power setting
+    writeData($03)  ' Enable internal VSH\VSL\VGH\VGL
+    writeData(BYTE [@EINKGD370T_LUT_PARTIAL][211])  ' VGH=20V,VGL=-20V
+    writeData(BYTE [@EINKGD370T_LUT_PARTIAL][212])  ' VSH=15V
+    writeData(BYTE [@EINKGD370T_LUT_PARTIAL][213])  ' VSL=-15V
+    writeData(BYTE [@EINKGD370T_LUT_PARTIAL][214])  ' VSHR
+
+    writeCmd($06)  ' booster soft start
+    writeData($D7)
+    writeData($D7)
+    writeData($2F)
+
+    writeCmd($30)  ' PLL  -Frame rate
+    writeData(BYTE [@EINKGD370T_LUT_PARTIAL][210])  '
+
+    writeCmd($50)  ' CDI
+    writeData($D7)  ' KW MODE   VBD=10,DDX=01,CDI=0111
+
+    writeCmd($60)  ' TCON SETTING
+    writeData($22)  '
+
+    writeCmd($65)
+    writeData($00)
+    writeData($00)
+    writeData($00)
+    writeData($00)
+
+    writeCmd($82)  ' VCOM_DC
+    writeData(BYTE [@EINKGD370T_LUT_PARTIAL][215])  ' -2.0V
+
+    ' Power Saving Register
+    writeCmd($E3)
+    writeData($88)
+
+    writePartLUTGD370Tch()
+
+
+PRI resetDeviceGD370Tch()
 ' Reset our 2-color display w/Touch
 '
-
-' NOTE: fm Screen_EPD_EXT3_Fast::COG_SmallKP_reset 5, 5, 10, 5, 5
-    waitms(5) ' Wait for power stabilization
-    pinhigh(pinbase + CLICK_OFST_RST) ' RESET = HIGH
-    waitms(5)
-    pinlow(pinbase + CLICK_OFST_RST) ' RESET = LOW
+' NOTE: fm TY037T03_Arduino.ino::EPD_W21_Init()
+    pinlow(eiPinRST) ' RESET = LOW
     waitms(10)
-    pinhigh(pinbase + CLICK_OFST_RST) ' RESET = HIGH
-    waitms(5)
-    pinhigh(pinbase + CLICK_OFST_CS)  ' CS = HIGH, unselect
-    waitms(5)
+    pinhigh(eiPinRST) ' RESET = HIGH
+    waitms(10) ' at 70uS busy is cleared... so 10mS should be plenty
 
-PRI waitDeviceIdlePD370Tch() | state ', statusByte
+PRI waitDeviceIdleGD370Tch() | state ', statusByte
 ' Wait for WS213BV3 busy to go high
 '
-    state := pinread(pinbase + CLICK_OFST_BSY)
+    state := pinread(eiPinBUSY)
     Debug("* wait idle - ENTRY: ", uhex(state))
     repeat
-        state := pinread(pinbase + CLICK_OFST_BSY)
+        state := pinread(eiPinBUSY)
         if state == 0
-            waitms(32)
+            waitms(1)
     until state <> 0
     Debug("* wait idle - EXIT: ", uhex(state))
 
 
-PRI updateDisplayPD370Tch()
-' ...
+PRI clearGD370Tch()
+' Clear the GD370Tch display
 '
-    waitDeviceIdlePD370Tch()
+    'fillBufferGD370Tch(EINK5in65F_COLOR_WHITE)
+    BYTEFILL(@deviceFrame, $FF, frameSizeInBytes)
+    BYTEFILL(@deviceFramePrior, $FF, frameSizeInBytes)
+    writeBufferGD370Tch()
 
-    writeCmd(CMD_POWER_ON_CMD) ' $04 Power on
-    waitDeviceIdlePD370Tch()
+PRI fillBufferGD370Tch(color) | byteIdx, bytePxColor
+' fill entire buffer with single color (black or white)
+    bytePxColor := (color == EINKDS_COLOR_BLACK) ? $00 : $FF
+    repeat byteIdx from 0 to frameSizeInBytes - 1
+        BYTE [@deviceFrame][byteIdx] := bytePxColor
+
+PRI writeBufferGD370Tch() | byteIdx
+' write buffer to display
+'
+    waitDeviceIdleGD370Tch()
+
+    ' write our OLD display values
+    writeCmd(CMD_DISPLAY_START_OLD) ' $10 Transfer old data
+    repeat byteIdx from 0 to frameSizeInBytes - 1
+        writeData(BYTE [@deviceFramePrior][byteIdx])
+
+    ' write our NW display values
+    writeCmd(CMD_DISPLAY_START) ' $13 Transfer old data
+    repeat byteIdx from 0 to frameSizeInBytes - 1
+        writeData(BYTE [@deviceFrame][byteIdx])
+
+    ' keep current display values for next update
+    BYTEMOVE(@deviceFramePrior, @deviceFrame, frameSizeInBytes)
 
     writeCmd(CMD_DISPLAY_REFRESH) ' $12 Display Refresh
-    waitDeviceIdlePD370Tch()
+    waitms(1)
+    waitDeviceIdleGD370Tch()
+    powerOffGD370Tch()
 
-PRI powerOffPD370Tch()
-' Power off the PD370Tch display
+PRI writePartialGD370Tch(x_start, y_start, pBffr, line, column, mode) | byteIdx, datas, x_end, y_end
+' write partial buffer to display (really fast paint mechanism)
+    x_end := x_start + line - 1
+    y_end := y_start + column - 1
+    datas := line * column / 8
+
+    writeCmd($91)   ' This command makes the display enter partial mode
+    writeCmd($90)   ' resolution setting
+    writeData(x_start)   ' x-start
+    writeData(x_end-1)   ' x-end
+
+    writeData(y_start/256)
+    writeData(y_start % 256)   ' y-start
+
+    writeData(y_end/256)
+    writeData(y_end % 256-1)  ' y-end
+    writeData($01)  ' 28
+
+    writeCmd(CMD_DISPLAY_START_OLD)        ' 0x10 writes New data to SRAM.
+    'for(i=0;i<datas;i++)
+    repeat byteIdx from 0 to datas - 1
+       if(mode==0)
+          writeData($ff)
+       else
+          writeData(BYTE [@deviceFramePrior][byteIdx])
+
+    writeCmd(CMD_DISPLAY_START)        ' 0x13 writes Old data to SRAM for programming
+    'for(i=0;i<datas;i++)
+    repeat byteIdx from 0 to datas - 1
+        writeData(BYTE [@deviceFrame][byteIdx])
+
+    ' keep current display values for next update
+    BYTEMOVE(@deviceFramePrior, @deviceFrame, frameSizeInBytes)
+
+    writeCmd(CMD_DISPLAY_REFRESH)    ' 0x12 DISPLAY REFRESH
+    waitms(10)     ' !!!The delay here is necessary, 200uS at least!!!
+    waitDeviceIdleGD370Tch()
+    powerOffGD370Tch()
+
+PRI powerOffGD370Tch()
+' Power off the GD370Tch display
 '
     writeCmd(CMD_POWER_OFF_CMD) ' $02 Power off
-    waitDeviceIdlePD370Tch()
+    waitDeviceIdleGD370Tch()
+
+PRI sleepGD370Tch()
+' sleep the display
+'
+    writeCmd(CMD_POWER_OFF_CMD) ' $02 Power off
+    waitDeviceIdleGD370Tch()
+    waitms(100)    ' !!!The delay here is necessary, 200uS at least!!!
+    writeCmd(CMD_DEEP_SLEEP) ' $07 Deep sleep
+    writeData($A5) ' check code
+
+
+PRI writePartLUTGD370Tch() | idx
+' load the LUT into the eInk controller
+
+  writeCmd($20) '  write VCOM register
+  ' for(i=0;i<42;i++)
+  repeat idx from 0 to 42 - 1
+      writeData(BYTE [@EINKGD370T_LUT_PARTIAL][idx])
+
+  writeCmd($21) '  write LUTWW register
+  ' for(i=42;i<84;i++)
+  repeat idx from 42 to 84 - 1
+      writeData(BYTE [@EINKGD370T_LUT_PARTIAL][idx])
+
+  writeCmd($22) '  write LUTBW register
+  ' for(i=84;i<126;i++)
+  repeat idx from 84 to 126 - 1
+      writeData(BYTE [@EINKGD370T_LUT_PARTIAL][idx])
+
+  writeCmd($23) '  write LUTWB register
+  ' for(i=126;i<168;i++)
+  repeat idx from 126 to 168 - 1
+      writeData(BYTE [@EINKGD370T_LUT_PARTIAL][idx])
+
+  writeCmd($24) '  write LUTBB register
+  ' for(i=168;i<210;i++)
+  repeat idx from 168 to 210 - 1
+      writeData(BYTE [@EINKGD370T_LUT_PARTIAL][idx])
+
+
 
 DAT ' --- PRIVATE object CLASS data ---
 ' test code variables
@@ -2148,6 +2374,39 @@ DAT ' --- PRIVATE object CLASS data ---
                             BYTE    $07, $00, $00, $00, $00, $00, $00
                             BYTE    $00, $00, $00, $00, $00, $00, $00
                             BYTE    $00, $00, $00, $00, $00, $00, $00
+
+   EINKGD370T_LUT_PARTIAL   BYTE    $01, $0E, $01, $00, $00, $01, $01           ' 216 bytes long!
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $0E, $01, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $8E, $81, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $4E, $41, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $0E, $41, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $01, $00, $00, $00, $00, $01, $01
+                            BYTE    $09, $10, $3F, $3F, $00, $00
+                                    ' Frame VGH VSH VSL VSHR  VCOM
 
 PRI char_wr(chrCode, textColor) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, frmX, frmY, rowBits, mask, bitmapOffset, pChrDescriptor, pChrBitmap, tempStr, bmIdx
 ' place font character into device frame for later display
@@ -2229,49 +2488,49 @@ CON ' --- PRIVATE Click SPI I/O Methods ---
 
 PRI writeCmd(data)
 ' write command byte(DC low = command)
-    pinlow(pinbase + CLICK_OFST_DC)
+    pinlow(eiPinDCb)
     selectNWrite(data)
 
 
 PRI writeData(data)
 ' write data byte(DC high = data)
-    pinhigh(pinbase + CLICK_OFST_DC)
+    pinhigh(eiPinDCb)
     selectNWrite(data)
 
 PRI readData(): value8bit
 ' read data byte(DC high = data)
-    pinhigh(pinbase + CLICK_OFST_DC)
+    pinhigh(eiPinDCb)
     value8bit := selectNRead()
 
 PRI selectNRead(): value8bit | count
 ' read byte from SPI
     ' select device
-    pinlow(pinbase + CLICK_OFST_CS)
+    pinlow(eiPinCSb)
     ' clock out bits MSB first
     value8bit := spi.shiftin(spi.MSBFIRST, 8)
     ' deselect device
-    pinhigh(pinbase + CLICK_OFST_CS)
+    pinhigh(eiPinCSb)
 
 PRI selectNWrite(dataByte) | count
 ' write byte to SPI
     ' select device
-    pinlow(pinbase + CLICK_OFST_CS)
+    pinlow(eiPinCSb)
     ' clock out bits MSB first
     spi.shiftout(spi.MSBFIRST, dataByte, 8)
     ' deselect device
-    pinhigh(pinbase + CLICK_OFST_CS)
+    pinhigh(eiPinCSb)
 
 PRI writeDataBytes(pData, nBytes) | byteIdx
 ' write multiple date bytes (more efficient)
     ' write data byte(DC high = data)
-    pinhigh(pinbase + CLICK_OFST_DC)
+    pinhigh(eiPinDCb)
     ' select device
-    pinlow(pinbase + CLICK_OFST_CS)
+    pinlow(eiPinCSb)
     ' clock out bits MSB first
     repeat byteIdx from 0 to nBytes - 1
         spi.shiftout(spi.MSBFIRST, BYTE [pData][byteIdx], 8)
     ' deselect device
-    pinhigh(pinbase + CLICK_OFST_CS)
+    pinhigh(eiPinCSb)
 
 
 CON { license }

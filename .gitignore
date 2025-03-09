@@ -147,3 +147,5 @@ C-src/lut_dumper.c
 src/demo_eInk_clickREF.spin2
 src/isp_eInk_clickREF.spin2
 src/isp_dummy_flash.spin2
+src/isp_eink_gd.spin2
+src/demo_eInk_gd.spin2

@@ -32,7 +32,7 @@ CON { click module io pins }
     EINK_CLICK_PINGROUP = eInkDisplay.PINS_P32_P47
 
     ' we are using a 2.13" eInk display
-    EINK_DISPLAY_TYPE = eInkDisplay.DSPD_370Tch
+    EINK_DISPLAY_TYPE = eInkDisplay.DSGD_370Tch
 
 OBJ { the object being demo'd }
 
@@ -52,9 +52,9 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
     else
         debug("* SPI started OK")
 
-    eInkDisplay.getDataOTP()
-    debug("* HOLD Here... ")
-    repeat
+    'eInkDisplay.getDataOTP()
+    'debug("* HOLD Here... ")
+    'repeat
 
     eraseDisplay()
 
