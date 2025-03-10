@@ -14,31 +14,33 @@ Object "isp_eInk_click" Interface:
 PUB null()
 PUB start(eDisplayType, eClickBasePin) : ok
 PUB stop()
-PUB enableDevice()
 PUB resetDevice()
 PUB enterSleepMode()
 PUB displaySize() : widthInPix, heightInPix
 PUB displayType() : eDisplayType
-PUB clearScreen()
-PUB fillScreen(eColor)
-PUB displayImage(pImageBffr)
-PUB displayTextAtXY(X, Y, pText)
+PUB displayColors() : pColorSet
 PUB setTextColor(eColor)
 PUB setBackground(eColor)
 PUB setOrientation(eRotation)
 PUB selectFont(eFontOrientation, eColor, eFont): validFont
+PUB fontMetrics() : firstChar, lastChar, fontHeight, fontWidth, lineHeight
+PUB clearScreen()
+PUB fillScreen(eColor)
+PUB displayImage(pImageBffr)
+PUB displayTextAtXY(x, y, pText)
+PUB updateDisplay()
+PUB waitForDeviceIdle()
 PUB clearBuffer()
 PUB fillBuffer(eColor)
-PUB setTextAtXY(X, Y, pText)
-PUB fillRegionAtXY(X, Y, eColor, width, height)
-PUB borderAtXY(X, Y, eColor, thickness, width, height)
+PUB setTextAtXY(x, y, pText)
+PUB fillRegionAtXY(x, y, eColor, width, height)
+PUB borderAtXY(x, y, eColor, thickness, width, height)
 PUB lineAtXY(fmX, fmY, toX, toY, eColor)
+PUB lineWidthAtXY(fmX, fmY, toX, toY, width, eColor)
 PUB circleAtXY(xc, yc, diameter, eColor)
 PUB arrowAtXY(x, y, width, length, rotation, eColor)
 PUB setPixelAtXY(inX, inY, eColor)
-PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation)
-PUB flushToDisplay()
-PUB waitForDisplayComplete()
+PUB placeImageAtXY(x, y, pImgBits, imgWidth, imgHeight, rotation)
 
 __________
 PUB null()
@@ -48,7 +50,7 @@ PUB null()
 ___________________________________________
 PUB start(eDisplayType, eClickBasePin) : ok
 
- Specify the Eink display type and the eval board connect location for the EINK click and start SPI
+ Specify the Eink display type and the eval board connect location for the eInk click and start SPI
  @param eDisplayType - display from enum value
  @param eClickBasePin - pin-group enum value
  @returns ok - return T/F where F means invalid pin or display type
@@ -56,22 +58,17 @@ PUB start(eDisplayType, eClickBasePin) : ok
 __________
 PUB stop()
 
- Stop the EINK Click SPI Object
-
-__________________
-PUB enableDevice()
-
- Enable the EINK Device(pull it out of reset)
+ Stop the eInk Click SPI Object
 
 _________________
 PUB resetDevice()
 
- Reset the EINK device
+ Reset the eInk device
 
 ____________________
 PUB enterSleepMode()
 
- Tell device to sleep
+ Tell eInk device to sleep
 
 ___________________________________________
 PUB displaySize() : widthInPix, heightInPix
@@ -91,33 +88,13 @@ PUB displayType() : eDisplayType
   (ensure start() is called, first, and that it is successful!)
  @returns eDisplayType - the current device type enum value
 
-_________________
-PUB clearScreen()
+_______________________________
+PUB displayColors() : pColorSet
 
- Clear the eInk display
-  NOTE: this is immediately displayed
-
-______________________
-PUB fillScreen(eColor)
-
- Write color to the entire eInk display
-  NOTE: this is immediately displayed
- @param eColor - fill color, specific to eInk device
-
-____________________________
-PUB displayImage(pImageBffr)
-
- Write image bitmap to Display
-  NOTE: MUST fit within display size
- @param pImageBffr - pointer to the image buffer
-
-________________________________
-PUB displayTextAtXY(X, Y, pText)
-
- Write zstr at {pText} to Display at device row, column,  is immediately displayed
- @param X - horizontal position
- @param Y - vertical position
- @param pText - text string to display
+ Return the number and list of color values for the current display
+  NOTE: only valid if device is successfully started!
+  (ensure start() is called, first, and that it is successful!)
+ @returns pColorSet - pointer to long array: count followed by count color values
 
 ________________________
 PUB setTextColor(eColor)
@@ -130,7 +107,7 @@ _________________________
 PUB setBackground(eColor)
 
  Fill Frame Buffer with {color}
-  NOTE: not immediately displayed, use flushToDisplay() to display
+  NOTE: not immediately displayed, use updateDisplay() to display
  @param eColor - background color, specific to eInk device
 
 _____________________________
@@ -149,6 +126,58 @@ PUB selectFont(eFontOrientation, eColor, eFont): validFont
  @param eFont - font to use for text
  @returns validFont - T/F - where F means font wast NOT found (is invalid)
 
+__________________________________________________________________________
+PUB fontMetrics() : firstChar, lastChar, fontHeight, fontWidth, lineHeight
+
+ Return font metrics for the currently selected font
+ @returns firstChar - ascii value of first character in font
+ @returns lastChar - ascii value of last character in font
+ @returns fontHeight - height of font in pixels
+ @returns fontWidth - width of font in pixels
+
+_________________
+PUB clearScreen()
+
+ Clear the eInk display
+  NOTE: this is immediately displayed
+
+______________________
+PUB fillScreen(eColor)
+
+ Write color to the entire eInk display
+  NOTE: this is immediately displayed
+ @param eColor - fill color, specific to eInk device
+
+____________________________
+PUB displayImage(pImageBffr)
+
+ Write image bitmap to Display
+  NOTE: MUST fit within display size, this is immediately displayed
+ @param pImageBffr - pointer to the image buffer
+
+________________________________
+PUB displayTextAtXY(x, y, pText)
+
+ Write zstr at {pText} to Display at device row, column,  is immediately displayed
+  NOTE: this is immediately displayed
+ @param x - horizontal position
+ @param y - vertical position
+ @param pText - text string to display
+
+___________________
+PUB updateDisplay()
+
+ Flush Frame Buffer content to eINK Display
+  NOTE: this will wait for prior display-update to complete before starting this update
+   this allows us to build the next display while the current display is being shown
+  NOTE2: See waitForDeviceIdle() which is needed to ensure final display is completely written before stopping the driver
+
+_______________________
+PUB waitForDeviceIdle()
+
+ Wait for display to indicate that last update is complete
+  NOTE: use this before a driver stop() to ensure the display is completely written.
+
 _________________
 PUB clearBuffer()
 
@@ -164,32 +193,32 @@ PUB fillBuffer(eColor)
  @param eColor - fill color, specific to eInk device
 
 ____________________________
-PUB setTextAtXY(X, Y, pText)
+PUB setTextAtXY(x, y, pText)
 
  Write zstr at {pText} to Frame Buffer at row, column
-  NOTE: not immediately displayed, use flushToDisplay() to display
- @param X - horizontal position
- @param Y - vertical position
+  NOTE: not immediately displayed, use updateDisplay() to display
+ @param x - horizontal position
+ @param y - vertical position
  @param pText - text string to display
 
 _______________________________________________
-PUB fillRegionAtXY(X, Y, eColor, width, height)
+PUB fillRegionAtXY(x, y, eColor, width, height)
 
  Fill region of Frame Buffer with color
-  NOTE: not immediately displayed, use flushToDisplay() to display
- @param X - horizontal position
- @param Y - vertical position
+  NOTE: not immediately displayed, use updateDisplay() to display
+ @param x - horizontal position
+ @param y - vertical position
  @param eColor - fill color, specific to eInk device
  @param width - width of region to fill
  @param height - height of region to fill
 
 ______________________________________________________
-PUB borderAtXY(X, Y, eColor, thickness, width, height)
+PUB borderAtXY(x, y, eColor, thickness, width, height)
 
  Draw border of thickness, color into Frame Buffer
-  NOTE: not immediately displayed, use flushToDisplay() to display
- @param X - horizontal position
- @param Y - vertical position
+  NOTE: not immediately displayed, use updateDisplay() to display
+ @param x - horizontal position
+ @param y - vertical position
  @param eColor - border color, specific to eInk device
  @param thickness - border thickness
  @param width - width of region to border
@@ -199,18 +228,30 @@ ________________________________________
 PUB lineAtXY(fmX, fmY, toX, toY, eColor)
 
  Draw colored line into Frame Buffer
-  NOTE: not immediately displayed, use flushToDisplay() to display
+  NOTE: not immediately displayed, use updateDisplay() to display
  @param fmX - starting horizontal position
  @param fmY - starting vertical position
  @param toX - ending horizontal position
  @param toY - ending vertical position
  @param eColor - line color, specific to eInk device
 
+____________________________________________________
+PUB lineWidthAtXY(fmX, fmY, toX, toY, width, eColor)
+
+ Draw colored line of width into Frame Buffer
+  NOTE: not immediately displayed, use updateDisplay() to display
+ @param fmX - starting horizontal position
+ @param fmY - starting vertical position
+ @param toX - ending horizontal position
+ @param toY - ending vertical position
+ @param width - line color, specific to eInk device
+ @param eColor - line color, specific to eInk device
+
 ________________________________________
 PUB circleAtXY(xc, yc, diameter, eColor)
 
  Draw colored circle into Frame Buffer
-  NOTE: not immediately displayed, use flushToDisplay() to display
+  NOTE: not immediately displayed, use updateDisplay() to display
  @param xc - center horizontal position
  @param yc - center vertical position
  @param diameter - diameter of circle
@@ -236,30 +277,18 @@ PUB setPixelAtXY(inX, inY, eColor)
  @param eColor - pixel color, specific to eInk device
 
 _________________________________________________________________
-PUB placeImageAtXY(X, Y, pImgBits, imgWidth, imgHeight, rotation)
+PUB placeImageAtXY(x, y, pImgBits, imgWidth, imgHeight, rotation)
 
- Overlay an image bitmap into Frame Buffer at X,Y
-  NOTE: not immediately displayed, use flushToDisplay() to display
- @param X - horizontal position
- @param Y - vertical position
+ Overlay an image bitmap into Frame Buffer at x,y
+  NOTE: not immediately displayed, use updateDisplay() to display
+ @param x - horizontal position
+ @param y - vertical position
  @param pImgBits - pointer to image
  @param imgWidth - image width
  @param imgHeight - image height
  @param rotation - image rotation (numeric, one of four cardinals: 0, 90, 180, 270)
 
-____________________
-PUB flushToDisplay()
 
- Flush Frame Buffer content to eINK Display
-  NOTE: this will wait for prior display-update to complete before starting this update
-   this allows us to build the next display while the current display is being shown
-  NOTE2: See waitForDisplayComplete() which is needed to ensure final display is completely written before stopping the driver
-
-____________________________
-PUB waitForDisplayComplete()
-
- Wait for display to indicate that last update is complete
-  NOTE: use this before a driver stop() to ensure the display is completely written.
 
 
 
