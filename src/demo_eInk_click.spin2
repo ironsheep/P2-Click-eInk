@@ -48,9 +48,9 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
     ' tell object what display hardware we have and where the click board is connected
     ok := eInkDisplay.start(EINK_DISPLAY_TYPE, EINK_CLICK_PINGROUP)
     if not ok
-        debug("* SPI FAILED to start")
+        debug("* eInk FAILED to start")
     else
-        debug("* SPI started OK")
+        debug("* eInk started OK")
 
     'eInkDisplay.getDataOTP()
     'debug("* HOLD Here... ")
@@ -58,10 +58,10 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
 
     eraseDisplay()
 
-    'debug("* ERASED, ready for storing")
+    'debug("* ERASED, ready for drawing, hold")
     'repeat ' hold here - when prepping the display for storage (no image on it)
 
-'{   Small tests while bringing up a new display
+{   Small tests while bringing up a new display
     'borderDemo()
     lineWidthDemo()
     'text_demo()
@@ -70,24 +70,24 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
     repeat
 '}
 
-{
+'{
 ' enable this code so we can get pictures of the display orientations
     ' make our orientation display set
     drawOrientationDisplay(eInkDisplay.ROTATE_0)
-    eInkDisplay.waitForDisplayComplete()
+    eInkDisplay.waitForDeviceIdle()
     waitms(5_000) ' time for pictures
 
-    drawOrientationDisplay(eInkDisplay.ROTATE_90)
-    eInkDisplay.waitForDisplayComplete()
-    waitms(5_000) ' time for pictures
+    'drawOrientationDisplay(eInkDisplay.ROTATE_90)
+    'eInkDisplay.waitForDeviceIdle()
+    'waitms(5_000) ' time for pictures
 
-    drawOrientationDisplay(eInkDisplay.ROTATE_180)
-    eInkDisplay.waitForDisplayComplete()
-    waitms(5_000) ' time for pictures
+    'drawOrientationDisplay(eInkDisplay.ROTATE_180)
+    'eInkDisplay.waitForDeviceIdle()
+    'waitms(5_000) ' time for pictures
 
-    drawOrientationDisplay(eInkDisplay.ROTATE_270)
-    eInkDisplay.waitForDisplayComplete()
-    waitms(5_000) ' time for pictures
+    'drawOrientationDisplay(eInkDisplay.ROTATE_270)
+    'eInkDisplay.waitForDeviceIdle()
+    'waitms(5_000) ' time for pictures
 
     debug("* HOLD Here... ")
     repeat
@@ -107,7 +107,7 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
     ' end with our device P2 Logo image
     p2_demoRegionImage()
 
-    eInkDisplay.waitForDisplayComplete()
+    eInkDisplay.waitForDeviceIdle()
     debug("* stopped")
     eInkDisplay.stop()
 
@@ -164,7 +164,7 @@ PRI demo7Color() | xOffset, yOffset, lineWidth
     eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_WHITE, eInkDisplay.FONT_Tahoma_14)
     eInkDisplay.setTextAtXY(20, 22+149, @"7-Color ACeP Display")
 
-    eInkDisplay.flushToDisplay()
+    eInkDisplay.updateDisplay()
 
 PRI drawOrientationDisplay(rotation) | dsplyWidthInPix, dsplyHeightInPix, startX, startY, endX, endY, pTitle, lineLen, bLandscape, detailColor
     einkDisplay.setOrientation(rotation)
@@ -261,7 +261,7 @@ PRI drawOrientationDisplay(rotation) | dsplyWidthInPix, dsplyHeightInPix, startX
         startY := dsplyHeightInPix / 4 * 3
         eInkDisplay.fillRegionAtXY(startX, startY, detailColor, lineLen, 20)
 
-    eInkDisplay.flushToDisplay()
+    eInkDisplay.updateDisplay()
 
 pri sin(angle): sinAngle
     sinAngle := angle
@@ -499,7 +499,7 @@ PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWid
 
 
     debug("and flush to screen")
-    eInkDisplay.flushToDisplay()
+    eInkDisplay.updateDisplay()
     waitms(5000)
 
 PRI text_demoRegionImage() | pImageBits, imgWidth, imgHeight
@@ -535,7 +535,7 @@ PRI text_demoRegionImage() | pImageBits, imgWidth, imgHeight
     ' borderAtXY(X,Y, color, thickness, width, height)
     eInkDisplay.borderAtXY(46, 110, eInkDisplay.EINK_COLOR_BLACK, 2, 30, 30)
 
-    eInkDisplay.flushToDisplay()
+    eInkDisplay.updateDisplay()
     waitms(5000)
 
 
@@ -566,7 +566,7 @@ PRI text_demoRecreate() | leftEdge, firstLine, lineSpacing, pImageBits, imgWidth
         eInkDisplay.placeImageAtXY(82, 10, pImageBits, imgWidth, imgHeight, 90)
 '}
 
-    eInkDisplay.flushToDisplay()
+    eInkDisplay.updateDisplay()
     waitms(5000)
 
 PRI text_demo() | dsplyWidthInPix, dsplyHeightInPix, detailColor
@@ -643,7 +643,7 @@ PRI text_demo() | dsplyWidthInPix, dsplyHeightInPix, detailColor
             eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL_COLUMN, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
             eInkDisplay.setTextAtXY(5, 140, @demo_text4)
 
-    eInkDisplay.flushToDisplay()
+    eInkDisplay.updateDisplay()
     waitms(5000)
 
 PRI borderDemo() |dsplyWidthInPix, dsplyHeightInPix, detailColor, borderInset, minLength, thickness, pColorSet, maxColors, colorIndex
@@ -663,7 +663,7 @@ PRI borderDemo() |dsplyWidthInPix, dsplyHeightInPix, detailColor, borderInset, m
     if thickness < 1
         thickness := 1 ' ensure not zero!
 
-    pColorSet := einkDisplay.colorSet()
+    pColorSet := einkDisplay.displayColors()
     maxColors := BYTE[pColorSet] ' first is number of colors in set
     colorIndex := getrnd() +// maxColors 'Get a random number between 0 and maxColors - 1
 
@@ -685,7 +685,7 @@ PRI borderDemo() |dsplyWidthInPix, dsplyHeightInPix, detailColor, borderInset, m
         if borderInset > minLength/2 - 4
             quit
 '}
-    eInkDisplay.flushToDisplay()
+    eInkDisplay.updateDisplay()
     waitms(5000)
 
 PRI lineWidthDemo() |dsplyWidthInPix, dsplyHeightInPix, detailColor
@@ -720,7 +720,7 @@ PRI lineWidthDemo() |dsplyWidthInPix, dsplyHeightInPix, detailColor
     eInkDisplay.lineWidthAtXY(40, 40, dsplyWidthInPix-40, dsplyHeightInPix-40, 2, detailColor)
     eInkDisplay.lineWidthAtXY(60, 60, dsplyWidthInPix-20, dsplyHeightInPix-20, 3, eInkDisplay.EINK_COLOR_BLACK)
 
-    eInkDisplay.flushToDisplay()
+    eInkDisplay.updateDisplay()
     waitms(5000)
 
 PRI region_image_demo() | pImageBits, imgWidth, imgHeight, dsplyWidthInPix, dsplyHeightInPix
@@ -803,7 +803,7 @@ PRI region_image_demo() | pImageBits, imgWidth, imgHeight, dsplyWidthInPix, dspl
                 ' ROTATION 270
                 placeRotatedImageAtXY(8, 124, 270, pImageBits, imgWidth, imgHeight, @"270 degr")
 
-    eInkDisplay.flushToDisplay()
+    eInkDisplay.updateDisplay()
     waitms(5000)
 
 PRI placeRotatedImageAtXY(x, y, rotation, pImgBits, imgWidth, imgHeight, pLabel) | rotHeight, rotWidth

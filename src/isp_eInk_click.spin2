@@ -67,7 +67,7 @@ OBJ { Objects / constants included by this object }
     spi         : "jm_ez_spi"                   '   smart pin mode 0 spi coms
 
 
-CON { Click Module offsets }
+CON { Click Module Pin Offsets }
  {
     P2 Eval Click Adapter IO Assignments
     * - used by eInk Click module w/display(3.3v only)
@@ -91,7 +91,7 @@ CON { Click Module offsets }
                └─────────────────────────────/
 }
 
-    ' specs for Click EINK board
+    ' specs for Click eInk board
    CLICK_OFST_MOSI = 11     ' Mikroe pin 6  - SPI Data - Out
    CLICK_OFST_MISO = 10     ' Mikroe pin 5  - SPI Data - In
    CLICK_OFST_SCK = 9       ' Mikroe pin 4  - SPI Clock - Out
@@ -107,7 +107,7 @@ CON { Click Module offsets }
 
    PIN_NOT_USED = -1
 
-CON { eInk Constants }
+CON { PRIVATE eInk Constants }
 
 ' error_code Error Code
     EINK_OK                     = $00
@@ -184,7 +184,7 @@ CON { eInk Constants }
 ' ================================================================
 ' ------------- NO USER ADJUSTABLE VALUES BELOW HERE -------------
 ' ================================================================
-' INTERNAL device color names/values
+' PRIVATE device color names/values
     ' DS_eink200gs: $FF=white, $00=black, $55=gray 1, $AA=gray 2
     EINKDS_COLOR_WHITE            = $FF
     EINKDS_COLOR_BLACK            = $00
@@ -287,7 +287,7 @@ CON { eInk Constants }
     'CMD_VCOM_DATA_INTERVAL        = $50
     CMD_RESOLUTION_SETTING          = $61
 
-    ' SPI Communication Freq w/EINK Board
+    ' SPI Communication Freq w/eInk Board
     EINK_SPI_CLK_MHZ = 20_000
 
 PUB null()
@@ -295,7 +295,7 @@ PUB null()
 '' This is not a top-level object
 
 PUB start(eDisplayType, eClickBasePin) : ok | legalBase
-'' Specify the Eink display type and the eval board connect location for the EINK click and start SPI
+'' Specify the Eink display type and the eval board connect location for the eInk click and start SPI
 ''
 '' @param eDisplayType - display from enum value
 '' @param eClickBasePin - pin-group enum value
@@ -381,26 +381,6 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
 
    debug("  -- now:[", udec_(deviceType), ", ", udec_(legalBase), "]")
 
-   ' init our pin variables
-   if eDisplayType == DSGD_370Tch
-        ' pins of click adapter w/o Click Module
-        eiPinBUSY := pinbase + CLICK_OFST_AN   ' + 6
-        eiPinRST  := pinbase + CLICK_OFST_RST  ' + 7
-        eiPinCSb  := pinbase + CLICK_OFST_CS   ' + 8
-        eiPinSCLK := pinbase + CLICK_OFST_SCK  ' + 9
-        eiPinDCb  := pinbase + CLICK_OFST_MISO ' + 10
-        eiPinSDO  := pinbase + CLICK_OFST_MOSI ' + 11
-        eiPinSDI  := PIN_NOT_USED ' no input from GD eInk display
-   else
-        ' pins of Microe Click EINK module
-        eiPinBUSY := pinbase + CLICK_OFST_INT
-        eiPinRST := pinbase + CLICK_OFST_RST
-        eiPinCSb := pinbase + CLICK_OFST_CS
-        eiPinDCb := pinbase + CLICK_OFST_PWM
-        eiPinSCLK := pinbase + CLICK_OFST_SCK
-        eiPinSDI := pinbase + CLICK_OFST_MISO
-        eiPinSDO := pinbase + CLICK_OFST_MOSI
-
     ' DEFAULTS
     setOrientation(ROTATE_0)
     bkgndColor := validColor(EINK_COLOR_WHITE)
@@ -410,6 +390,27 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
     ok := false
     if legalBase <> INVALID_PIN_BASE and deviceType <> INVALID_DISPLAY_TYPE
         pinbase := legalBase                    ' record base pin number
+
+        ' init our pin variables
+        if eDisplayType == DSGD_370Tch
+            ' pins of click adapter w/o Click Module
+            eiPinBUSY := pinbase + CLICK_OFST_AN   ' + 6
+            eiPinRST  := pinbase + CLICK_OFST_RST  ' + 7
+            eiPinCSb  := pinbase + CLICK_OFST_CS   ' + 8
+            eiPinSCLK := pinbase + CLICK_OFST_SCK  ' + 9
+            eiPinDCb  := pinbase + CLICK_OFST_MISO ' + 10
+            eiPinSDO  := pinbase + CLICK_OFST_MOSI ' + 11
+            eiPinSDI  := PIN_NOT_USED ' no input from GD eInk display
+        else
+            ' pins of Microe Click eInk module
+            eiPinBUSY := pinbase + CLICK_OFST_INT
+            eiPinRST := pinbase + CLICK_OFST_RST
+            eiPinCSb := pinbase + CLICK_OFST_CS
+            eiPinDCb := pinbase + CLICK_OFST_PWM
+            eiPinSCLK := pinbase + CLICK_OFST_SCK
+            eiPinSDI := pinbase + CLICK_OFST_MISO
+            eiPinSDO := pinbase + CLICK_OFST_MOSI
+
         ' configure inputs
         pinfloat(eiPinBUSY)
         'pinfloat(eiPinSDO)
@@ -417,31 +418,25 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
         pinlow(eiPinRST)
         ' Deselect the click SPI device
         pinhigh(eiPinCSb)
-        ' start the smart pins                            ' select EINK Click
-        ok := spi.start(eiPinSDI, eiPinSDO, eiPinSCLK, EINK_SPI_CLK_MHZ)                     ' spi to EINK @ 3MHz(can run at 20MHz)
+        ' start the smart pins                            ' select eInk Click
+        ok := spi.start(eiPinSDI, eiPinSDO, eiPinSCLK, EINK_SPI_CLK_MHZ)                     ' spi to eInk @ 3MHz(can run at 20MHz)
+        if ok
+            ' reset device
+            resetDevice()
 
-        ' reset device
-        resetDevice()
-
-        '  Click initialization based on display size
-        configDevice()
+            '  Click initialization based on display size
+            configDevice()
 
 PUB stop()
-'' Stop the EINK Click SPI Object
+'' Stop the eInk Click SPI Object
 ''
     spi.stop()
 
 
 CON ' --- PUBLIC interface Methods ---
 
-
-PUB enableDevice()
-'' Enable the EINK Device (pull it out of reset)
-''
-    pinhigh(eiPinRST)                       ' de-assert reset
-
 PUB resetDevice()
-'' Reset the EINK device
+'' Reset the eInk device
 ''
     pinhigh(eiPinCSb)    ' CS idle=1
     pinlow(eiPinSCLK)    ' SCLK idle=0
@@ -463,16 +458,8 @@ PUB resetDevice()
         pinhigh(eiPinRST)
         waitms(3)
 
-{PRI reset()
-' from library source
-    pinlow(eiPinRST)
-    waitms(200)
-    pinhigh(eiPinRST)
-    waitms(200)
-}
-
 PUB enterSleepMode()
-'' Tell device to sleep
+'' Tell eInk device to sleep
 ''
 ''
     if deviceType == DSWS_2in13BV3
@@ -506,7 +493,7 @@ PUB displayType() : eDisplayType
 
     eDisplayType := deviceType
 
-DAT  { color lists }
+DAT  { PRIVATE Color Lists }
 
     ' driver external values
     '  number of colors, followed by color values
@@ -518,12 +505,12 @@ DAT  { color lists }
     ' some debug stuff
     dbgMsgCt BYTE 10
 
-PUB colorSet() : pColorSet
+PUB displayColors() : pColorSet
 '' Return the number and list of color values for the current display
 ''  NOTE: only valid if device is successfully started!
 ''  (ensure start() is called, first, and that it is successful!)
 ''
-'' @returns pColorSet - pointer to count and list of color values
+'' @returns pColorSet - pointer to long array: count followed by count color values
 
     if deviceType == DS_eink200gs
         pColorSet := @fourColor
@@ -533,107 +520,6 @@ PUB colorSet() : pColorSet
         pColorSet := @sevenColor
     else
         pColorSet := @twoColor
-
-CON ' --- PUBLIC write to Display methods ---
-
-PUB clearScreen()
-'' Clear the eInk display
-''  NOTE: this is immediately displayed
-''
-    fillScreen(EINK_COLOR_WHITE)
-
-PUB fillScreen(eColor)
-'' Write color to the entire eInk display
-''  NOTE: this is immediately displayed
-''
-'' @param eColor - fill color, specific to eInk device
-    debug("* fillScreen(", uhex_byte_(eColor), ")")
-
-    fillBuffer(eColor)
-    ' memory loaded update display hardware
-    updateDisplay()
-
-PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
-'' Write image bitmap to Display
-''  NOTE: MUST fit within display size
-''
-'' @param pImageBffr - pointer to the image buffer
-
-' Local Variables:
-' @local xCtr -
-' @local yCtr -
-' @local imgIdx -
-
-    if deviceType == DSWS_2in13BV3
-        ' NOT supported on this device
-        '    NOTE: will likely be a 2bpp image file when we get it supported
-    elseif deviceType == DSWS_5in65F
-        ' NOT supported on this device
-    elseif deviceType == DSGD_370Tch
-        ' NOT supported on this device
-    else
-        ' set memory area to full display
-        if deviceType <> DS_eink200gs
-            ' setMemoryArea(xStart, yStart, xEnd, yEnd)
-            setMemoryArea(0, 0, eInkPhysWidth - 1, eInkPhysHeight - 1)
-        else
-            ' setMemoryArea(xStart, yStart, xEnd, yEnd)
-            setMemoryArea(0, eInkPhysHeight - 1, eInkPhysWidth - 1, 0)
-
-        ' write image to memory
-        if deviceType <> DS_eink213
-            ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
-            if deviceType == DS_eink200gs
-                setMemoryPointer(0, $AB)
-            else
-                setMemoryPointer(0, 0)
-            writeCmd(CMD_WRITE_RAM)
-            repeat imgIdx from 0 to frameSizeInBytes - 1
-                writeData(BYTE [@pImageBffr][ imgIdx ])
-
-        else
-            ' 2.13" means of doing this... we have 6 extra bits at end of ea row!
-            ' for each display line...
-            repeat yCtr from 0 to eInkPhysHeight - 1
-                setMemoryPointer(0, yCtr)
-                ' write contents for this line
-                writeCmd(CMD_WRITE_RAM)
-                repeat xCtr from 0 to (eInkPhysWidth / 8) - 1   ' our 122 width is really 128 bits with last 6 ignored!
-                    imgIdx := xCtr +(yCtr * (eInkPhysWidth / 8))
-                    writeData(BYTE [pImageBffr][imgIdx])
-
-        if deviceType == DS_eink200gs
-            writeCmd(CMD_MASTER_ACTIVATION)
-
-        ' memory loaded update display hardware
-        updateDisplay()
-
-PUB displayTextAtXY(x, y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
-'' Write zstr at {pText} to Display at device row, column,  is immediately displayed
-''
-'' @param x - horizontal position
-'' @param y - vertical position
-'' @param pText - text string to display
-
-' Local Variables:
-' @local xCtr -
-' @local yCtr -
-' @local strIdx -
-' @local nChar -
-' @local byteCtr -
-''
-    if (x >= displayWidthInPix) || (y >= displayHeightInPix)
-        return
-
-    nChar := strsize(pText)
-
-    textPosnX := x
-    textPosnY := y
-
-    repeat strIdx from 0 to nChar - 1
-        char_wr(BYTE [pText][strIdx], fontColor)   ' place chars in Frame Buffer
-
-    flushToDisplay()
 
 CON ' --- PUBLIC device setup/configuration methods ---
 
@@ -647,7 +533,7 @@ PUB setTextColor(eColor)
 
 PUB setBackground(eColor)
 '' Fill Frame Buffer with {color}
-''  NOTE: not immediately displayed, use flushToDisplay() to display
+''  NOTE: not immediately displayed, use updateDisplay() to display
 ''
 '' @param eColor - background color, specific to eInk device
 ''
@@ -721,6 +607,212 @@ PUB fontMetrics() : firstChar, lastChar, fontHeight, fontWidth, lineHeight
     fontWidth := _fontWidth
     lineHeight := _fontHeight * 13 / 10 ' 1.3 x height for a line of text
 
+CON ' --- PUBLIC write to Display methods ---
+
+PUB clearScreen()
+'' Clear the eInk display
+''  NOTE: this is immediately displayed
+''
+    fillScreen(EINK_COLOR_WHITE)
+
+PUB fillScreen(eColor)
+'' Write color to the entire eInk display
+''  NOTE: this is immediately displayed
+''
+'' @param eColor - fill color, specific to eInk device
+    debug("* fillScreen(", uhex_byte_(eColor), ")")
+
+    fillBuffer(eColor)
+    ' memory loaded update display hardware
+    updateDisplay()
+
+PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
+'' Write image bitmap to Display
+''  NOTE: MUST fit within display size, this is immediately displayed
+''
+'' @param pImageBffr - pointer to the image buffer
+
+' Local Variables:
+' @local xCtr -
+' @local yCtr -
+' @local imgIdx -
+
+    if deviceType == DSWS_2in13BV3
+        ' NOT supported on this device
+        '    NOTE: will likely be a 2bpp image file when we get it supported
+    elseif deviceType == DSWS_5in65F
+        ' NOT supported on this device
+    elseif deviceType == DSGD_370Tch
+        ' NOT supported on this device
+    else
+        ' set memory area to full display
+        if deviceType <> DS_eink200gs
+            ' setMemoryArea(xStart, yStart, xEnd, yEnd)
+            setMemoryArea(0, 0, eInkPhysWidth - 1, eInkPhysHeight - 1)
+        else
+            ' setMemoryArea(xStart, yStart, xEnd, yEnd)
+            setMemoryArea(0, eInkPhysHeight - 1, eInkPhysWidth - 1, 0)
+
+        ' write image to memory
+        if deviceType <> DS_eink213
+            ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
+            if deviceType == DS_eink200gs
+                setMemoryPointer(0, $AB)
+            else
+                setMemoryPointer(0, 0)
+            writeCmd(CMD_WRITE_RAM)
+            repeat imgIdx from 0 to frameSizeInBytes - 1
+                writeData(BYTE [@pImageBffr][ imgIdx ])
+
+        else
+            ' 2.13" means of doing this... we have 6 extra bits at end of ea row!
+            ' for each display line...
+            repeat yCtr from 0 to eInkPhysHeight - 1
+                setMemoryPointer(0, yCtr)
+                ' write contents for this line
+                writeCmd(CMD_WRITE_RAM)
+                repeat xCtr from 0 to (eInkPhysWidth / 8) - 1   ' our 122 width is really 128 bits with last 6 ignored!
+                    imgIdx := xCtr +(yCtr * (eInkPhysWidth / 8))
+                    writeData(BYTE [pImageBffr][imgIdx])
+
+        if deviceType == DS_eink200gs
+            writeCmd(CMD_MASTER_ACTIVATION)
+
+        ' memory loaded update display hardware
+        updateDisplay()
+
+PUB displayTextAtXY(x, y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
+'' Write zstr at {pText} to Display at device row, column,  is immediately displayed
+''  NOTE: this is immediately displayed
+''
+'' @param x - horizontal position
+'' @param y - vertical position
+'' @param pText - text string to display
+
+' Local Variables:
+' @local xCtr -
+' @local yCtr -
+' @local strIdx -
+' @local nChar -
+' @local byteCtr -
+''
+    if (x >= displayWidthInPix) || (y >= displayHeightInPix)
+        return
+
+    nChar := strsize(pText)
+
+    textPosnX := x
+    textPosnY := y
+
+    repeat strIdx from 0 to nChar - 1
+        char_wr(BYTE [pText][strIdx], fontColor)   ' place chars in Frame Buffer
+
+    updateDisplay()
+
+PUB updateDisplay() | byteCtr, yCtr, xCtr, cmdValue
+'' Flush Frame Buffer content to eINK Display
+''  NOTE: this will wait for prior display-update to complete before starting this update
+''   this allows us to build the next display while the current display is being shown
+''  NOTE2: See waitForDeviceIdle() which is needed to ensure final display is completely written before stopping the driver
+    if deviceType == DSWS_2in13BV3
+        writeBufferWS213BV3()
+    elseif deviceType == DSWS_5in65F
+        writeBufferWS565F()
+    elseif deviceType == DSGD_370Tch
+        writeBufferGD370Tch()
+    else
+        waitForDeviceIdle()
+        if deviceType <> DS_eink200gs
+            ' setMemoryArea(xStart, yStart, xEnd, yEnd)
+            setMemoryArea(0, 0, eInkPhysWidth - 1, eInkPhysHeight - 1)
+        else
+            ' setMemoryArea(xStart, yStart, xEnd, yEnd)
+            setMemoryArea(0, eInkPhysHeight - 1, eInkPhysWidth - 1, 0)
+
+        if deviceType <> DS_eink213
+            ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
+            if deviceType == DS_eink200gs
+                setMemoryPointer(0, $AB)
+            else
+                setMemoryPointer(0, 0)
+            writeCmd(CMD_WRITE_RAM)
+            repeat byteCtr from 0 to frameSizeInBytes - 1
+                writeData(BYTE [@deviceFrame][byteCtr])
+
+        else
+            ' 2.13" means of doing this... we have 6 extra bits at end of ea row!
+            ' for each display line...
+            repeat yCtr from 0 to eInkPhysHeight - 1
+                setMemoryPointer(0, yCtr)
+                ' write contents for this line
+                writeCmd(CMD_WRITE_RAM)
+                repeat xCtr from 0 to (eInkPhysWidth / 8) - 1   ' our 122 width is really 128 bits with last 6 ignored!
+                    byteCtr := xCtr + (yCtr * (eInkPhysWidth / 8))
+                    writeData(BYTE [@deviceFrame][byteCtr])
+
+        if deviceType == DS_eink200gs
+            writeCmd(CMD_MASTER_ACTIVATION)
+
+        ' Tell display to show updates
+        ' wait for settle time
+        waitms(2)
+        if deviceType == DSWS_2in13BV3
+
+            writeCmd(CMD_DISPLAY_REFRESH) ' refresh
+            waitms(100) ' partial wait for display to update
+
+        elseif deviceType == DSWS_5in65F
+            ' updateDisplayWS565F() already done by writeBufferWS565F()
+        elseif deviceType == DSGD_370Tch
+            ' updateDisplayGD370Tch() already done by writeBufferGD370Tch()
+        else
+            case deviceType
+                DS_eink154:
+                    cmdValue := $C4
+                DS_eink200gs:
+                    cmdValue := $02
+                DS_eink213:
+                    cmdValue := $C7
+                DS_eink290:
+                    cmdValue := $C7
+                OTHER:
+                    cmdValue := $C7 ' just some random value since unknown display
+                    debug("ud() ERROR unknown display size")
+
+            waitms(100)
+            writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)
+            writeData(cmdValue)
+            writeCmd(CMD_MASTER_ACTIVATION) ' raises BUSY must wait for end!
+
+            if deviceType <> DS_eink200gs
+                writeCmd(CMD_TERMINATE_FRAME_READ_WRITE)
+
+            ' NO waitForDeviceIdle() will DO SO before we attempt next write
+
+PUB waitForDeviceIdle() | state
+'' Wait for display to indicate that last update is complete
+''  NOTE: use this before a driver stop() to ensure the display is completely written.
+''
+    ' wait until BUSY is de-asserted
+    state := pinread(eiPinBUSY)
+    if deviceType == DSWS_2in13BV3
+        waitDeviceIdleDS213BV3()
+    elseif deviceType == DSWS_5in65F
+    ' already done for us?
+        'wrCmdWtDesiredBusyWS565F(CMD_NO_CMD, 0) ' not busy
+    elseif deviceType == DSGD_370Tch
+        waitDeviceIdleGD370Tch()
+    else
+        Debug("* wait idle - ENTRY: ", udec(state))
+        ' wait for busy to go low
+        repeat
+            state := pinread(eiPinBUSY)
+            if state
+                waitms(100)
+        until state == 0
+        Debug("* wait idle - EXIT: ", udec(state))
+
+
 CON ' --- PUBLIC write to Frame Buffer methods ---
 
 PUB clearBuffer()
@@ -787,7 +879,7 @@ PUB fillBuffer(eColor) | xCtr, yCtr, fillColor, byteCtr
 
 PUB setTextAtXY(x, y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
 '' Write zstr at {pText} to Frame Buffer at row, column
-''  NOTE: not immediately displayed, use flushToDisplay() to display
+''  NOTE: not immediately displayed, use updateDisplay() to display
 ''
 '' @param x - horizontal position
 '' @param y - vertical position
@@ -815,7 +907,7 @@ PUB setTextAtXY(x, y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
 
 PUB fillRegionAtXY(x, y, eColor, width, height) | xCoord, yCoord, fillColor
 '' Fill region of Frame Buffer with color
-''  NOTE: not immediately displayed, use flushToDisplay() to display
+''  NOTE: not immediately displayed, use updateDisplay() to display
 ''
 '' @param x - horizontal position
 '' @param y - vertical position
@@ -849,7 +941,7 @@ PUB fillRegionAtXY(x, y, eColor, width, height) | xCoord, yCoord, fillColor
 
 PUB borderAtXY(x, y, eColor, thickness, width, height) | lineCt, topRow, botRow, ltCol, rtCol, maxThickness, borderColor, lineLengthH, lineLengthV
 '' Draw border of thickness, color into Frame Buffer
-''  NOTE: not immediately displayed, use flushToDisplay() to display
+''  NOTE: not immediately displayed, use updateDisplay() to display
 ''
 '' @param x - horizontal position
 '' @param y - vertical position
@@ -897,7 +989,7 @@ PUB borderAtXY(x, y, eColor, thickness, width, height) | lineCt, topRow, botRow,
 
 PUB lineAtXY(fmX, fmY, toX, toY, eColor)
 '' Draw colored line into Frame Buffer
-''  NOTE: not immediately displayed, use flushToDisplay() to display
+''  NOTE: not immediately displayed, use updateDisplay() to display
 ''
 '' @param fmX - starting horizontal position
 '' @param fmY - starting vertical position
@@ -919,7 +1011,7 @@ PUB lineAtXY(fmX, fmY, toX, toY, eColor)
 
 PUB lineWidthAtXY(fmX, fmY, toX, toY, width, eColor) | vFmX, vFmY, vToX, vToY, xOffset, yOffset, lineColor, lineWidth, distance, stepValue, lineX, lineY
 '' Draw colored line of width into Frame Buffer
-''  NOTE: not immediately displayed, use flushToDisplay() to display
+''  NOTE: not immediately displayed, use updateDisplay() to display
 ''
 '' @param fmX - starting horizontal position
 '' @param fmY - starting vertical position
@@ -993,7 +1085,7 @@ PUB lineWidthAtXY(fmX, fmY, toX, toY, width, eColor) | vFmX, vFmY, vToX, vToY, x
 
 PUB circleAtXY(xc, yc, diameter, eColor) | x, y, vXc, vYc, lineColor
 '' Draw colored circle into Frame Buffer
-''  NOTE: not immediately displayed, use flushToDisplay() to display
+''  NOTE: not immediately displayed, use updateDisplay() to display
 ''
 '' @param xc - center horizontal position
 '' @param yc - center vertical position
@@ -1157,7 +1249,7 @@ PUB setPixelAtXY(inX, inY, eColor) | bitColor, bitInByte, nibbleMask, colorBits,
 
 PUB placeImageAtXY(x, y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, dstX, dstY, imageIdx, ltBits, rtBits, srcXinverted, srcYinverted, minX, minY, maxX, maxY
 '' Overlay an image bitmap into Frame Buffer at x,y
-''  NOTE: not immediately displayed, use flushToDisplay() to display
+''  NOTE: not immediately displayed, use updateDisplay() to display
 ''
 '' @param x - horizontal position
 '' @param y - vertical position
@@ -1286,58 +1378,6 @@ PUB placeImageAtXY(x, y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
         debug("* ERROR unsupported rotation: ", udec_(rotation))
     debug("  - placed from x,y=(", udec_(minX), ", ", udec_(minY), "), to x,y=(", udec_(maxX), ", ", udec_(maxY), ")")
 
-PUB flushToDisplay() | byteCtr, yCtr, xCtr
-'' Flush Frame Buffer content to eINK Display
-''  NOTE: this will wait for prior display-update to complete before starting this update
-''   this allows us to build the next display while the current display is being shown
-''  NOTE2: See waitForDisplayComplete() which is needed to ensure final display is completely written before stopping the driver
-    if deviceType == DSWS_2in13BV3
-        writeBufferWS213BV3()
-    elseif deviceType == DSWS_5in65F
-        writeBufferWS565F()
-    elseif deviceType == DSGD_370Tch
-        writeBufferGD370Tch()
-    else
-        waitForDeviceIdle()
-        if deviceType <> DS_eink200gs
-            ' setMemoryArea(xStart, yStart, xEnd, yEnd)
-            setMemoryArea(0, 0, eInkPhysWidth - 1, eInkPhysHeight - 1)
-        else
-            ' setMemoryArea(xStart, yStart, xEnd, yEnd)
-            setMemoryArea(0, eInkPhysHeight - 1, eInkPhysWidth - 1, 0)
-
-        if deviceType <> DS_eink213
-            ' 1.54", 2.00", and 2.90" have no extra bits so write 'em all
-            if deviceType == DS_eink200gs
-                setMemoryPointer(0, $AB)
-            else
-                setMemoryPointer(0, 0)
-            writeCmd(CMD_WRITE_RAM)
-            repeat byteCtr from 0 to frameSizeInBytes - 1
-                writeData(BYTE [@deviceFrame][byteCtr])
-
-        else
-            ' 2.13" means of doing this... we have 6 extra bits at end of ea row!
-            ' for each display line...
-            repeat yCtr from 0 to eInkPhysHeight - 1
-                setMemoryPointer(0, yCtr)
-                ' write contents for this line
-                writeCmd(CMD_WRITE_RAM)
-                repeat xCtr from 0 to (eInkPhysWidth / 8) - 1   ' our 122 width is really 128 bits with last 6 ignored!
-                    byteCtr := xCtr + (yCtr * (eInkPhysWidth / 8))
-                    writeData(BYTE [@deviceFrame][byteCtr])
-
-        if deviceType == DS_eink200gs
-            writeCmd(CMD_MASTER_ACTIVATION)
-
-    updateDisplay()
-
-PUB waitForDisplayComplete()
-'' Wait for display to indicate that last update is complete
-''  NOTE: use this before a driver stop() to ensure the display is completely written.
-''
-    waitForDeviceIdle()
-
 VAR ' --- PRIVATE Instance Variables ---
 
     LONG    pinbase
@@ -1408,7 +1448,9 @@ PRI configDevice() | flashFrameRate, VCOM
             writeCmd(CMD_DATA_ENTRY_MODE_SETTING)
             writeData($03)
 
-            displayDelay()
+            ' wait for settle time
+            waitms(2)
+
             setDeviceLut(@EINK154_LUT_TABLE, 30)    ' waits for 1sec at end
 
         DS_eink200gs:
@@ -1440,7 +1482,9 @@ PRI configDevice() | flashFrameRate, VCOM
             writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)
             writeData($C4)
 
-            displayDelay()
+            ' wait for settle time
+            waitms(2)
+
             setDeviceLut(@EINK_LUT_TABLE, 90)    ' waits for 1sec at end
 
         DS_eink213:
@@ -1469,7 +1513,9 @@ PRI configDevice() | flashFrameRate, VCOM
             writeCmd(CMD_BORDER_WAVEFORM_CTRL)          ' 0x3C
             writeData($33)                                  ' 7,6 = POR, 5,4 = VSH2, 1,0 = LUT3
 
-            displayDelay()
+            ' wait for settle time
+            waitms(2)
+
             setDeviceLut(@EINK213_BIG_LUT_TABLE, 70)    ' doc: device LUT is 70 bytes!   waits for 1sec at end
 
         DS_eink290:
@@ -1502,7 +1548,9 @@ PRI configDevice() | flashFrameRate, VCOM
             writeCmd(CMD_DATA_ENTRY_MODE_SETTING)
             writeData($03)
 
-            displayDelay()
+            ' wait for settle time
+            waitms(2)
+
             setDeviceLut(@EINK290_LUT_TABLE, 70)    ' waits for 1sec at end
 
         DSWS_2in13BV3:
@@ -1514,8 +1562,6 @@ PRI configDevice() | flashFrameRate, VCOM
             initGD370Tch()
         OTHER:
             debug("sc() ERROR unknown display size")
-
-
 
 PRI setDeviceLut(pLut, nBytes) | nIdx
 ' write the device LUT data - waits for 1sec at end
@@ -1572,69 +1618,6 @@ PRI setMemoryArea(xStart, yStart, xEnd, yEnd)
                 writeData((yStart >> 8) & $FF)
                 writeData(yEnd & $FF)
                 writeData((yEnd >> 8) & $FF)
-
-
-PRI displayDelay()
-' wait for settle time
-    waitms(2)
-
-
-PRI updateDisplay() | cmdValue
-' Tell display to show updates
-    displayDelay()
-    if deviceType == DSWS_2in13BV3
-
-        writeCmd(CMD_DISPLAY_REFRESH) ' refresh
-        waitms(100) ' partial wait for display to update
-
-    elseif deviceType == DSWS_5in65F
-        ' updateDisplayWS565F() already done by writeBufferWS565F()
-    elseif deviceType == DSGD_370Tch
-        ' updateDisplayGD370Tch() already done by writeBufferGD370Tch()
-    else
-        case deviceType
-            DS_eink154:
-                cmdValue := $C4
-            DS_eink200gs:
-                cmdValue := $02
-            DS_eink213:
-                cmdValue := $C7
-            DS_eink290:
-                cmdValue := $C7
-            OTHER:
-                cmdValue := $C7 ' just some random value since unknown display
-                debug("ud() ERROR unknown display size")
-
-        waitms(100)
-        writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)
-        writeData(cmdValue)
-        writeCmd(CMD_MASTER_ACTIVATION) ' raises BUSY must wait for end!
-
-        if deviceType <> DS_eink200gs
-            writeCmd(CMD_TERMINATE_FRAME_READ_WRITE)
-
-    ' NO waitForDeviceIdle() will DO SO before we attempt next write
-
-
-PRI waitForDeviceIdle() | state
-    ' wait until BUSY is de-asserted
-    state := pinread(eiPinBUSY)
-    if deviceType == DSWS_2in13BV3
-        waitDeviceIdleDS213BV3()
-    elseif deviceType == DSWS_5in65F
-    ' already done for us?
-        'wrCmdWtDesiredBusyWS565F(CMD_NO_CMD, 0) ' not busy
-    elseif deviceType == DSGD_370Tch
-        waitDeviceIdleGD370Tch()
-    else
-        Debug("* wait idle - ENTRY: ", udec(state))
-        ' wait for busy to go low
-        repeat
-            state := pinread(eiPinBUSY)
-            if state
-                waitms(100)
-        until state == 0
-        Debug("* wait idle - EXIT: ", udec(state))
 
 PRI validFontOrientation(eFontOrientation) : valOrientation
     valOrientation := eFontOrientation
@@ -2098,14 +2081,14 @@ CON ' --- PRIVATE DSGD_370Tch Display Methods ---
 
 PRI initGD370Tch()
 ' Initialize our 3.7" display
-    debug("initGD370Tch() - ENTRY")
-    resetDeviceGD370Tch() ' EPD init
+    'debug("initGD370Tch() - ENTRY")
+    initGD370TchBasic() ' EPD init
     clearGD370Tch()     ' EPD Clear
     sleepGD370Tch()     ' EPD_sleep,Sleep instruction is necessary, please do not delete!!!
     waitms(1000)        ' 1s
     initGD370TchFast()  ' EPD init Fast
     ' ready to draw
-    debug("initGD370Tch() - EXIT")
+    'debug("initGD370Tch() - EXIT")
 
 PRI initGD370TchBasic()
 ' short init
@@ -2117,7 +2100,7 @@ PRI initGD370TchBasic()
     writeCmd(CMD_VCOM_DATA_INTRVL)  ' $50 VCOM Data Intervl
     writeData($97) ' WBmode:VBDF 17|D7 VBDW 97 VBDB 57    WBRmode:VBDF F7 VBDW 77 VBDB 37  VBDR B7
 
-    debug("initGD370TchBasic() done")
+    'debug("initGD370TchBasic() done")
 
 PRI initGD370TchFast()
 ' alternate init (for fast mode?)
@@ -2127,15 +2110,15 @@ PRI initGD370TchFast()
     waitDeviceIdleGD370Tch()  ' waiting for the electronic paper IC to release the idle signal
 
     writeCmd($e0)   ' cascade setting
-    writeData($02)   ' cascade setting
+    writeData($02)   '
 
     writeCmd($e5)   ' force temperature sensor
-    writeData($32)   ' force temperature sensor
+    writeData($32)   '
 
     writeCmd(CMD_VCOM_DATA_INTRVL)  ' $50 VCOM Data Intervl
     writeData($97) ' WBmode:VBDF 17|D7 VBDW 97 VBDB 57    WBRmode:VBDF F7 VBDW 77 VBDB 37  VBDR B7
 
-    debug("initGD370TchFast() done")
+    'debug("initGD370TchFast() done")
 
 PRI initGD370TchPart()
 ' longer init (partial write support?)
@@ -2253,13 +2236,13 @@ PRI writePartialGD370Tch(x_start, y_start, pBffr, line, column, mode) | byteIdx,
     writeCmd($91)   ' This command makes the display enter partial mode
     writeCmd($90)   ' resolution setting
     writeData(x_start)   ' x-start
-    writeData(x_end-1)   ' x-end
+    writeData(x_end - 1)   ' x-end
 
-    writeData(y_start/256)
-    writeData(y_start % 256)   ' y-start
+    writeData(y_start / 256)
+    writeData(y_start // 256)   ' y-start
 
-    writeData(y_end/256)
-    writeData(y_end % 256-1)  ' y-end
+    writeData(y_end / 256)
+    writeData(y_end // 256 - 1)  ' y-end
     writeData($01)  ' 28
 
     writeCmd(CMD_DISPLAY_START_OLD)        ' 0x10 writes New data to SRAM.
@@ -2340,7 +2323,7 @@ DAT ' --- PRIVATE object CLASS data ---
                             BYTE    $00, $00, $00, $00, $F8, $B4, $13, $51
                             BYTE    $35, $51, $51, $19, $01, $00
 
-     EINK_LUT_TABLE      BYTE    $82, $00, $00, $00, $AA, $00, $00, $00      ' 90 bytes long!
+     EINK_LUT_TABLE         BYTE    $82, $00, $00, $00, $AA, $00, $00, $00      ' 90 bytes long!
                             BYTE    $AA, $AA, $00, $00, $AA, $AA, $AA, $00
                             BYTE    $55, $AA, $AA, $00, $55, $55, $55, $55
                             BYTE    $AA, $AA, $AA, $AA, $55, $55, $55, $55
@@ -2490,7 +2473,6 @@ PRI writeCmd(data)
 ' write command byte(DC low = command)
     pinlow(eiPinDCb)
     selectNWrite(data)
-
 
 PRI writeData(data)
 ' write data byte(DC high = data)
