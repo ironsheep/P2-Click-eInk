@@ -61,6 +61,8 @@ To this, we added these additional capabilities:
 Latest Changes:
 
 ```
+10 Mar 2025
+- Adding support for Good Displays' 3.70" eInk display with touch
 30 Jan 2025
 - Now at Release v1.0.0
 - Add new Orientation doc and updated inline source documentation
@@ -112,8 +114,6 @@ Latest Changes:
 Things we know about that still need attention:
 
 ```
-- We still want to support all display orientations (only two are supported currently.)
-  - Landscape (connector to left) and Portrait (connector at bottom)
 - Want to add utility methods like: 
   - Calculate length of string in given font
   - Calculate offset to center string of given font in region
@@ -135,6 +135,7 @@ Additional pages:
 - [Configure Display Orientation](./Docs/Orientation.md) - set driver to match your hardare set up
 - [Create bitmaps for display on your eINK device](./C-src)
 - [See images of all supported displays working!](./Docs) There are a small number of .PDFs in the [Docs](./Docs) directory providing  detailed information on the display and controller chips
+- [Using Good Displays eInk w/Touch e-paper display](./Docs/eInk-touch.md)
 
 ## How to Contribute
 
