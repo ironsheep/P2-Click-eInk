@@ -53,34 +53,63 @@ When using the GDEY037T03-T02 eInk display from Good Displays you do NOT use the
 Here's the signal mapping:
 
 <p align="center">
-  <img src="../Images/p2-click-adapter.png" width="400"></br>
+  <img src="../Images/p2-click-adapter.png" width="300"></br>
   <caption><B>Mapping the eInk signals and the Touch signals to the Click Adapter</B></caption>
 </p>
 
-Here's the full mapping table:
+**NOTE:** we connect our **eInk-display** to the SPI-signals-side of the adapter ("eInk" on left) and the connect **Touch** to the I2C-signals-side of the adapter ("touch" on the right.)
 
-| Signal Name | HAT Pin | Adapter Pin 
-| --- | --- | --- 
-| | **eInk Signals** | 
-| BUSY | P6 BUSY | AN 
-| RST | P6 RES | RST 
-| CS | P6 CS | CS 
-| SCK | P6 SCLK | SCK 
-| D/C | P6 D/C | MISO 
-| SDO | P6 SDI | MOSI 
-| | **Touch Signals** | 
-| RST | P8 PB12 - A3 RST | PWM 
-| INT | P8 PB14 - A0 INT | INT 
-| SCL | P8 PB10 - A4 SCL | SCL 
-| SDA | P8 PE10 - A5 SDA | SDA 
+### Connecting the HAT eInk display signals
 
-**NOTE:** There are three female headers on the HAT board labeled P6, P7, and P8. P6 provide eInk signals, while P8 provides Touch signals.
+For the display side, we connect the signals from HAT Header P6 to our P2 Eval Click Adapter (on the SPI signals side.) 
+
+<p align="center">
+  <img src="../Images/e-paper-pins.jpg" width="300"></br>
+  <caption><B>Authors' eInk display connections from HAT - Header P6</B></caption>
+</p>
+
+Detailed list of the iInk connections:
+
+| Signal Name | HAT Pin | Wire Color | Adapter Pin 
+| --- | --- | ---  | --- 
+| | ** **eInk Signals**  **| 
+| 3.3v | P6-8  | Red | +3.3v 
+| GND | P6-7 | Black | GND 
+| SDI | P6-6 | Green | MOSI 
+| SCLK | P6-5 | Yellow | SCK 
+| CS | P6-4 | Orange | CS 
+| D/C | P6-3  | Blue | MISO 
+| RES | P6-2 | Violet | RST 
+| BUSY | P6-1 | White | AN 
+
+
+### Connecting the HAT Touch signals
+
+For the touch side, we connect the signals from HAT Header P8 to our P2 Eval Click Adapter (on the I2C signals side.) 
+
+<p align="center">
+  <img src="../Images/touch-pins.jpg" width="300"></br>
+  <caption><B>Authors' Touch connecctions from HAT Header P8</B></caption>
+</p>
+
+Detailed list of the Touch connections:
+
+| Signal Name | HAT Pin | Wire Color | Adapter Pin 
+| --- | --- | ---  | --- 
+| | ** **Touch Signals** ** | 
+| GND | P8-1 | Brown | GND 
+| INT | P8-2 - PB14 - A0 INT | Blue | INT 
+| RST | P8-3 - PB12 - A3 RST | Green | PWM 
+| SCL | P8-4 - PB10 - A4 SCL | Orange | SCL 
+| SDA | P8-5 - PE10 - A5 SDA | Yellow | SDA 
+
+**NOTE:** There are three female 8-pin headers on the HAT board labeled P6, P7, and P8. P6 provides eInk display signals, while P8 provides the Touch signals.
 
 ---
 
 > If you like my work and/or this has helped you in some way then feel free to help me out for a couple of :coffee:'s or :pizza: slices!
 >
-> [![coffee](https://www.buymeacoffee.com/assets/img/custom_images/black_img.png)](https://www.buymeacoffee.com/ironsheep) &nbsp;&nbsp; -OR- &nbsp;&nbsp; [![Patreon](./Images/patreon.png)](https://www.patreon.com/IronSheep?fan_landing=true)[Patreon.com/IronSheep](https://www.patreon.com/IronSheep?fan_landing=true)
+> [![coffee](https://www.buymeacoffee.com/assets/img/custom_images/black_img.png)](https://www.buymeacoffee.com/ironsheep) &nbsp;&nbsp; -OR- &nbsp;&nbsp; [![Patreon](../Images/patreon.png)](https://www.patreon.com/IronSheep?fan_landing=true)[Patreon.com/IronSheep](https://www.patreon.com/IronSheep?fan_landing=true)
 
 ---
 
