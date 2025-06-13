@@ -2055,7 +2055,9 @@ PRI writeBufferWS565F() | byteIdx, pRedBffr, pBlkBffr, dualPixelColor
     ' write our new display values
     writeCmd(CMD_DATA_START_XMIT_1)
     repeat byteIdx from 0 to frameSizeInBytes - 1
-        writeData(BYTE [@deviceFrame][byteIdx])
+        ' writeData(BYTE [@deviceFrame][byteIdx])
+        ' Fix from Patrick, thank you!
+        writeData((((BYTE [@deviceFrame][byteIdx]) & $f0) >> 4) | (((BYTE [@deviceFrame][byteIdx]) & $0f) << 4))
 
     updateDisplayWS565F()
 
