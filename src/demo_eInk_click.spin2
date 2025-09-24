@@ -42,8 +42,12 @@ OBJ { the object being demo'd }
     p2LogoImage : "isp_demo_P2logo_image"
     strFmt      : "isp_mem_strings"
 
-PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
-'' DEMO let's see what our radio hears!
+PUB main() | ok
+'' Main demonstration method for eInk Click module functionality
+''
+'
+' Local Variables:
+' @local ok - Success/failure status of eInk display initialization
 
     ' tell object what display hardware we have and where the click board is connected
     ok := eInkDisplay.start(EINK_DISPLAY_TYPE, EINK_CLICK_PINGROUP)
@@ -112,6 +116,12 @@ PUB main() | ok, deviceID, uniqMSB, uniqLSB, dsplyWidthInPix, dsplyHeightInPix
     eInkDisplay.stop()
 
 pri min(a,b) : result
+' Returns the minimum of two values
+'
+' @param a - First value to compare
+' @param b - Second value to compare
+' @returns result - The smaller of the two input values
+
     result := a < b ? a : b
 
 VAR { local variables }
@@ -119,6 +129,14 @@ VAR { local variables }
     BYTE    strBuffer[20+1]
 
 PRI demo7Color() | xOffset, yOffset, lineWidth
+' Demonstrates 7-color ACeP display capabilities with color tiles and borders
+'
+'
+' Local Variables:
+' @local xOffset - Horizontal position offset for drawing elements
+' @local yOffset - Vertical position offset for drawing elements
+' @local lineWidth - Width of border lines around color tiles
+
     'einkDisplay.setOrientation(eInkDisplay.ROTATE_0)
     eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
 
@@ -167,6 +185,22 @@ PRI demo7Color() | xOffset, yOffset, lineWidth
     eInkDisplay.updateDisplay()
 
 PRI drawOrientationDisplay(rotation) | dsplyWidthInPix, dsplyHeightInPix, startX, startY, endX, endY, pTitle, lineLen, bLandscape, detailColor
+' Draws orientation demonstration display with axes, dimensions, and color patches
+'
+' @param rotation - Display rotation angle (0, 90, 180, or 270 degrees)
+'
+' Local Variables:
+' @local dsplyWidthInPix - Display width in pixels
+' @local dsplyHeightInPix - Display height in pixels
+' @local startX - Starting X coordinate for drawing
+' @local startY - Starting Y coordinate for drawing
+' @local endX - Ending X coordinate for lines
+' @local endY - Ending Y coordinate for lines
+' @local pTitle - Pointer to rotation title string
+' @local lineLen - Length of axis lines
+' @local bLandscape - Boolean flag indicating landscape orientation
+' @local detailColor - Color used for detail elements (arrows, dots, patches)
+
     einkDisplay.setOrientation(rotation)
     eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
 
@@ -264,9 +298,19 @@ PRI drawOrientationDisplay(rotation) | dsplyWidthInPix, dsplyHeightInPix, startX
     eInkDisplay.updateDisplay()
 
 pri sin(angle): sinAngle
+' Placeholder sine function (currently returns input unchanged)
+'
+' @param angle - Input angle value
+' @returns sinAngle - Sine of the angle (currently just returns input)
+
     sinAngle := angle
 
 pri cos(angle): cosAngle
+' Placeholder cosine function (currently returns input unchanged)
+'
+' @param angle - Input angle value
+' @returns cosAngle - Cosine of the angle (currently just returns input)
+
     cosAngle := angle
 
 DAT { demonstration data }
@@ -318,6 +362,8 @@ DAT { demonstration data }
     recr_text45      BYTE    "* SPI Interface",0
 
 PRI eraseDisplay()
+' Erases the display by filling it with white color
+''
 
     debug("* erase display")
     eInkDisplay.fillScreen(eInkDisplay.EINK_COLOR_WHITE)
@@ -326,6 +372,21 @@ PRI eraseDisplay()
     waitms(5000)
 
 PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWidth, imgHeight, imgWidthInPix, leftEdge, firstLine, lineSpacing, vertOffset
+' Demonstrates region image placement with P2 logo and device-specific layouts
+'
+'
+' Local Variables:
+' @local dsplyWidthInPix - Display width in pixels
+' @local dsplyHeightInPix - Display height in pixels
+' @local pImageBits - Pointer to image bitmap data
+' @local imgWidth - Image width in bytes
+' @local imgHeight - Image height in pixels
+' @local imgWidthInPix - Image width in pixels (calculated)
+' @local leftEdge - Left edge position for text placement
+' @local firstLine - First line position for text
+' @local lineSpacing - Spacing between text lines
+' @local vertOffset - Vertical offset for positioning elements
+
     ' github pictures screen - make it look pretty
     debug("* write border, place marker for image corner, place small cup, then border around image")
     einkDisplay.setOrientation(eInkDisplay.ROTATE_0)
@@ -502,7 +563,10 @@ PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWid
     eInkDisplay.updateDisplay()
     waitms(5000)
 
-PRI text_demoRegionImage() | pImageBits, imgWidth, imgHeight
+PRI text_demoRegionImage()
+' Demonstrates text and region drawing with borders and shapes
+''
+
     debug("* write border, filled region, and place small cup")
     einkDisplay.setOrientation(eInkDisplay.ROTATE_0)
 
@@ -540,6 +604,17 @@ PRI text_demoRegionImage() | pImageBits, imgWidth, imgHeight
 
 
 PRI text_demoRecreate() | leftEdge, firstLine, lineSpacing, pImageBits, imgWidth, imgHeight
+' Recreates the documentation display layout with text and formatting
+'
+'
+' Local Variables:
+' @local leftEdge - Left edge position for text placement
+' @local firstLine - First line position for text
+' @local lineSpacing - Spacing between text lines
+' @local pImageBits - Pointer to image bitmap data (for commented code)
+' @local imgWidth - Image width (for commented code)
+' @local imgHeight - Image height (for commented code)
+
     debug("* Create our DEMO image")
 
     eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
@@ -570,6 +645,14 @@ PRI text_demoRecreate() | leftEdge, firstLine, lineSpacing, pImageBits, imgWidth
     waitms(5000)
 
 PRI text_demo() | dsplyWidthInPix, dsplyHeightInPix, detailColor
+' Demonstrates text rendering in various orientations and fonts
+'
+'
+' Local Variables:
+' @local dsplyWidthInPix - Display width in pixels
+' @local dsplyHeightInPix - Display height in pixels
+' @local detailColor - Color used for detail elements based on display type
+
     ' demo display text on screen
     '   X: 0-71
     '   Y: 0-171
@@ -647,6 +730,20 @@ PRI text_demo() | dsplyWidthInPix, dsplyHeightInPix, detailColor
     waitms(5000)
 
 PRI borderDemo() |dsplyWidthInPix, dsplyHeightInPix, detailColor, borderInset, minLength, thickness, pColorSet, maxColors, colorIndex
+' Demonstrates border drawing with random colors and thicknesses
+'
+'
+' Local Variables:
+' @local dsplyWidthInPix - Display width in pixels
+' @local dsplyHeightInPix - Display height in pixels
+' @local detailColor - Color used for borders
+' @local borderInset - Inset distance from display edges
+' @local minLength - Minimum dimension of display
+' @local thickness - Border line thickness
+' @local pColorSet - Pointer to available color set
+' @local maxColors - Maximum number of available colors
+' @local colorIndex - Index of selected color
+
     einkDisplay.setOrientation(eInkDisplay.ROTATE_0)
     eInkDisplay.clearBuffer()
 
@@ -689,6 +786,13 @@ PRI borderDemo() |dsplyWidthInPix, dsplyHeightInPix, detailColor, borderInset, m
     waitms(5000)
 
 PRI lineWidthDemo() |dsplyWidthInPix, dsplyHeightInPix, detailColor
+' Demonstrates line drawing with various widths and orientations
+'
+'
+' Local Variables:
+' @local dsplyWidthInPix - Display width in pixels
+' @local dsplyHeightInPix - Display height in pixels
+' @local detailColor - Color used for some lines based on display type
 
     einkDisplay.setOrientation(eInkDisplay.ROTATE_0)
     eInkDisplay.clearBuffer()
@@ -724,6 +828,16 @@ PRI lineWidthDemo() |dsplyWidthInPix, dsplyHeightInPix, detailColor
     waitms(5000)
 
 PRI region_image_demo() | pImageBits, imgWidth, imgHeight, dsplyWidthInPix, dsplyHeightInPix
+' Demonstrates image placement in various rotations with labels and borders
+'
+'
+' Local Variables:
+' @local pImageBits - Pointer to image bitmap data
+' @local imgWidth - Image width in bytes
+' @local imgHeight - Image height in pixels
+' @local dsplyWidthInPix - Display width in pixels
+' @local dsplyHeightInPix - Display height in pixels
+
     debug("* write border, place marker for image corner, place small cup, then border around image")
 
     eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
@@ -807,7 +921,20 @@ PRI region_image_demo() | pImageBits, imgWidth, imgHeight, dsplyWidthInPix, dspl
     waitms(5000)
 
 PRI placeRotatedImageAtXY(x, y, rotation, pImgBits, imgWidth, imgHeight, pLabel) | rotHeight, rotWidth
-' utility to bound images so we can validate rotation an pixel placement
+' Utility method to place images with rotation validation and visual bounds
+'
+' @param x - X coordinate for image placement
+' @param y - Y coordinate for image placement
+' @param rotation - Rotation angle (0, 90, 180, or 270 degrees)
+' @param pImgBits - Pointer to image bitmap data
+' @param imgWidth - Image width in bytes
+' @param imgHeight - Image height in pixels
+' @param pLabel - Pointer to label string for the image
+'
+' Local Variables:
+' @local rotHeight - Height of rotated image
+' @local rotWidth - Width of rotated image
+
     rotHeight := imgHeight
     rotWidth := imgWidth * 2
     if rotation == 90 or rotation == 270
@@ -824,6 +951,9 @@ PRI placeRotatedImageAtXY(x, y, rotation, pImgBits, imgWidth, imgHeight, pLabel)
 
 
 PRI fullScreen_image_demo()
+' Demonstrates full-screen image display cycling through different images
+''
+
     ' draw our two images to display
     eInkDisplay.displayImage(eInkImages.screenBitmapAddress(eInkImages.IMAGE_light))
     waitms(1000)
@@ -840,6 +970,8 @@ PRI fullScreen_image_demo()
 
 
 PRI demoRaw()
+' Empty demonstration method placeholder
+''
 
 
 CON { license }

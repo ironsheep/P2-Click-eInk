@@ -42,6 +42,8 @@ OBJ { Objects / constants included by this object }
     touch         : "isp_eink_touch"             '   touch hardware
 
 PUB main()
+'' Main demonstration method for eInk touch functionality
+''
 
     debug("Touch Demo")
     touch.start(EINK_DISPLAY_TYPE, EINK_CLICK_PINGROUP, EINK_DISPLAY_ORIENTATION)

@@ -53,9 +53,18 @@ DAT
     bShowDebug   BYTE    FALSE
 
 pub null()
+'' Placeholder method indicating this is not a top-level object
+''
 
-'' This is not a top-level object
 PRI record(mode, value) | pMode
+' Record I2C operation for debug logging
+''
+' @param mode - Operation mode (MK_* enum values)
+' @param value - Operation value or data
+'
+' Local Variables:
+' @local pMode - Pointer to mode string (unused in current implementation)
+
     if bShowDebug
         if entryCount < MAX_LOG_ENTRIES - 1
             WORD [@logEntries][entryCount] := (mode & $ff) << 8 | (value & $ff)
@@ -74,6 +83,13 @@ PRI record(mode, value) | pMode
 '}
 
 PRI report() | bytIndex, mode, value
+' Report recorded I2C operations for debugging
+''
+' Local Variables:
+' @local bytIndex - Index for iterating through log entries
+' @local mode - Operation mode extracted from log entry
+' @local value - Operation value extracted from log entry
+
     if bShowDebug
         if entryCount > 0
             repeat bytIndex from 0 to entryCount - 1
@@ -97,9 +113,9 @@ PRI report() | bytIndex, mode, value
             entryCount := 0
 
 pub quiesce(pScl, pSda, pullup) | scl, sda
-
 '' Define I2C SCL (clock) and SDA (data) pins
 '' -- pullup controls high level drive configuration of SCL and SDA
+
   sdapin := pSda
   sclpin := pScl
 
@@ -119,13 +135,21 @@ pub quiesce(pScl, pSda, pullup) | scl, sda
 
 
 pub setup(pScl, pSda, khz, pullup) | scl, sda, tix
+'' Define I2C SCL (clock) and SDA (data) pins
+''
+'' @param pScl - SCL pin
+'' @param pSda - SDA pin
+'' @param khz - is bus frequency: 100 (standard), 400 (full), 1000 (fast)
+''              * circuit/connections will affect maximum bus speed
+'' @param pullup - controls high level drive configuration of SCL and SDA
+
+' Local Variables:
+' @local scl - SCL pin for inline pasm code
+' @local sda - SDA pin for inline pasm code
+' @local tix - Clock ticks for inline pasm code
 
   entryCount := 0
 
-'' Define I2C SCL (clock) and SDA (data) pins
-'' -- khz is bus frequency: 100 (standard), 400 (full), 1000 (fast)
-''    * circuit/connections will affect maximum bus speed
-'' -- pullup controls high level drive configuration of SCL and SDA
 
   clktix := tix := (clkfreq / (khz * 1_000)) >> 2               ' calculate ticks in 1/4 period
   sdapin := pSda
@@ -165,8 +189,10 @@ pub setup(pScl, pSda, khz, pullup) | scl, sda, tix
 
 
 pub present(devid) : result
-
 '' Pings device, returns true if device on bus.
+''
+'' @param devid - Device ID
+'' @returns result - True if device is present, false otherwise.
 
   start()
 
@@ -174,9 +200,13 @@ pub present(devid) : result
 
 
 pub wait(devid) | ackbit
-
 '' Waits for device to be ready for new command.
 '' -- Note: Use present() to detect device before using wait()
+''
+'' @param devid - Device ID
+
+' Local Variables:
+' @local ackbit - Acknowledgment bit
 
   repeat
     start()
@@ -185,9 +215,14 @@ pub wait(devid) | ackbit
 
 
 pub start() | scl, sda, tix
-
 '' Create I2C start sequence
-'' -- will wait if I2C bus SCL pin is held low
+'' -- will wait if I2C bus SCL pin is held low''
+
+' Local Variables:
+' @local scl - SCL pin for inline pasm code
+' @local sda - SDA pin for inline pasm code
+' @local tix - Clock ticks for inline pasm code
+
   scl := sclpin
   sda := sdapin
   tix := clktix
@@ -206,10 +241,17 @@ pub start() | scl, sda, tix
   end
 
 pub write(i2cbyte) : ackbit | scl, sda, tix
-
 '' Write byte to I2C bus
 '' -- leaves SCL low
-  'longmove(@scl, @sclpin, 2)
+''
+'' @param i2cbyte - I2C byte to write
+'' @returns ackbit - Acknowledgment bit
+
+' Local Variables:
+' @local scl - SCL pin for inline pasm code
+' @local sda - SDA pin for inline pasm code
+' @local tix - Clock ticks for inline pasm code
+
   scl := sclpin
   sda := sdapin
   tix := clktix
@@ -242,10 +284,20 @@ pub write(i2cbyte) : ackbit | scl, sda, tix
 
 
 pub wr_block(p_block, count) : ackbit | i2cbyte, scl, sda, tix
-
-'' Write count bytes from p_block to I2C bus
+'' Write block of data to I2C bus
 '' -- p_block is pointer to bytes
 '' -- leaves SCL low
+''
+'' @param p_block - Pointer to data block
+'' @param count - Number of bytes to write
+'' @returns ackbit - Acknowledgment bit
+
+' Local Variables:
+' @local i2cbyte - I2C byte to write
+' @local scl - SCL pin for inline pasm code
+' @local sda - SDA pin for inline pasm code
+' @local tix - Clock ticks for inline pasm code
+
   'longmove(@scl, @sclpin, 2)
   scl := sclpin
   sda := sdapin
@@ -282,10 +334,17 @@ pub wr_block(p_block, count) : ackbit | i2cbyte, scl, sda, tix
 
 
 pub read(ackbit) : i2cbyte | scl, sda, tix
-
 '' Read byte from I2C bus
 '' -- ackbit is state of ack bit
 ''    * usually NAK for last byte read
+'' @param ackbit - Acknowledgment bit
+'' @returns i2cbyte - I2C byte read
+
+' Local Variables:
+' @local scl - SCL pin for inline pasm code
+' @local sda - SDA pin for inline pasm code
+' @local tix - Clock ticks for inline pasm code
+
   'longmove(@scl, @sclpin, 2)
   scl := sclpin
   sda := sdapin
@@ -319,10 +378,17 @@ pub read(ackbit) : i2cbyte | scl, sda, tix
 
 
 pub rd_block(p_block, count, ackbit) | i2cbyte, scl, sda, tix
-
-'' Read count bytes from I2C bus
+'' Read block of data from I2C bus
 '' -- p_block is pointer to storage location for bytes
+'' -- count is number of bytes to read
 '' -- ackbit is state of ack for final byte read
+
+' Local Variables:
+' @local i2cbyte - I2C byte read
+' @local scl - SCL pin for inline pasm code
+' @local sda - SDA pin for inline pasm code
+' @local tix - Clock ticks for inline pasm code
+
   'longmove(@scl, @sclpin, 2)
   scl := sclpin
   sda := sdapin
@@ -364,9 +430,14 @@ pub rd_block(p_block, count, ackbit) | i2cbyte, scl, sda, tix
 
 
 pub stop() | scl, sda, tix
-
 '' Create I2C stop sequence
 '' -- allows for clock stretch
+
+' Local Variables:
+' @local scl - SCL pin for inline pasm code
+' @local sda - SDA pin for inline pasm code
+' @local tix - Clock ticks for inline pasm code
+
   scl := sclpin
   sda := sdapin
   tix := clktix

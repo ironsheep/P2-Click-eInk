@@ -19,11 +19,14 @@ CON { Public Interface Constants }
     FONT_UNKNOWN = -1
 
 pub null()
-
-'' This is not a top object
+'' Placeholder method indicating this is not a top-level object
 
 PUB fontAddress(eFont) : fontAddr
-'' Return the address of the font data associated with {efont}
+'' Return the address of the font data associated with eFont
+''
+'' @param eFont - Font identifier from enum values
+'' @returns fontAddr - Pointer to font data or FONT_UNKNOWN if invalid
+
     case eFont
         FONT_Tahoma_7:
             fontAddr := @fntTahoma_7

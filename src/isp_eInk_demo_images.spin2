@@ -18,11 +18,14 @@ CON { Public Interface Constants }
     IMAGE_UNKNOWN = -1
 
 pub null()
-
-'' This is not a top object
+'' Placeholder method indicating this is not a top-level object
 
 PUB screenBitmapAddress(eImage) : imageAddr
-'' Return the address of the image bitmap associated with {eImage}
+'' Return the address of the image bitmap associated with eImage
+''
+'' @param eImage - Image identifier from enum values
+'' @returns imageAddr - Pointer to full-screen image bitmap data
+
     case eImage
         IMAGE_light:
             imageAddr := @demoImage_light

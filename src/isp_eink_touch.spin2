@@ -117,11 +117,21 @@ VAR ' --- PRIVATE Instance Variables ---
     LONG cogStack[64]
 
 pub null()
-
-'' This is not a top object
+'' Placeholder method indicating this is not a top-level object
+''
 
 PUB start(eDisplayType, eTouchBasePin, eOrientation) : ok | legalBase, legalOrientation
-'' Specify the Eink display type and the eval board connect location for the EINK click and start SPI
+'' Specify the Eink display type and the eval board connect location for the EINK click and start touch
+''
+'' @param eDisplayType - Display type from enum values
+'' @param eTouchBasePin - Pin group enum value for touch hardware connection
+'' @param eOrientation - Touch screen orientation from enum values
+'' @returns ok - True/False where False means invalid parameters
+'
+' Local Variables:
+' @local legalBase - Validated base pin value
+' @local legalOrientation - Validated orientation value
+
     ' if legal base-pin then start cog
    ' ensure we only use legal values
     debug("start(", udec_(eDisplayType), ", ", udec_(eTouchBasePin), ")")
@@ -184,9 +194,13 @@ PUB start(eDisplayType, eTouchBasePin, eOrientation) : ok | legalBase, legalOrie
 PUB stop()
 '' Stop the Touch I2C Object
 ''
+
     stopRequested := true
 
 PRI initPins()
+' Configure the touch controller pins
+''
+
     ' configure inputs
     pinfloat(pinbase + TOUCH_OFST_SDA)
     pinfloat(pinbase + TOUCH_OFST_INT)
@@ -197,7 +211,8 @@ PRI initPins()
 
 PRI resetTouch()
 ' Reset the touch controller
-'
+''
+
     pinhigh(pinbase + TOUCH_OFST_RST)
     waitms(10)
     pinlow(pinbase + TOUCH_OFST_RST)
@@ -208,18 +223,17 @@ PRI resetTouch()
 
 PRI touchDriverTask() : ok | intBit, locnX, locnY, tchZ, eTchEvent, pStr
 ' COG task to handle touch events
+''
+' @returns ok - Success status (currently unused)
 '
-' @returns ok -
-
 ' Local Variables:
-' @local intBit -
-' @local locnX -
-' @local locnY -
-' @local tchZ -
-' @local eTchEvent -
-' @local pStr -
-'
-'
+' @local intBit - Interrupt bit status
+' @local locnX - Touch X coordinate
+' @local locnY - Touch Y coordinate
+' @local tchZ - Touch pressure/Z value
+' @local eTchEvent - Touch event type
+' @local pStr - Pointer to event type string
+
     debug("* touchDriverTask() Started...")
     initPins()
 
@@ -250,10 +264,10 @@ PRI touchDriverTask() : ok | intBit, locnX, locnY, tchZ, eTchEvent, pStr
     i2c_bus.stop()
 
 PRI touchTypeString(eTouchType) : pInterp
-' return string for touch event type
-'
-' @param type - the event type (enum)
-' @returns pInterp -
+' Return string for touch event type
+''
+' @param eTouchType - The event type (enum)
+' @returns pInterp - Pointer to string describing the event type
 
     case eTouchType
         TOUCH_EVENT_NONE:
@@ -268,6 +282,15 @@ PRI touchTypeString(eTouchType) : pInterp
             pInterp := @"UNKNOWN"
 
 PRI clearTouch() : bIsTouch | tx, ty, tz, tt
+' Clear any pending touch events
+''
+' @returns bIsTouch - Always returns false after clearing
+'
+' Local Variables:
+' @local tx - Temporary X coordinate storage
+' @local ty - Temporary Y coordinate storage
+' @local tz - Temporary Z/pressure storage
+' @local tt - Temporary touch type storage
 
     repeat while getTouch(tx, ty, tz, tt)
         ' while getTouchInterrupt()
@@ -276,37 +299,56 @@ PRI clearTouch() : bIsTouch | tx, ty, tz, tt
     touchPrevious := TOUCH_EVENT_NONE
 
 PRI checkRange(value, min, max) : limitValue | actualMin, actualMax
-' return value limited to min/max
+' Return value limited to min/max range
+''
+' @param value - Value to check
+' @param min - Lower value limit
+' @param max - Upper value limit
+' @returns limitValue - Possibly adjusted value
 '
-' @param value - value to check
-' @param min - lower value limit
-' @param max - upper value limit
-' @returns limitValue - possibly adjusted value
-
 ' Local Variables:
-' @local actualMin -
-' @local actualMax -
+' @local actualMin - Actual minimum value (handles reversed min/max)
+' @local actualMax - Actual maximum value (handles reversed min/max)
 
 ' * ensure min/max are in correct order
 ' * if value < valueMin, return valueMin
 ' * if value > valueMax, return valueMax
+
     actualMin := min > max ? max : min
     actualMax := min > max ? min : max
     limitValue := actualMin #> value <# actualMax
 
 PRI map(value, fromLow, fromHigh, toLow, toHigh) : scaledValue
-' map a value from one range to another
-'
-' @param value - given value
-' @param fromLow - current range lower value
-' @param fromHigh - current range upper value
-' @param toLow - new range lower value
-' @param toHigh - new range upper value
-' @returns scaledValue - value mapped to new range
-'
+' Map a value from one range to another
+''
+' @param value - Given value to map
+' @param fromLow - Current range lower value
+' @param fromHigh - Current range upper value
+' @param toLow - New range lower value
+' @param toHigh - New range upper value
+' @returns scaledValue - Value mapped to new range
+
+    scaledValue := (((value - fromLow) * (toHigh - toLow)) / (fromHigh - fromLow)) + toLow
 
 
 PRI getTouch(pTx, pTy, pTz, pTt) : bIsTouch | locnX, locnY, tchZ, eTchEvent, rngX, rngY, rotX, rotY
+' Get touch coordinates adjusted for display orientation
+''
+' @param pTx - Pointer to X coordinate storage
+' @param pTy - Pointer to Y coordinate storage
+' @param pTz - Pointer to Z/pressure storage
+' @param pTt - Pointer to touch type storage
+' @returns bIsTouch - True if valid touch detected
+'
+' Local Variables:
+' @local locnX - Raw X coordinate from touch controller
+' @local locnY - Raw Y coordinate from touch controller
+' @local tchZ - Raw Z/pressure value
+' @local eTchEvent - Touch event type
+' @local rngX - Range-checked X coordinate
+' @local rngY - Range-checked Y coordinate
+' @local rotX - Rotation-adjusted X coordinate
+' @local rotY - Rotation-adjusted Y coordinate
 
     locnX, locnY, tchZ, eTchEvent := getRawTouchData()
 
@@ -345,6 +387,19 @@ PRI getTouch(pTx, pTy, pTz, pTt) : bIsTouch | locnX, locnY, tchZ, eTchEvent, rng
         bIsTouch := false
 
 PRI getRawTouchData() : locnX, locnY, tchZ, eTchEvent | bDidInterrupt, flagValid, BYTE rdBuffer[9], id, pStr
+' Get raw touch data from the touch controller
+''
+' @returns locnX - Raw X coordinate
+' @returns locnY - Raw Y coordinate
+' @returns tchZ - Raw Z/pressure value
+' @returns eTchEvent - Touch event type
+'
+' Local Variables:
+' @local bDidInterrupt - True if interrupt was pending
+' @local flagValid - True if touch data is valid
+' @local rdBuffer - Buffer for reading I2C data
+' @local id - Touch point ID from controller
+' @local pStr - Pointer to debug string
 
     debug("* getRawTouchData()")
     flagValid := false
@@ -395,8 +450,10 @@ PRI getRawTouchData() : locnX, locnY, tchZ, eTchEvent | bDidInterrupt, flagValid
     waitms(5) ' add extra delay - - is needed why 4 events back to back???
 
 PRI interruptPending() : bDidInterrupt
-' check if the touch controller has an interrupt pending
-'
+' Check if the touch controller has an interrupt pending
+''
+' @returns bDidInterrupt - True if interrupt is pending
+
     bDidInterrupt := pinread(pinbase + TOUCH_OFST_INT) == 0 ? 1 : 0
     if bDidInterrupt
         debug(" - interruptPending() - bDidInterrupt: ", udec_(bDidInterrupt))
@@ -405,12 +462,22 @@ PRI interruptPending() : bDidInterrupt
 CON ' --- Device I/O Methods ---
 
 PRI huntTouch()
+' Hunt for touch controller at known I2C addresses
+''
+
     idDevice(EINKPD271T_I2C_ADDR) ' known touch controller ID's
     idDevice(EINKPD343T_I2C_ADDR)
     idDevice(EINKPD370T_I2C_ADDR)
 
 PRI idDevice(possAddr) : bFound | bFoundAddr
-    ' Identify the address our device is at on the i2c_bus bus
+' Identify the address our device is at on the I2C bus
+''
+' @param possAddr - Possible I2C address to check
+' @returns bFound - True if device found at this address
+'
+' Local Variables:
+' @local bFoundAddr - True if address responds to I2C query
+
     bFoundAddr := false
     if i2c_bus.present(possAddr << 1)
         bFoundAddr := true
@@ -435,8 +502,19 @@ PRI idDevice(possAddr) : bFound | bFoundAddr
     i2c_bus.stop()  ' ensure we are in stable state
 
 PUB readTouchBytes(regAddr, byteCount, pByteStore) : ok | ackbit, byteIndex, endAckNak, result8
-    '' Read {result16} from register {regAddr}
-    ''  return 0 if success
+'' Read bytes from touch controller register
+''
+'' @param regAddr - Register address to read from
+'' @param byteCount - Number of bytes to read
+'' @param pByteStore - Pointer to storage for read bytes
+'' @returns ok - 0 if success, non-zero if error
+''
+' Local Variables:
+' @local ackbit - ACK/NAK bit from I2C operations
+' @local byteIndex - Current byte index being read
+' @local endAckNak - ACK/NAK to send (ACK for all but last byte)
+' @local result8 - Single byte read result
+
     debug("* readTouchBytes(", uhex_(regAddr), ", ", udec_(byteCount), ")")
     if bShowDebug
         term.fstr2(string("tch- readTouchBytes(0x%.02x, ct=%d)\r\n"), regAddr, byteCount)

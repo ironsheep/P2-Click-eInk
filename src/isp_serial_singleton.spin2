@@ -68,20 +68,29 @@ pbuf  byte  0[80]                                                ' padded string
 kLock byte  0
 
 pub null()
+'' Placeholder method indicating this is not a top-level object
+''
 
-  '' This is not a top level object
+
 
 
 pub start(baudrate)
-
 '' Start simple serial coms on default pins at baudrate
+''
+'' @param baudrate - Baud rate for serial communication
 
   startx(RX1, TX1, baudrate)                                    ' use programming port
 
 
 pub startx(rxpin, txpin, baud) | bitmode
-
 '' Start simple serial coms on rxpin and txpin at baud
+''
+'' @param rxpin - Receive pin number
+'' @param txpin - Transmit pin number
+'' @param baud - Baud rate for serial communication
+'
+' Local Variables:
+' @local bitmode - Smart pin bit timing configuration
 
   'longmove(@rxp, @rxpin, 2)                                     ' save pins
     rxp := rxpin
@@ -104,17 +113,20 @@ pub startx(rxpin, txpin, baud) | bitmode
 
 
 pub rxflush()
-
 '' Clear serial input
+''
 
   repeat
   while (rxcheck() >= 0)
 
 
 pub rxcheck() : rxbyte | check
-
 '' Check for serial input
-'' -- returns -1 if nothing available
+''
+'' @returns rxbyte - Received byte (0-255) or -1 if nothing available
+'
+' Local Variables:
+' @local check - Smart pin status check result
 
   rxbyte := -1
   check := pinr(rxp)
@@ -123,9 +135,14 @@ pub rxcheck() : rxbyte | check
 
 
 pub rxtime(ms) : b | mstix, t
-
 '' Wait ms milliseconds for a byte to be received
-'' -- returns -1 if no byte received, $00..$FF if byte
+''
+'' @param ms - Maximum milliseconds to wait for a byte
+'' @returns b - Received byte (0-255) or -1 if timeout
+'
+' Local Variables:
+' @local mstix - Millisecond clock ticks per second
+' @local t - Starting timestamp for timeout calculation
 
   mstix := clkfreq / 1000
 
@@ -135,9 +152,9 @@ pub rxtime(ms) : b | mstix, t
 
 
 pub rx() : rxbyte
-
-'' Wait for serial input
-'' -- blocks!
+'' Wait for serial input (blocking)
+''
+'' @returns rxbyte - Received byte (0-255), blocks until data available
 
   repeat
     rxbyte := rxcheck()
@@ -145,24 +162,30 @@ pub rx() : rxbyte
 
 
 pub tx(b)
-
 '' Emit byte
+''
+'' @param b - Byte value to transmit
 
   wypin(txp, b)
   txflush()
 
 
 pub txn(b, n)
-
 '' Emit byte n times
+''
+'' @param b - Byte value to transmit
+'' @param n - Number of times to repeat the byte
 
   repeat n
     tx(b)
 
 
 pub txflush() | check
-
 '' Wait until last byte has finished
+''
+'
+' Local Variables:
+' @local check - Smart pin transmission status
 
   repeat
     check := pinr(txp)
@@ -170,17 +193,23 @@ pub txflush() | check
 
 
 pub str(p_str)
-
 '' Emit z-string at p_str
+''
+'' @param p_str - Pointer to null-terminated string
 
   repeat (strsize(p_str))
     tx(byte[p_str++])
 
 
 pub substr(p_str, len) | b
-
 '' Emit len characters of string at p_str
 '' -- aborts if end of string detected
+''
+'' @param p_str - Pointer to string
+'' @param len - Maximum number of characters to transmit
+'
+' Local Variables:
+' @local b - Current character being processed
 
   repeat len
     b := byte[p_str++]
@@ -191,11 +220,14 @@ pub substr(p_str, len) | b
 
 
 pub padstr(p_str, width, pad)
-
 '' Emit p_str as padded field of width characters
 '' -- pad is character to use to fill out field
 '' -- positive width causes right alignment
 '' -- negative width causes left alignment
+''
+'' @param p_str - Pointer to string to pad
+'' @param width - Field width (positive=right align, negative=left align)
+'' @param pad - Character to use for padding
 
   str(nstr.padstr(p_str, width, pad))
 
@@ -238,66 +270,109 @@ con { formatted strings }
 
 
 pub fstr0(p_str)
-
-'' Emit string with formatting characters.
+'' Emit string with formatting characters
+''
+'' @param p_str - Pointer to format string with escape sequences
 
   format(p_str, 0)
 
 
 pub fstr1(p_str, arg1)
-
-'' Emit string with formatting characters and one argument.
+'' Emit string with formatting characters and one argument
+''
+'' @param p_str - Pointer to format string with escape sequences
+'' @param arg1 - First argument for formatting
 
   format(p_str, @arg1)
 
 
 pub fstr2(p_str, arg1, arg2)
-
-'' Emit string with formatting characters and two arguments.
+'' Emit string with formatting characters and two arguments
+''
+'' @param p_str - Pointer to format string with escape sequences
+'' @param arg1 - First argument for formatting
+'' @param arg2 - Second argument for formatting
 
   format(p_str, @arg1)
 
 
 pub fstr3(p_str, arg1, arg2, arg3)
-
-'' Emit string with formatting characters and three arguments.
+'' Emit string with formatting characters and three arguments
+''
+'' @param p_str - Pointer to format string with escape sequences
+'' @param arg1 - First argument for formatting
+'' @param arg2 - Second argument for formatting
+'' @param arg3 - Third argument for formatting
 
   format(p_str, @arg1)
 
 
 pub fstr4(p_str, arg1, arg2, arg3, arg4)
-
-'' Emit string with formatting characters and four arguments.
+'' Emit string with formatting characters and four arguments
+''
+'' @param p_str - Pointer to format string with escape sequences
+'' @param arg1 - First argument for formatting
+'' @param arg2 - Second argument for formatting
+'' @param arg3 - Third argument for formatting
+'' @param arg4 - Fourth argument for formatting
 
   format(p_str, @arg1)
 
 
 pub fstr5(p_str, arg1, arg2, arg3, arg4, arg5)
-
-'' Emit string with formatting characters and five arguments.
+'' Emit string with formatting characters and five arguments
+''
+'' @param p_str - Pointer to format string with escape sequences
+'' @param arg1 - First argument for formatting
+'' @param arg2 - Second argument for formatting
+'' @param arg3 - Third argument for formatting
+'' @param arg4 - Fourth argument for formatting
+'' @param arg5 - Fifth argument for formatting
 
   format(p_str, @arg1)
 
 
 pub fstr6(p_str, arg1, arg2, arg3, arg4, arg5, arg6)
-
-'' Emit string with formatting characters and six arguments.
+'' Emit string with formatting characters and six arguments
+''
+'' @param p_str - Pointer to format string with escape sequences
+'' @param arg1 - First argument for formatting
+'' @param arg2 - Second argument for formatting
+'' @param arg3 - Third argument for formatting
+'' @param arg4 - Fourth argument for formatting
+'' @param arg5 - Fifth argument for formatting
+'' @param arg6 - Sixth argument for formatting
 
   format(p_str, @arg1)
 
 pub fstr7(p_str, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
-
-'' Emit string with formatting characters and seven arguments.
+'' Emit string with formatting characters and seven arguments
+''
+'' @param p_str - Pointer to format string with escape sequences
+'' @param arg1 - First argument for formatting
+'' @param arg2 - Second argument for formatting
+'' @param arg3 - Third argument for formatting
+'' @param arg4 - Fourth argument for formatting
+'' @param arg5 - Fifth argument for formatting
+'' @param arg6 - Sixth argument for formatting
+'' @param arg7 - Seventh argument for formatting
 
   format(p_str, @arg1)
 
 
 pub format(p_str, p_args) | idx, c, asc, fld, digits, kindaLock
-
 '' Emit formatted string with escape sequences and embedded values
-'' -- p_str is a pointer to the format control string
-'' -- p_args is pointer to array of longs that hold field values
-''    * field values can be numbers, characters, or pointers to strings
+''
+'' @param p_str - Pointer to format control string
+'' @param p_args - Pointer to array of longs containing field values
+'
+' Local Variables:
+' @local idx - Current argument index
+' @local c - Current character being processed
+' @local asc - ASCII value for escape sequences
+' @local fld - Field width for formatting
+' @local digits - Number of digits for numeric formatting
+' @local kindaLock - Simple locking mechanism for thread safety
 
     repeat
         kindaLock := kLock
@@ -398,156 +473,212 @@ pri get_nargs(p_str) : p_str1, val1, val2 | c, sign
 
 
 pub fmt_number(value, base, digits, width, pad)
-
 '' Emit value converted to number in padded field
-'' -- value is converted using base as radix
-''    * 99 for decimal with digits after decimal point
-'' -- digits is max number of digits to use
-'' -- width is width of final field (max)
-'' -- pad is character that fills out field
+''   value is converted using base as radix
+''   99 for decimal with digits after decimal point
+''   digits is max number of digits to use
+''   width is width of final field (max)
+''   pad is character that fills out field
+''
+'' @param value - numeric value to convert
+'' @param base - radix for conversion (99 for decimal with decimal point)
+'' @param digits - maximum number of digits to use
+'' @param width - width of final field
+'' @param pad - character that fills out field
 
   str(nstr.fmt_number(value, base, digits, width, pad))
 
 
 pub dec(value)
-
 '' Emit value as decimal
+''
+'' @param value - Numeric value to convert and transmit
 
   str(nstr.itoa(value, 10, 0))
 
 
 pub fwdec(value, digits)
-
 '' Emit value as decimal using fixed # of digits
-'' -- may add leading zeros
+''   may add leading zeros
+''
+'' @param value - numeric value to convert
+'' @param digits - fixed number of digits to use
 
   str(nstr.itoa(value, 10, digits))
 
 
 pub jdec(value, digits, width, pad)
-
 '' Emit value as decimal using fixed # of digits
-'' -- aligned in padded field (negative width to left-align)
-'' -- digits is max number of digits to use
-'' -- width is width of final field (max)
-'' -- pad is character that fills out field
+''   aligned in padded field (negative width to left-align)
+''   digits is max number of digits to use
+''   width is width of final field (max)
+''   pad is character that fills out field
+''
+'' @param value - numeric value to convert
+'' @param digits - maximum number of digits to use
+'' @param width - width of final field
+'' @param pad - character that fills out field
 
   str(nstr.fmt_number(value, 10, digits, width, pad))
 
 
 pub dpdec(value, dp)
-
 '' Emit value as decimal with decimal point
-'' -- dp is number of digits after decimal point
+''   dp is number of digits after decimal point
+''
+'' @param value - numeric value to convert
+'' @param dp - number of digits after decimal point
 
   str(nstr.dpdec(value, dp))
 
 
 pub jdpdec(value, dp, width, pad)
-
 '' Emit value as decimal with decimal point
-'' -- aligned in padded field (negative width to left-align)
-'' -- dp is number of digits after decimal point
-'' -- width is width of final field (max)
-'' -- pad is character that fills out field
+''   aligned in padded field (negative width to left-align)
+''   dp is number of digits after decimal point
+''   width is width of final field (max)
+''   pad is character that fills out field
+''
+'' @param value - numeric value to convert
+'' @param dp - number of digits after decimal point
+'' @param width - width of final field
+'' @param pad - character that fills out field
 
   str(nstr.fmt_number(value, 99, dp, width, pad))
 
 
 pub hex(value)
-
 '' Emit value as hexadecimal
+''
+'' @param value - Numeric value to convert and transmit
 
   str(nstr.itoa(value, 16, 0))
 
 
 pub fhex(value, digits)
-
 '' Emit value as hexadecimal using fixed # of digits
+''
+'' @param value - numeric value to convert
+'' @param digits - fixed number of digits to use
 
   str(nstr.itoa(value, 16, digits))
 
 
 pub jhex(value, digits, width, pad)
-
-'' Emit value as quarternary using fixed # of digits
-'' -- aligned inside field
-'' -- pad fills out field
+'' Emit value as hexadecimal using fixed # of digits
+''   aligned inside field
+''   pad fills out field
+''
+'' @param value - numeric value to convert
+'' @param digits - fixed number of digits to use
+'' @param width - width of final field
+'' @param pad - character that fills out field
 
   str(nstr.fmt_number(value, 16, digits, width, pad))
 
 
 pub oct(value)
-
 '' Emit value as octal
+''
+'' @param value - numeric value to convert and transmit
 
   str(nstr.itoa(value, 8, 0))
 
 
 pub foct(value, digits)
-
 '' Emit value as octal using fixed # of digits
+''
+'' @param value - numeric value to convert
+'' @param digits - fixed number of digits to use
 
   str(nstr.itoa(value, 8, digits))
 
 
 pub joct(value, digits, width, pad)
-
 '' Emit value as octal using fixed # of digits
-'' -- aligned inside field
-'' -- pad fills out field
+''   aligned inside field
+''   pad fills out field
+''
+'' @param value - numeric value to convert
+'' @param digits - fixed number of digits to use
+'' @param width - width of final field
+'' @param pad - character that fills out field
 
   str(nstr.fmt_number(value, 8, digits, width, pad))
 
 
 pub qrt(value)
-
 '' Emit value as quarternary
+''
+'' @param value - numeric value to convert and transmit
 
   str(nstr.itoa(value, 4, 0))
 
 
 pub fqrt(value, digits)
-
 '' Emit value as quarternary using fixed # of digits
+''
+'' @param value - numeric value to convert
+'' @param digits - fixed number of digits to use
 
   str(nstr.itoa(value, 4, digits))
 
 
 pub jqrt(value, digits, width, pad)
-
 '' Emit value as quarternary using fixed # of digits
-'' -- aligned inside field
-'' -- pad fills out field
+''   aligned inside field
+''   pad fills out field
+''
+'' @param value - numeric value to convert
+'' @param digits - fixed number of digits to use
+'' @param width - width of final field
+'' @param pad - character that fills out field
 
   str(nstr.fmt_number(value, 4, digits, width, pad))
 
 
 pub bin(value)
-
 '' Emit value as binary
+''
+'' @param value - numeric value to convert and transmit
 
   str(nstr.itoa(value, 2, 0))
 
 
 pub fbin(value, digits)
-
 '' Emit value as binary using fixed # of digits
+''
+'' @param value - numeric value to convert
+'' @param digits - fixed number of digits to use
 
   str(nstr.itoa(value, 2, digits))
 
 
 pub jbin(value, digits, width, pad)
-
 '' Emit value as binary using fixed # of digits
-'' -- aligned inside field
-'' -- pad fills out field
+''   aligned inside field
+''   pad fills out field
+''
+'' @param value - numeric value to convert
+'' @param digits - fixed number of digits to use
+'' @param width - width of final field
+'' @param pad - character that fills out field
 
   str(nstr.fmt_number(value, 2, digits, width, pad))
 
 pub memDump(pBytes, lenBytes, pMessage) | rowCount, rowLen, pCurrByte, lastRowByteCount, bytesSoFar
-
-'' Dump rows of hex values with address preceeding
+'' Dump rows of hex values with address preceding
+''
+'' @param pBytes - Pointer to byte array to dump
+'' @param lenBytes - Number of bytes to dump
+'' @param pMessage - Optional pointer to header message string
+'
+' Local Variables:
+' @local rowCount - Number of complete 16-byte rows
+' @local rowLen - Length of current row (unused)
+' @local pCurrByte - Pointer to current byte being processed
+' @local lastRowByteCount - Number of bytes in final partial row
+' @local bytesSoFar - Running count of bytes processed
 
     if pMessage
         fstr1(string("** %s:\r\n"), pMessage)
@@ -569,6 +700,17 @@ pub memDump(pBytes, lenBytes, pMessage) | rowCount, rowLen, pCurrByte, lastRowBy
         memDumpRow(pCurrByte, lastRowByteCount)
 
 pri memDumpRow(pBytes, lenBytes) | rowCount, rowLen, pCurrByte, bytIndex
+'' Emit a single row of hex dump data
+''
+'' @param pBytes - pointer to bytes to dump
+'' @param lenBytes - number of bytes in this row
+''
+' Local Variables:
+' @local rowCount - row count (unused)
+' @local rowLen - row length (unused)
+' @local pCurrByte - pointer to current byte (unused)
+' @local bytIndex - index of current byte
+
     ' emit address
     fstr1(string("  0x%.8x: "), pBytes)
     ' emit 8 bytes

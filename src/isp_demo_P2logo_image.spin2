@@ -18,12 +18,17 @@ CON { Public Interface Constants }
     IMAGE_UNKNOWN = -1
 
 pub null()
-
-'' This is not a top object
+'' Placeholder method indicating this is not a top-level object
 
 PUB imageInfo(eImage) : imageAddr, imageWidthBytes, imageHeightBytes
 '' Return the address of the image bitmap associated with {eImage}
 '' NOTE: widthInPix = imageWidthBytes * 2, while heightInPix = imageHeightBytes
+''
+'' @param eImage - Image identifier from enum values
+'' @returns imageAddr - Pointer to image bitmap data or IMAGE_UNKNOWN if invalid
+'' @returns imageWidthBytes - Image width in bytes (multiply by 2 for pixels)
+'' @returns imageHeightBytes - Image height in pixels
+
     case eImage
         IMAGE_P2_logo:
             imageAddr := @p2logoBits
