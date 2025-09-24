@@ -46,7 +46,10 @@ Initial ported capabilties:
 - Font orientations:
   - Vertical, Vertical-Column, Horizontal
 - eINK colors:
-  - Black, and White *(2.00" display might be Black, Dark Grey, Light Grey and White)*
+  - Black and White *(most displays)*
+  - Black, Dark Grey, Light Grey, and White *(2.00" grayscale display)*
+  - Black, White, and Red *(WaveShare 2.13" R/B/W)*
+  - Black, White, Blue, Orange, Yellow, Green, and Red *(WaveShare 5.65" 7-color)*
 
 To this, we added these additional capabilities:
 
@@ -54,7 +57,7 @@ To this, we added these additional capabilities:
 - Set region background color
 - Show bitmap in region as color w/rotation
 - Draw line, box, circle
-- Support for 1.54", 2.00" (older), 2.13" and 2.90" eINK displays
+- Support for 1.54", 2.00" (older), 2.13", 2.90", WaveShare 2.13" R/B/W, and WaveShare 5.65" 7-color eINK displays
 
 ## Current status
 
@@ -130,7 +133,7 @@ On this Page:
 
 Additional pages:
 
-- [Driver Public Interface](./isp_eink_click.txt) - shows full driver annotated API 
+- [Driver Public Interface](./isp_eInk_click.txt) - shows full driver annotated API 
 - [Start your project using this object](DEVELOP.md) - Walks thru configuration and setup of your own project using this object
 - [Configure Display Orientation](./Docs/Orientation.md) - set driver to match your hardare set up
 - [Create bitmaps for display on your eINK device](./C-src)
@@ -141,7 +144,7 @@ Additional pages:
 
 This is a project supporting our P2 Development Community. Please feel free to contribute to this project. You can contribute in the following ways:
 
-- File **Feature Requests** or **Issues** (describing things you are seeing while using our code) at the [Project Issue Tracking Page](https://github.com/ironsheep/P2-Click-UWB/issues)
+- File **Feature Requests** or **Issues** (describing things you are seeing while using our code) at the [Project Issue Tracking Page](https://github.com/ironsheep/P2-Click-eInk/issues)
 - Fork this repo and then add your code to it. Finally, create a Pull Request to contribute your code back to this repository for inclusion with the projects code. See [CONTRIBUTING](CONTRIBUTING.md)
 
 ---

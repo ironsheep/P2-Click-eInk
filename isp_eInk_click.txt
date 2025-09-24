@@ -45,7 +45,7 @@ PUB placeImageAtXY(x, y, pImgBits, imgWidth, imgHeight, rotation)
 __________
 PUB null()
 
- This is not a top-level object
+ Placeholder method indicating this is not a top-level object
 
 ___________________________________________
 PUB start(eDisplayType, eClickBasePin) : ok
@@ -121,10 +121,10 @@ __________________________________________________________
 PUB selectFont(eFontOrientation, eColor, eFont): validFont
 
  Set font configuration to be used in following setTextAtXY() and displayTextAtXY() calls
- @param eFontOrientation - - orientation of text [FO_* enum values]
- @param eColor - text color, specific to eInk device
- @param eFont - font to use for text
- @returns validFont - T/F - where F means font wast NOT found (is invalid)
+ @param eFontOrientation - Orientation of text [FO_* enum values]
+ @param eColor - Text color, specific to eInk device
+ @param eFont - Font to use for text
+ @returns validFont - True/False where False means font was NOT found (is invalid)
 
 __________________________________________________________________________
 PUB fontMetrics() : firstChar, lastChar, fontHeight, fontWidth, lineHeight
@@ -153,16 +153,16 @@ PUB displayImage(pImageBffr)
 
  Write image bitmap to Display
   NOTE: MUST fit within display size, this is immediately displayed
- @param pImageBffr - pointer to the image buffer
+ @param pImageBffr - Pointer to the image buffer
 
 ________________________________
 PUB displayTextAtXY(x, y, pText)
 
- Write zstr at {pText} to Display at device row, column,  is immediately displayed
+ Write string at pText to Display at device coordinates, immediately displayed
   NOTE: this is immediately displayed
- @param x - horizontal position
- @param y - vertical position
- @param pText - text string to display
+ @param x - Horizontal position in pixels
+ @param y - Vertical position in pixels
+ @param pText - Pointer to text string to display
 
 ___________________
 PUB updateDisplay()
@@ -187,19 +187,19 @@ PUB clearBuffer()
 ______________________
 PUB fillBuffer(eColor)
 
- Fill Display with {color}
+ Fill Display with color
   Defaults to white if color not supported by device
   NOTE: this only affects the buffer not the eInk display
- @param eColor - fill color, specific to eInk device
+ @param eColor - Fill color, specific to eInk device
 
 ____________________________
 PUB setTextAtXY(x, y, pText)
 
- Write zstr at {pText} to Frame Buffer at row, column
+ Write string at pText to Frame Buffer at coordinates
   NOTE: not immediately displayed, use updateDisplay() to display
- @param x - horizontal position
- @param y - vertical position
- @param pText - text string to display
+ @param x - Horizontal position in pixels
+ @param y - Vertical position in pixels
+ @param pText - Pointer to text string to display
 
 _______________________________________________
 PUB fillRegionAtXY(x, y, eColor, width, height)
@@ -289,11 +289,126 @@ PUB placeImageAtXY(x, y, pImgBits, imgWidth, imgHeight, rotation)
  @param rotation - image rotation (numeric, one of four cardinals: 0, 90, 180, 270)
 
 
+ Configure our display based on device type
+ Write the device LUT data - waits for 1sec at end
+ @param pLut - pointer to LUT table data
+ @param nBytes - number of bytes in LUT table
+ Set pointer to RAM
+ @param x - X coordinate position
+ @param y - Y coordinate position
+ Set region of RAM
+ @param xStart - starting X coordinate
+ @param yStart - starting Y coordinate
+ @param xEnd - ending X coordinate
+ @param yEnd - ending Y coordinate
+ Validate and return a legal font orientation value
+ @param eFontOrientation - font orientation to validate
+ @returns valOrientation - validated font orientation
+ Validate and return a legal color value for the current device
+ @param eColor - color value to validate
+ @returns valColor - validated color value for current device
+ Validate and limit X,Y coordinates to displayable area
+ @param x - X coordinate to validate
+ @param y - Y coordinate to validate
+ @returns valX - validated X coordinate
+ @returns valY - validated Y coordinate
+ Validate and limit X,Y coordinates and width,height to displayable area
+ @param x - X coordinate to validate
+ @param y - Y coordinate to validate
+ @param width - width to validate
+ @param height - height to validate
+ @returns valX - validated X coordinate
+ @returns valY - validated Y coordinate
+ @returns valWidth - validated width
+ @returns valHeight - validated height
+ Rotate X,Y coordinates to display orientation
+ @param x - original X coordinate
+ @param y - original Y coordinate
+ @returns rotX - rotated X coordinate
+ @returns rotY - rotated Y coordinate
+ Return the maximum of two values
+ @param a - first value
+ @param b - second value
+ @returns maxValue - the larger of the two values
+ Return the minimum of two values
+ @param a - first value
+ @param b - second value
+ @returns minValue - the smaller of the two values
 
+ Initialize our 2.13" display (WS213BV3)
+ Hard-reset WS213BV3 followed by soft-reset and wait for idle
+ Hard-reset the WS213BV3 device
+ Put the WS213BV3 device into sleep mode
+ Wait for WS213BV3 busy to go high
+ Clear the WS213BV3 display
+ Fill the WS213BV3 buffer with color
+ @param color - color, specific to WS213BV3 eInk device
+ Write the buffer to the WS213BV3 display black half then red half
+ Decode WS213BV3 color into needed black/red bits
+ @param color - color to decode
+ @returns blkBit - black bit value (0 or 1)
+ @returns redBit - red bit value (0 or 1)
 
+ Initialize our 7-color display
+ Reset our 7-color display
+ Put our 7-color display to sleep
+ After this command is transmitted, the chip would enter the
+ deep-sleep mode to save power.
+ The deep sleep mode would return to standby by hardware reset.
+ The only one parameter is a check code, the command would be
+ You can use EPD_Reset() to awaken
+ Clear the WS565F display
+ Fill the WS565F buffer with color
+  we have two pixels per byte, upper and lower nibbles
+ @param color - color to fill buffer with
+ Write command to device then wait for busy to be desired state
+ @param cmd - command byte to write
+ @param endState - desired ending state of busy pin
+ Return a string for the busy state
+ @param state - busy pin state (0 or 1)
+ @returns stateStr - pointer to string representation
+ Write the buffer to the WS565F display black half then red half
+ Request display update
 
+ Initialize our 3.7" display
+ Short initialization routine for GD370Tch display
+ Alternate initialization routine for GD370Tch display (fast mode)
+ Longer initialization routine for GD370Tch display (partial write support)
+ Reset our 2-color display w/Touch
+ Wait for GD370Tch busy to go high
+ Clear the GD370Tch display
+ Fill entire buffer with single color (black or white)
+ @param color - color to fill buffer with
+ Write buffer to display
+ Write partial buffer to display (really fast paint mechanism)
+ @param x_start - starting X coordinate
+ @param y_start - starting Y coordinate
+ @param pBffr - pointer to buffer data
+ @param line - line count
+ @param column - column count
+ @param mode - display mode
+ Power off the GD370Tch display
+ Sleep the display
+ Load the LUT into the eInk controller
 
+ Place font character into device frame for later display
+ NOTE: font color and device x,y set externally
+ @param chrCode - character code to write
+ @param textColor - text color for character
 
+ Write command byte (DC low = command)
+ @param data - command byte to write
+ Write data byte (DC high = data)
+ @param data - data byte to write
+ Read data byte (DC high = data)
+ @returns value8bit - the 8-bit data value read
+ Read byte from SPI
+ @returns value8bit - the 8-bit value read
+ Write byte to SPI
+ @param dataByte - byte to write to SPI
+ Write multiple data bytes (more efficient)
+ @param pData - pointer to data bytes
+ @param nBytes - number of bytes to write
 
 
  -------------------------------------------------------------------------------------------------
