@@ -26,7 +26,8 @@ CON { Public Interface Constants }
     '   *PD_ = fm Pervasive Displays (doesn't work with click)! REMOVED!
     '   *GD_ = fm Good Display (Dalian Good Display, LTD)
     '   *Tch = eINK w/Touch
-    #$40, DS_eink154, DS_eink200gs, DS_eink213, DS_eink290, DSWS_2in13BV3, DSWS_5in65F, DSGD_370Tch
+    '   *AF_ = fm Adafruit
+    #$40, DS_eink154, DS_eink200gs, DS_eink213, DS_eink290, DSWS_2in13BV3, DSWS_5in65F, DSGD_370Tch, DSAF_213BRYW
     ' return value when user makes bad choice
     INVALID_DISPLAY_TYPE = -1
 
@@ -175,6 +176,15 @@ CON { PRIVATE eInk Constants }
     EINKWS565F_DISPLAY_HEIGHT = 448
     EINKWS565F_DISPLAY_RESOLUTION = 134_400   ' = 600 * 448 / 2 (4 bits per pixel)
 
+' ---------------------------------------
+' 2.13" Adafruit Quad-Color eInk display 122x250 - JD79661AA controller
+' resolution 250-gate, 128-source (122 visible + 6 padding)
+'  4-color display: Black, Red, Yellow, White (2bpp, 4 pixels per byte)
+
+    EINKAF213_DISPLAY_WIDTH = 176           ' JD79661 internal SRAM width (176 source channels)
+    EINKAF213_DISPLAY_HEIGHT = 250
+    EINKAF213_DISPLAY_RESOLUTION = 11_000    ' = 176 * 250 / 4 (2 bits per pixel)
+
 ' =======================================
 
 ' you can reduce this if you are not using the larger displays
@@ -195,6 +205,13 @@ CON { PRIVATE eInk Constants }
     EINK213B_COLOR_WHITE        = $03' internal-use values
     EINK213B_COLOR_BLACK        = $00
     EINK213B_COLOR_RED          = $02
+
+    ' DSAF_213BRYW: Adafruit 4-color (B/R/Y/W) 2bpp values
+    '  Panel LUT maps: Gray0=Black, Gray1=White, Gray2=Yellow, Gray3=Red
+    EINKAF213_COLOR_BLACK         = $00 ' Gray0
+    EINKAF213_COLOR_WHITE         = $01 ' Gray1
+    EINKAF213_COLOR_YELLOW        = $02 ' Gray2
+    EINKAF213_COLOR_RED           = $03 ' Gray3
 
     EINK5in65F_COLOR_BLACK        = $00 ' 000 internal-use values
     EINK5in65F_COLOR_WHITE        = $01 ' 001
@@ -375,6 +392,14 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
             displayWidthInPix   := EINKWS565F_DISPLAY_WIDTH
             displayHeightInPix  := EINKWS565F_DISPLAY_HEIGHT
 
+        DSAF_213BRYW:
+            eInkPhysWidth       := EINKAF213_DISPLAY_WIDTH
+            eInkPhysHeight      := EINKAF213_DISPLAY_HEIGHT
+            frameSizeInBytes    := EINKAF213_DISPLAY_RESOLUTION
+
+            displayWidthInPix   := 122                             ' 122 visible pixels (176 SRAM, offset 7)
+            displayHeightInPix  := EINKAF213_DISPLAY_HEIGHT
+
         OTHER:
             deviceType := INVALID_DISPLAY_TYPE
 
@@ -451,6 +476,15 @@ PUB resetDevice()
     elseif deviceType == DSGD_370Tch
         ' this is done by init
         'resetDeviceGD370Tch()
+    elseif deviceType == DSAF_213BRYW
+        ' JD79661 needs longer reset timing than standard displays
+        pinhigh(eiPinRST)
+        waitms(10)
+        pinlow(eiPinRST)
+        waitms(10)
+        pinhigh(eiPinRST)
+        waitms(10)
+        waitDeviceIdleDS213BV3()            ' wait for controller ready after reset
     else
         pinhigh(eiPinRST)   ' toggle reset
         waitms(1)
@@ -469,6 +503,8 @@ PUB enterSleepMode()
         sleepDS565F()
     elseif deviceType == DSGD_370Tch
         sleepGD370Tch()
+    elseif deviceType == DSAF_213BRYW
+        sleepAF213BRYW()
     else
         writeCmd(CMD_DEEP_SLEEP_MODE)
         waitForDeviceIdle()
@@ -501,6 +537,7 @@ DAT  { PRIVATE Color Lists }
     twoColor    BYTE    2, EINK_COLOR_BLACK, EINK_COLOR_WHITE
     threeColor  BYTE    3, EINK_COLOR_BLACK, EINK_COLOR_WHITE, EINK_COLOR_RED
     fourColor   BYTE    4, EINK_COLOR_BLACK, EINK_COLOR_WHITE, EINK_COLOR_LIGHT_GREY, EINK_COLOR_DARK_GREY
+    fourColorBRYW BYTE  4, EINK_COLOR_BLACK, EINK_COLOR_WHITE, EINK_COLOR_RED, EINK_COLOR_YELLOW
     sevenColor  BYTE    7, EINK_COLOR_BLACK, EINK_COLOR_WHITE, EINK_COLOR_BLUE, EINK_COLOR_ORANGE, EINK_COLOR_YELLOW, EINK_COLOR_GREEN, EINK_COLOR_RED
 
     ' some debug stuff
@@ -519,6 +556,8 @@ PUB displayColors() : pColorSet
         pColorSet := @threeColor
     elseif deviceType == DSWS_5in65F
         pColorSet := @sevenColor
+    elseif deviceType == DSAF_213BRYW
+        pColorSet := @fourColorBRYW
     else
         pColorSet := @twoColor
 
@@ -648,6 +687,9 @@ PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
         BYTEMOVE(@deviceFrame, pImageBffr, frameSizeInBytes)
         updateDisplay()
     elseif deviceType == DSGD_370Tch
+        BYTEMOVE(@deviceFrame, pImageBffr, frameSizeInBytes)
+        updateDisplay()
+    elseif deviceType == DSAF_213BRYW
         BYTEMOVE(@deviceFrame, pImageBffr, frameSizeInBytes)
         updateDisplay()
     else
@@ -806,7 +848,7 @@ PUB displayTextAtXY(x, y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
 
     updateDisplay()
 
-PUB updateDisplay() | byteCtr, yCtr, xCtr, cmdValue
+PUB updateDisplay() | byteCtr, yCtr, xCtr, cmdValue, startMs, elapsedMs, elapsedSec, elapsedFrac
 '' Flush Frame Buffer content to eINK Display
 ''  NOTE: this will wait for prior display-update to complete before starting this update
 ''   this allows us to build the next display while the current display is being shown
@@ -817,6 +859,12 @@ PUB updateDisplay() | byteCtr, yCtr, xCtr, cmdValue
 ' @local yCtr - Y coordinate counter for display writing
 ' @local xCtr - X coordinate counter for display writing
 ' @local cmdValue - Command value specific to display type
+' @local startMs - Start time in milliseconds for performance measurement
+' @local elapsedMs - Elapsed time in milliseconds
+' @local elapsedSec - Elapsed whole seconds for display
+' @local elapsedFrac - Elapsed fractional milliseconds for display
+
+    startMs := getms()
 
     if deviceType == DSWS_2in13BV3
         writeBufferWS213BV3()
@@ -824,6 +872,8 @@ PUB updateDisplay() | byteCtr, yCtr, xCtr, cmdValue
         writeBufferWS565F()
     elseif deviceType == DSGD_370Tch
         writeBufferGD370Tch()
+    elseif deviceType == DSAF_213BRYW
+        writeBufferAF213BRYW()
     else
         waitForDeviceIdle()
         if deviceType <> DS_eink200gs
@@ -893,6 +943,11 @@ PUB updateDisplay() | byteCtr, yCtr, xCtr, cmdValue
 
             ' NO waitForDeviceIdle() will DO SO before we attempt next write
 
+    elapsedMs := getms() - startMs
+    elapsedSec := elapsedMs / 1000
+    elapsedFrac := elapsedMs // 1000
+    debug("* updateDisplay() ", udec_(elapsedSec), ".", udec_(elapsedFrac), " sec (", udec_(elapsedMs), " ms)")
+
 PUB waitForDeviceIdle() | state
 '' Wait for display to indicate that last update is complete
 ''  NOTE: use this before a driver stop() to ensure the display is completely written.
@@ -909,6 +964,8 @@ PUB waitForDeviceIdle() | state
         'wrCmdWtDesiredBusyWS565F(CMD_NO_CMD, 0) ' not busy
     elseif deviceType == DSGD_370Tch
         waitDeviceIdleGD370Tch()
+    elseif deviceType == DSAF_213BRYW
+        waitDeviceIdleDS213BV3()            ' same BUSY polarity: 0=busy, 1=idle
     else
         Debug("* wait idle - ENTRY: ", udec(state))
         ' wait for busy to go low
@@ -952,6 +1009,10 @@ PUB fillBuffer(eColor) | xCtr, yCtr, fillColor, byteCtr
         fillBufferWS565F(fillColor)
     elseif deviceType == DSGD_370Tch
         fillBufferGD370Tch(fillColor) ' fill only
+    elseif deviceType == DSAF_213BRYW
+        ' 2bpp: pack 2-bit color into all 4 pixel positions in byte
+        fillColor := (fillColor & $03) | ((fillColor & $03) << 2) | ((fillColor & $03) << 4) | ((fillColor & $03) << 6)
+        bytefill(@deviceFrame, fillColor, frameSizeInBytes)
     else
         ' fill deviceFrame so drawing operations have correct background
         bytefill(@deviceFrame, fillColor, frameSizeInBytes)
@@ -1329,7 +1390,7 @@ PUB setPixelAtXY(inX, inY, eColor) | bitColor, bitInByte, byteIdx, pBlkBffr, pRe
             dbgMsgCt--
             debug("setPixelAtXY(", udec_(inX), ", ", udec_(inY), ") (", udec_(x), ", ", udec_(y), ") ds=", uhex_byte_(bitColor), " @ ", uhex_byte_(byteIdx), ":", uhex_byte_(bitInByte), ", ",  uhex_byte_(mskValue), "->", uhex_byte_(updValue))
 
-    elseif deviceType <> DS_eink200gs
+    elseif deviceType <> DS_eink200gs and deviceType <> DSAF_213BRYW
         ' for 1.54", 2.13" and 2.90" displays
         ' monochrome (black/white) - 1 bit / pixel! (8 pix / byte)
         byteIdx := (y * (eInkPhysWidth / 8)) + (x / 8)
@@ -1338,12 +1399,15 @@ PUB setPixelAtXY(inX, inY, eColor) | bitColor, bitInByte, byteIdx, pBlkBffr, pRe
         BYTE [@deviceFrame][byteIdx] &= !($01 << bitInByte)
         BYTE [@deviceFrame][byteIdx] |= ((bitColor & $01) << bitInByte)
     else
-        ' for 2.00" display with 2-bit grey-scale
-        '  4bits packed into each byte - 2-bits / pixel
-        '
-        ' AUGH!  orientation of display is y inverted
-        '  let's counter this so 0,0 is same on all 4 displays
-        y := (eInkPhysHeight - 1) - y
+        ' for 2bpp displays: DS_eink200gs (greyscale) and DSAF_213BRYW (quad-color)
+        '  4 pixels packed into each byte - 2-bits / pixel
+        if deviceType == DS_eink200gs
+            ' AUGH!  orientation of 2.00" display is y inverted
+            '  counter this so 0,0 is same on all displays
+            y := (eInkPhysHeight - 1) - y
+        elseif deviceType == DSAF_213BRYW
+            ' center 122 visible pixels within 176-wide SRAM (visible range: SRAM columns 8-129)
+            x := x + 8
         byteIdx := (y * (eInkPhysWidth / 4)) + (x / 4)
         bitInByte := (3 - (x +// 4)) * 2
 
@@ -1666,6 +1730,8 @@ PRI configDevice()
             initDS565F()
         DSGD_370Tch:
             initGD370Tch()
+        DSAF_213BRYW:
+            initAF213BRYW()
         OTHER:
             debug("sc() ERROR unknown display size")
 
@@ -1682,6 +1748,7 @@ PRI setDeviceLut(pLut, nBytes) | nIdx
         DSWS_2in13BV3:
         DSWS_5in65F:
         DSGD_370Tch:
+        DSAF_213BRYW:
         OTHER:
             if(deviceType <> DSWS_2in13BV3)
                 writeCmd(CMD_WRITE_LUT_REGISTER)
@@ -1700,6 +1767,7 @@ PRI setMemoryPointer(x, y)
         DSWS_2in13BV3:
         DSWS_5in65F:
         DSGD_370Tch:
+        DSAF_213BRYW:
         OTHER:
             writeCmd(CMD_SET_RAM_X_ADDR_CTR)
             writeData(((x >> 3) & $FF))
@@ -1724,6 +1792,7 @@ PRI setMemoryArea(xStart, yStart, xEnd, yEnd)
         DSWS_2in13BV3:
         DSWS_5in65F:
         DSGD_370Tch:
+        DSAF_213BRYW:
         OTHER:
             if deviceType == DS_eink200gs
                 writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS)
@@ -1805,6 +1874,23 @@ PRI validColor(eColor) : valColor
                 EINK213B_COLOR_BLACK:
                 OTHER:
                     valColor := EINK213B_COLOR_BLACK    ' default
+        DSAF_213BRYW:
+          ' 4-color quad-color display (Black/Red/Yellow/White)
+            case eColor
+                EINK_COLOR_WHITE:
+                    valColor := EINKAF213_COLOR_WHITE
+                EINK_COLOR_BLACK:
+                    valColor := EINKAF213_COLOR_BLACK
+                EINK_COLOR_RED:
+                    valColor := EINKAF213_COLOR_RED
+                EINK_COLOR_YELLOW:
+                    valColor := EINKAF213_COLOR_YELLOW
+                EINKAF213_COLOR_WHITE:
+                EINKAF213_COLOR_BLACK:
+                EINKAF213_COLOR_RED:
+                EINKAF213_COLOR_YELLOW:
+                OTHER:
+                    valColor := EINKAF213_COLOR_BLACK    ' default
         DSWS_5in65F:
           ' 7 color display
             case eColor
@@ -2314,6 +2400,101 @@ PRI updateDisplayWS565F()
     ' power off, wait for busy to assert
     wrCmdWtDesiredBusyWS565F(CMD_POWER_OFF_CMD, 0)
     waitms(200)
+
+CON ' --- PRIVATE DSAF_213BRYW (Adafruit Quad-Color) Display Methods ---
+
+PRI initAF213BRYW()
+'' Initialize the Adafruit 2.13" quad-color display (JD79661AA)
+'' Init sequence from Adafruit_JD79661 reference driver
+
+    waitms(10)
+
+    writeCmd($4D)
+    writeData($78)
+
+    writeCmd(CMD_PANEL_SETTING_REG)         ' $00 PSR
+    writeData($0F)                          ' RES=00 (176x296 mode), UD=1, SHL=1, SHD_N=1, RST_N=1
+    writeData($29)
+
+    writeCmd(CMD_POWER_SETTING_REG)         ' $01 PWR
+    writeData($07)
+    writeData($00)
+
+    writeCmd(CMD_POWER_OFF_SEQ_SETTING)     ' $03
+    writeData($10)
+    writeData($54)
+    writeData($44)
+
+    writeCmd(CMD_BOOSTER_SOFT_START)        ' $06 BTST
+    writeData($05)
+    writeData($00)
+    writeData($3F)
+    writeData($0A)
+    writeData($25)
+    writeData($12)
+    writeData($1A)
+
+    writeCmd(CMD_VCOM_LUT)                  ' $20
+    writeData($37)
+
+    writeCmd($60)                           ' TCON
+    writeData($02)
+    writeData($02)
+
+    writeCmd(CMD_RESOLUTION_SETTING)        ' $61 TRES
+    writeData($00)
+    writeData($B0)                          ' 176 source channels (full SRAM width)
+    writeData($00)
+    writeData($FA)                          ' 250 gate lines
+
+    writeCmd($E7)
+    writeData($1C)
+
+    writeCmd($E3)                           ' PWS
+    writeData($22)
+
+    writeCmd($B4)
+    writeData($D0)
+
+    writeCmd($B5)
+    writeData($03)
+
+    writeCmd($E9)
+    writeData($01)
+
+    writeCmd(CMD_PLL_CONTROL)               ' $30
+    writeData($08)
+
+    writeCmd(CMD_POWER_ON_CMD)              ' $04 PON
+    waitDeviceIdleDS213BV3()
+
+PRI writeBufferAF213BRYW() | byteIdx
+'' Write frame buffer to the Adafruit 2.13" quad-color display
+''
+' Local Variables:
+' @local byteIdx - byte index counter
+
+    waitDeviceIdleDS213BV3()
+
+    ' Write pixel data
+    writeCmd(CMD_DATA_START_XMIT_1)         ' $10 DTM
+    repeat byteIdx from 0 to frameSizeInBytes - 1
+        writeData(BYTE [@deviceFrame][byteIdx])
+
+    ' Trigger display refresh
+    writeCmd(CMD_DISPLAY_REFRESH)            ' $12 DRF
+    writeData($00)
+    waitms(100)                              ' allow BUSY to assert
+    waitDeviceIdleDS213BV3()
+
+PRI sleepAF213BRYW()
+'' Put the Adafruit 2.13" quad-color display to sleep
+
+    writeCmd(CMD_POWER_OFF_CMD)              ' $02 POF
+    writeData($00)
+    waitDeviceIdleDS213BV3()
+    writeCmd(CMD_DEEP_SLEEP)                 ' $07 DSLP
+    writeData($A5)                           ' check code
 
 CON ' --- PRIVATE DSGD_370Tch Display Methods ---
 

@@ -31,8 +31,8 @@ CON { click module io pins }
     ' our Click module is on 32-47!
     EINK_CLICK_PINGROUP = eInkDisplay.PINS_P32_P47
 
-    ' we are using a 2.90" eInk display
-    EINK_DISPLAY_TYPE = eInkDisplay.DS_eink290
+    ' we are using a 2.13" quad-color (B/R/Y/W) eInk display
+    EINK_DISPLAY_TYPE = eInkDisplay.DSAF_213BRYW
 
 OBJ { the object being demo'd }
 
@@ -65,11 +65,14 @@ PUB main() | ok
     'debug("* ERASED, ready for drawing, hold")
     'repeat ' hold here - when prepping the display for storage (no image on it)
 
-{   Small tests while bringing up a new display
+'{  Small tests while bringing up a new display
     'borderDemo()
-    lineWidthDemo()
+    'lineWidthDemo()
     'text_demo()
     'demo7Color()
+    'demo4Color()
+    'demoCalibrationRuler()
+    demo4ColorBlocks()
     debug("* HOLD Here... ")
     repeat
 '}
@@ -127,6 +130,73 @@ pri min(a,b) : result
 VAR { local variables }
 
     BYTE    strBuffer[20+1]
+
+PRI demo4ColorBlocks() | dsplyWidthInPix, dsplyHeightInPix, bandH, inset, bandW
+' Color/centering test: white background, black border, 4 inset color blocks
+
+    dsplyWidthInPix, dsplyHeightInPix := eInkDisplay.displaySize()
+    inset := 8
+    bandH := (dsplyHeightInPix - inset * 2 - 15) / 4
+    bandW := dsplyWidthInPix - inset * 2
+
+    ' White background so all borders visible
+    eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
+
+    ' Black border at display edges
+    eInkDisplay.borderAtXY(0, 0, eInkDisplay.EINK_COLOR_BLACK, 2, dsplyWidthInPix, dsplyHeightInPix)
+
+    ' 4 inset color blocks with 5px gaps between them
+    eInkDisplay.fillRegionAtXY(inset, inset, eInkDisplay.EINK_COLOR_BLACK, bandW, bandH)
+    eInkDisplay.fillRegionAtXY(inset, inset + bandH + 5, eInkDisplay.EINK_COLOR_WHITE, bandW, bandH)
+    eInkDisplay.fillRegionAtXY(inset, inset + (bandH + 5) * 2, eInkDisplay.EINK_COLOR_RED, bandW, bandH)
+    eInkDisplay.fillRegionAtXY(inset, inset + (bandH + 5) * 3, eInkDisplay.EINK_COLOR_YELLOW, bandW, bandH)
+
+    ' Black border around white block so it's visible
+    eInkDisplay.borderAtXY(inset, inset + bandH + 5, eInkDisplay.EINK_COLOR_BLACK, 1, bandW, bandH)
+
+    ' Labels
+    eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_WHITE, eInkDisplay.FONT_Tahoma_10)
+    eInkDisplay.setTextAtXY(inset + 4, inset + 4, @"BLACK")
+
+    eInkDisplay.selectFont(eInkDisplay.FO_HORIZONTAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_10)
+    eInkDisplay.setTextAtXY(inset + 4, inset + bandH + 9, @"WHITE")
+    eInkDisplay.setTextAtXY(inset + 4, inset + (bandH + 5) * 2 + 4, @"RED")
+    eInkDisplay.setTextAtXY(inset + 4, inset + (bandH + 5) * 3 + 4, @"YELLOW")
+
+    eInkDisplay.updateDisplay()
+
+PRI demoCalibrationRuler() | dsplyWidthInPix, dsplyHeightInPix, tickX, rulerY
+' Calibration ruler: horizontal line across full 176px narrow width
+'  Small ticks every 2px above, medium every 10px below, large every 50px below
+'  Count ticks from panel edges to determine pixel offset
+
+    dsplyWidthInPix, dsplyHeightInPix := eInkDisplay.displaySize()
+
+    eInkDisplay.setBackground(eInkDisplay.EINK_COLOR_WHITE)
+
+    ' Horizontal ruler line at middle of long axis
+    rulerY := dsplyHeightInPix / 2
+    eInkDisplay.lineAtXY(0, rulerY, dsplyWidthInPix - 1, rulerY, eInkDisplay.EINK_COLOR_BLACK)
+
+    repeat tickX from 0 to dsplyWidthInPix - 1 step 2
+        ' 1px tick above line every 2 pixels
+        eInkDisplay.setPixelAtXY(tickX, rulerY - 1, eInkDisplay.EINK_COLOR_BLACK)
+
+    repeat tickX from 0 to dsplyWidthInPix - 1 step 10
+        ' 2px tick below line every 10 pixels
+        eInkDisplay.lineAtXY(tickX, rulerY + 1, tickX, rulerY + 2, eInkDisplay.EINK_COLOR_BLACK)
+
+    repeat tickX from 0 to dsplyWidthInPix - 1 step 50
+        ' 4px tick below line every 50 pixels (landmarks: 0, 50, 100, 150)
+        eInkDisplay.lineAtXY(tickX, rulerY + 1, tickX, rulerY + 4, eInkDisplay.EINK_COLOR_BLACK)
+
+    ' 2px lines at top and bottom edges for vertical centering check
+    eInkDisplay.lineAtXY(0, 0, dsplyWidthInPix - 1, 0, eInkDisplay.EINK_COLOR_BLACK)
+    eInkDisplay.lineAtXY(0, 1, dsplyWidthInPix - 1, 1, eInkDisplay.EINK_COLOR_BLACK)
+    eInkDisplay.lineAtXY(0, dsplyHeightInPix - 2, dsplyWidthInPix - 1, dsplyHeightInPix - 2, eInkDisplay.EINK_COLOR_BLACK)
+    eInkDisplay.lineAtXY(0, dsplyHeightInPix - 1, dsplyWidthInPix - 1, dsplyHeightInPix - 1, eInkDisplay.EINK_COLOR_BLACK)
+
+    eInkDisplay.updateDisplay()
 
 PRI demo7Color() | xOffset, yOffset, lineWidth
 ' Demonstrates 7-color ACeP display capabilities with color tiles and borders
@@ -212,6 +282,8 @@ PRI drawOrientationDisplay(rotation) | dsplyWidthInPix, dsplyHeightInPix, startX
             detailColor := eInkDisplay.EINK_COLOR_RED
         eInkDisplay.DS_eink200gs:
             detailColor := eInkDisplay.EINK_COLOR_DARK_GREY
+        eInkDisplay.DSAF_213BRYW:
+            detailColor := eInkDisplay.EINK_COLOR_RED
 
     pTitle := @"ROTATE ???"
     case rotation
@@ -698,6 +770,8 @@ PRI text_demo() | dsplyWidthInPix, dsplyHeightInPix, detailColor
             detailColor := eInkDisplay.EINK_COLOR_RED
         eInkDisplay.DSWS_5in65F:
             detailColor := eInkDisplay.EINK_COLOR_ORANGE
+        eInkDisplay.DSAF_213BRYW:
+            detailColor := eInkDisplay.EINK_COLOR_YELLOW
 
     eInkDisplay.borderAtXY(0, 0, detailColor, 1, dsplyWidthInPix, dsplyHeightInPix)
     eInkDisplay.borderAtXY(0+2, 0+4, eInkDisplay.EINK_COLOR_BLACK, 1, dsplyWidthInPix-4, dsplyHeightInPix-8)
@@ -835,6 +909,8 @@ PRI lineWidthDemo() |dsplyWidthInPix, dsplyHeightInPix, detailColor
             detailColor := eInkDisplay.EINK_COLOR_RED
         eInkDisplay.DSWS_5in65F:
             detailColor := eInkDisplay.EINK_COLOR_GREEN
+        eInkDisplay.DSAF_213BRYW:
+            detailColor := eInkDisplay.EINK_COLOR_RED
 
     ' vertical lines
     eInkDisplay.lineWidthAtXY(10, 10, 10, dsplyHeightInPix-10, 1, eInkDisplay.EINK_COLOR_BLACK)
