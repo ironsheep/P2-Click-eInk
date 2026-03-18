@@ -28,7 +28,7 @@ CON { fixed io pins }
 
 CON { click module io pins }
 
-    ' our Click module is on 16-31!
+    ' our Click module is on 32-47!
     EINK_CLICK_PINGROUP = eInkDisplay.PINS_P32_P47
 
     ' we are using a 2.90" eInk display
@@ -160,21 +160,21 @@ PRI demo7Color() | xOffset, yOffset, lineWidth
     xOffset += 66
     eInkDisplay.fillRegionAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_ORANGE, 66, 60)
 
-    ' now white border around each color
+    ' now white border around each color tile
     lineWidth := 5
     xOffset := 69
     eInkDisplay.borderAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_WHITE, lineWidth, 66, 60)
-    xOffset := 69
+    xOffset += 66
     eInkDisplay.borderAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_WHITE, lineWidth, 66, 60)
-    xOffset := 69
+    xOffset += 66
     eInkDisplay.borderAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_WHITE, lineWidth, 66, 60)
-    xOffset := 69
+    xOffset += 66
     eInkDisplay.borderAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_WHITE, lineWidth, 66, 60)
-    xOffset := 69
+    xOffset += 66
     eInkDisplay.borderAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_WHITE, lineWidth, 66, 60)
-    xOffset := 69
+    xOffset += 66
     eInkDisplay.borderAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_WHITE, lineWidth, 66, 60)
-    xOffset := 69
+    xOffset += 66
     eInkDisplay.borderAtXY(xOffset, yOffset, eInkDisplay.EINK_COLOR_WHITE, lineWidth, 66, 60)
 
     eInkDisplay.setTextAtXY(20, 45+149+149, @"600 x 448 Pixels")
@@ -350,7 +350,7 @@ DAT { demonstration data }
     recr_text30      BYTE    "eINK 2.90",34,0
     recr_text31      BYTE    "Rectangular",0
     recr_text32      BYTE    "* E-Paper",0
-    recr_text33      BYTE    "* 228 x 290 pixels",0
+    recr_text33      BYTE    "* 128 x 296 pixels",0
     recr_text34      BYTE    "* Mono Black/White",0
     recr_text35      BYTE    "* SPI Interface",0
 
@@ -435,6 +435,33 @@ PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWid
                 eInkDisplay.setTextAtXY(firstLine + lineSpacing * 1, leftEdge, @recr_text43)
                 eInkDisplay.setTextAtXY(firstLine + lineSpacing * 2, leftEdge, @recr_text44)
                 eInkDisplay.setTextAtXY(firstLine + lineSpacing * 3, leftEdge, @recr_text45)
+
+            eInkDisplay.DSWS_5in65F:
+                debug(" - filling DSWS_5in65F")
+                eInkDisplay.borderAtXY(2, 2, eInkDisplay.EINK_COLOR_BLUE, 2, dsplyWidthInPix-4, dsplyHeightInPix-4)
+                ' ROTATION 0
+                ' place P2 logo image, rotated
+                eInkDisplay.placeImageAtXY(10, dsplyHeightInPix - imgWidthInPix - 5, pImageBits, imgWidth, imgHeight, 270)
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_GREEN, eInkDisplay.FONT_Tahoma_10)
+                eInkDisplay.setTextAtXY(15, dsplyHeightInPix - imgWidthInPix - 8, @"Spin2")
+                eInkDisplay.setTextAtXY(30, dsplyHeightInPix - imgWidthInPix - 8, @"Driver")
+
+                firstLine := 55
+                eInkDisplay.fillRegionAtXY(4, 4, eInkDisplay.EINK_COLOR_BLUE, 50, 140)
+
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_WHITE, eInkDisplay.FONT_Tahoma_14)
+                eInkDisplay.setTextAtXY(9, 130, @"eINK 5.65")
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_WHITE, eInkDisplay.FONT_Tahoma_10)
+                eInkDisplay.setTextAtXY(31, 130, @"7-Color ACeP")
+
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_10)
+                leftEdge := dsplyHeightInPix - 20
+                firstLine := 55
+                lineSpacing := 14+4
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 0, leftEdge, @"* E-Paper")
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 1, leftEdge, @"* 600 x 448 pixels")
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 2, leftEdge, @"* 7-Color Display")
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 3, leftEdge, @"* SPI Interface")
 
             eInkDisplay.DS_eink213:
                 debug(" - filling DS_eink213")

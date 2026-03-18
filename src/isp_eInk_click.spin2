@@ -642,12 +642,14 @@ PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
 ' @local imgIdx - Index into image buffer
 
     if deviceType == DSWS_2in13BV3
-        ' NOT supported on this device
-        '    NOTE: will likely be a 2bpp image file when we get it supported
+        BYTEMOVE(@deviceFrame, pImageBffr, frameSizeInBytes)
+        updateDisplay()
     elseif deviceType == DSWS_5in65F
-        ' NOT supported on this device
+        BYTEMOVE(@deviceFrame, pImageBffr, frameSizeInBytes)
+        updateDisplay()
     elseif deviceType == DSGD_370Tch
-        ' NOT supported on this device
+        BYTEMOVE(@deviceFrame, pImageBffr, frameSizeInBytes)
+        updateDisplay()
     else
         ' set memory area to full display
         if deviceType <> DS_eink200gs
@@ -666,7 +668,7 @@ PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
                 setMemoryPointer(0, 0)
             writeCmd(CMD_WRITE_RAM)
             repeat imgIdx from 0 to frameSizeInBytes - 1
-                writeData(BYTE [@pImageBffr][ imgIdx ])
+                writeData(BYTE [pImageBffr][ imgIdx ])
 
         else
             ' 2.13" means of doing this... we have 6 extra bits at end of ea row!
@@ -684,6 +686,97 @@ PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
 
         ' memory loaded update display hardware
         updateDisplay()
+
+PUB displayImageMono(pImageBffr, eFgColor, eBgColor) | fgColor, bgColor, srcIdx, dstIdx, srcByte, srcSize, bitPair, pix0, pix1, x, y, bitIdx, pixColor, savedRotation
+'' Display a monochrome (1bpp) full-frame image using specified foreground/background colors
+''  Image must match current display physical dimensions in 1bpp format
+''  (8 pixels per byte, MSB = leftmost pixel, 0=foreground, 1=background)
+''  NOTE: this is immediately displayed
+''
+'' @param pImageBffr - Pointer to 1bpp image data
+'' @param eFgColor - Color for foreground pixels (0 bits in source)
+'' @param eBgColor - Color for background pixels (1 bits in source)
+
+    fgColor := validColor(eFgColor)
+    bgColor := validColor(eBgColor)
+
+    if deviceType == DSWS_5in65F
+        ' Optimized direct conversion: 1bpp -> 4bpp nibbles in deviceFrame
+        srcSize := eInkPhysWidth * eInkPhysHeight / 8
+        dstIdx := 0
+        repeat srcIdx from 0 to srcSize - 1
+            srcByte := BYTE[pImageBffr][srcIdx]
+            ' Each source byte (8 pixels) -> 4 dest bytes (2 pixels each)
+            repeat bitPair from 3 to 0
+                pix0 := ((srcByte >> (bitPair * 2 + 1)) & 1) ? bgColor : fgColor
+                pix1 := ((srcByte >> (bitPair * 2)) & 1) ? bgColor : fgColor
+                BYTE[@deviceFrame][dstIdx] := (pix0 & $07) | ((pix1 & $07) << 4)
+                dstIdx++
+    else
+        ' Generic conversion for all other display types via setPixelAtXY
+        savedRotation := dvcRotation
+        dvcRotation := ROTATE_0
+        repeat y from 0 to eInkPhysHeight - 1
+            repeat x from 0 to eInkPhysWidth - 1
+                srcIdx := (y * (eInkPhysWidth / 8)) + (x / 8)
+                bitIdx := 7 - (x +// 8)
+                pixColor := ((BYTE[pImageBffr][srcIdx] >> bitIdx) & 1) ? bgColor : fgColor
+                setPixelAtXY(x, y, pixColor)
+        dvcRotation := savedRotation
+
+    updateDisplay()
+
+PUB displayImage3Color(pImageBffr, eBlkColor, eWhtColor, eRedColor) | blkColor, whtColor, redColor, srcIdx, dstIdx, halfLen, blkByte, redByte, bitPair, blkBit, redBit, pix0, pix1, x, y, bitIdx, pixColor, savedRotation
+'' Display a 3-color (black/white/red) full-frame image using specified color mapping
+''  Image must match current display physical dimensions in WS213BV3 format
+''  (black plane followed by red plane, each 1bpp, MSB = leftmost pixel)
+''  NOTE: this is immediately displayed
+''
+'' @param pImageBffr - Pointer to dual-plane 3-color image data
+'' @param eBlkColor - Color to use for black pixels
+'' @param eWhtColor - Color to use for white pixels
+'' @param eRedColor - Color to use for red pixels
+
+    blkColor := validColor(eBlkColor)
+    whtColor := validColor(eWhtColor)
+    redColor := validColor(eRedColor)
+    halfLen := eInkPhysWidth * eInkPhysHeight / 8
+
+    if deviceType == DSWS_5in65F
+        ' Optimized direct conversion: 3-color -> 4bpp nibbles in deviceFrame
+        dstIdx := 0
+        repeat srcIdx from 0 to halfLen - 1
+            blkByte := BYTE[pImageBffr][srcIdx]
+            redByte := BYTE[pImageBffr][srcIdx + halfLen]
+            repeat bitPair from 3 to 0
+                ' Even pixel (left)
+                blkBit := (blkByte >> (bitPair * 2 + 1)) & 1
+                redBit := (redByte >> (bitPair * 2 + 1)) & 1
+                pix0 := decodeTriColor(blkBit, redBit, blkColor, whtColor, redColor)
+                ' Odd pixel (right)
+                blkBit := (blkByte >> (bitPair * 2)) & 1
+                redBit := (redByte >> (bitPair * 2)) & 1
+                pix1 := decodeTriColor(blkBit, redBit, blkColor, whtColor, redColor)
+                BYTE[@deviceFrame][dstIdx] := (pix0 & $07) | ((pix1 & $07) << 4)
+                dstIdx++
+    elseif deviceType == DSWS_2in13BV3
+        ' Source is already in native 3-color format, copy directly
+        BYTEMOVE(@deviceFrame, pImageBffr, frameSizeInBytes)
+    else
+        ' Generic conversion for all other display types via setPixelAtXY
+        savedRotation := dvcRotation
+        dvcRotation := ROTATE_0
+        repeat y from 0 to eInkPhysHeight - 1
+            repeat x from 0 to eInkPhysWidth - 1
+                srcIdx := (y * (eInkPhysWidth / 8)) + (x / 8)
+                bitIdx := 7 - (x +// 8)
+                blkBit := (BYTE[pImageBffr][srcIdx] >> bitIdx) & 1
+                redBit := (BYTE[pImageBffr][srcIdx + halfLen] >> bitIdx) & 1
+                pixColor := decodeTriColor(blkBit, redBit, blkColor, whtColor, redColor)
+                setPixelAtXY(x, y, pixColor)
+        dvcRotation := savedRotation
+
+    updateDisplay()
 
 PUB displayTextAtXY(x, y, pText) | xCtr, yCtr, strIdx, nChar, byteCtr
 '' Write string at pText to Display at device coordinates, immediately displayed
@@ -855,13 +948,14 @@ PUB fillBuffer(eColor) | xCtr, yCtr, fillColor, byteCtr
 
     if deviceType == DSWS_2in13BV3
         fillBufferWS213BV3(fillColor)
-        writeBufferWS213BV3()
     elseif deviceType == DSWS_5in65F
         fillBufferWS565F(fillColor)
-        writeBufferWS565F()
     elseif deviceType == DSGD_370Tch
         fillBufferGD370Tch(fillColor) ' fill only
     else
+        ' fill deviceFrame so drawing operations have correct background
+        bytefill(@deviceFrame, fillColor, frameSizeInBytes)
+
         waitForDeviceIdle()
         if deviceType <> DS_eink200gs
             ' setMemoryArea(xStart, yStart, xEnd, yEnd)
@@ -1307,9 +1401,9 @@ PUB placeImageAtXY(x, y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
                 rtBits := (BYTE [pImgBits][imageIdx] & $0f)
                 ' place our two px values only if colored
                 if ltBits <> $07
-                    setPixelAtXY(dstX + 0, dstY, ltBits & $03)
+                    setPixelAtXY(dstX + 0, dstY, ltBits & $07)
                 if rtBits <> $07
-                    setPixelAtXY(dstX + 1, dstY, rtBits & $03)
+                    setPixelAtXY(dstX + 1, dstY, rtBits & $07)
 
     elseif rotation == 90
         ' for each column... (2-px values/byte)
@@ -1331,9 +1425,9 @@ PUB placeImageAtXY(x, y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
                 rtBits := (BYTE [pImgBits][imageIdx] & $0f)
                 ' place our two px values only if colored
                 if ltBits <> $07
-                    setPixelAtXY(dstY, dstX+0, ltBits & $03)
+                    setPixelAtXY(dstY, dstX+0, ltBits & $07)
                 if rtBits <> $07
-                    setPixelAtXY(dstY, dstX+1, rtBits & $03)
+                    setPixelAtXY(dstY, dstX+1, rtBits & $07)
 
     elseif rotation == 180
         ' for each column... (2-px values/byte)
@@ -1343,7 +1437,7 @@ PUB placeImageAtXY(x, y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
             minX := min(dstX, minX)
             maxX := max(dstX, maxX)
             ' for each row...
-            repeat srcY from 0 to vImgHeight
+            repeat srcY from 0 to vImgHeight - 1
                 dstY := vY + srcY
                 minY := min(dstY, minY)
                 maxY := max(dstY, maxY)
@@ -1356,9 +1450,9 @@ PUB placeImageAtXY(x, y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
                 rtBits := (BYTE [pImgBits][imageIdx] & $0f)
                 ' place our two px values only if colored
                 if ltBits <> $07
-                    setPixelAtXY(dstX + 1, dstY, ltBits & $03)
+                    setPixelAtXY(dstX + 1, dstY, ltBits & $07)
                 if rtBits <> $07
-                    setPixelAtXY(dstX + 0, dstY, rtBits & $03)
+                    setPixelAtXY(dstX + 0, dstY, rtBits & $07)
 
     elseif rotation == 270
         ' for each column... (2-px values/byte)
@@ -1380,9 +1474,9 @@ PUB placeImageAtXY(x, y, pImgBits, imgWidth, imgHeight, rotation) | srcX, srcY, 
                 rtBits := (BYTE [pImgBits][imageIdx] & $0f)
                 ' place our two px values only if colored
                 if ltBits <> $07
-                    setPixelAtXY(dstY, dstX+1, ltBits & $03)
+                    setPixelAtXY(dstY, dstX+1, ltBits & $07)
                 if rtBits <> $07
-                    setPixelAtXY(dstY, dstX+0, rtBits & $03)
+                    setPixelAtXY(dstY, dstX+0, rtBits & $07)
 
     else
         debug("* ERROR unsupported rotation: ", udec_(rotation))
@@ -1817,6 +1911,23 @@ PRI min(a,b) : minValue
     minValue := (a < b) ? a : b
 
 
+PRI decodeTriColor(blkBit, redBit, blkColor, whtColor, redColor) : pixColor
+'' Decode WS213BV3 black/red bit pair into a mapped color value
+''
+'' @param blkBit - black plane bit value (0 or 1)
+'' @param redBit - red plane bit value (0 or 1)
+'' @param blkColor - target color for black pixels
+'' @param whtColor - target color for white pixels
+'' @param redColor - target color for red pixels
+'' @returns pixColor - the mapped color value
+
+    if blkBit == 0 and redBit == 1
+        pixColor := blkColor
+    elseif blkBit == 1 and redBit == 0
+        pixColor := redColor
+    else
+        pixColor := whtColor
+
 CON ' --- PRIVATE (DS)WS_2in13BV3 Display Methods ---
 
 PRI initDS213BV3()
@@ -2151,6 +2262,7 @@ PRI writeBufferWS565F() | byteIdx, dualPixelColor
 ' @local dualPixelColor - combined color value for two pixels
 
 '   IS PRECLEAN REALLY NEEDED? not used in demo code!
+{   ' DISABLED: skip clean phase to test if data phase works alone
     ' cmd to ...?
     writeCmd(CMD_RESOLUTION_SETTING)
     writeData((displayWidthInPix >> 8) & $ff)
@@ -2166,7 +2278,7 @@ PRI writeBufferWS565F() | byteIdx, dualPixelColor
         writeData(dualPixelColor)
 
     updateDisplayWS565F()
-
+}
     ' cmd to ...?
     writeCmd(CMD_RESOLUTION_SETTING)
     writeData((displayWidthInPix >> 8) & $ff)
@@ -2189,16 +2301,17 @@ PRI updateDisplayWS565F()
 '' Request display update
 ''
 
-    ' issue cmd, wait for busy/=HIGH (not busy)
-    '   busy for ~95 mSec
+    ' power on, wait for not busy
     wrCmdWtDesiredBusyWS565F(CMD_POWER_ON_CMD, 1)
 
-    ' issue cmd, wait for busy/=HIGH (not busy)
-    '   busy for ~45 Sec
-    wrCmdWtDesiredBusyWS565F(CMD_DISPLAY_REFRESH, 1)
+    ' start display refresh then wait for BUSY to assert before polling for completion
+    '   (display takes microseconds to assert BUSY after REFRESH cmd - must delay to avoid race)
+    '   refresh takes ~35 seconds for 7-color display
+    writeCmd(CMD_DISPLAY_REFRESH)
+    waitms(200)
+    wrCmdWtDesiredBusyWS565F(CMD_NO_CMD, 1)
 
-    ' issue cmd, wait for busy/=LOW (is busy)
-    '   busy for ~60 mSec
+    ' power off, wait for busy to assert
     wrCmdWtDesiredBusyWS565F(CMD_POWER_OFF_CMD, 0)
     waitms(200)
 
