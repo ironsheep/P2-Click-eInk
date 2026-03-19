@@ -65,19 +65,18 @@ PUB main() | ok
     'debug("* ERASED, ready for drawing, hold")
     'repeat ' hold here - when prepping the display for storage (no image on it)
 
-'{  Small tests while bringing up a new display
+{   Small tests while bringing up a new display
     'borderDemo()
     'lineWidthDemo()
     'text_demo()
     'demo7Color()
-    'demo4Color()
+    'demo4ColorBlocks()
     'demoCalibrationRuler()
-    demo4ColorBlocks()
     debug("* HOLD Here... ")
     repeat
-'}
+}
 
-'{
+{
 ' enable this code so we can get pictures of the display orientations
     ' make our orientation display set
     drawOrientationDisplay(eInkDisplay.ROTATE_0)
@@ -98,18 +97,18 @@ PUB main() | ok
 
     debug("* HOLD Here... ")
     repeat
-'}
+}
 
-    text_demo()             ' Text
-    waitms(2_000)
+    'text_demo()             ' Text
+    'waitms(2_000)
 
-    region_image_demo()     ' Coffee Cups
-    waitms(2_000)
+    'region_image_demo()     ' Coffee Cups
+    'waitms(2_000)
 
     ' full screen images
-    if eInkDisplay.displayType() == eInkDisplay.DS_eink213
-        repeat 1
-            fullScreen_image_demo()
+    'if eInkDisplay.displayType() == eInkDisplay.DS_eink213
+    '    repeat 1
+    '        fullScreen_image_demo()
 
     ' end with our device P2 Logo image
     p2_demoRegionImage()
@@ -117,6 +116,29 @@ PUB main() | ok
     eInkDisplay.waitForDeviceIdle()
     debug("* stopped")
     eInkDisplay.stop()
+
+PRI placeImageColor270(x, y, pImgBits, imgWidth, imgHeight, eColor) | srcX, srcY, dstX, dstY, imageIdx, ltBits, rtBits, srcXinverted
+' Place image at x,y rotated 270 degrees using specified color for all visible pixels
+'
+' @param x - horizontal position
+' @param y - vertical position
+' @param pImgBits - pointer to image data
+' @param imgWidth - image width in bytes
+' @param imgHeight - image height in pixels
+' @param eColor - color for visible (non-transparent) pixels
+
+    repeat srcX from 0 to imgWidth - 1
+        dstX := y + (srcX << 1)
+        repeat srcY from 0 to imgHeight - 1
+            dstY := x + srcY
+            srcXinverted := (imgWidth - 1) - srcX
+            imageIdx := (srcY * imgWidth) + srcXinverted
+            ltBits := (BYTE[pImgBits][imageIdx] & $f0) >> 4
+            rtBits := (BYTE[pImgBits][imageIdx] & $0f)
+            if ltBits <> $07
+                eInkDisplay.setPixelAtXY(dstY, dstX+1, eColor)
+            if rtBits <> $07
+                eInkDisplay.setPixelAtXY(dstY, dstX+0, eColor)
 
 pri min(a,b) : result
 ' Returns the minimum of two values
@@ -433,6 +455,13 @@ DAT { demonstration data }
     recr_text44      BYTE    "* Red/Black/White",0
     recr_text45      BYTE    "* SPI Interface",0
 
+    recr_text50      BYTE    "eInk 2.13",34,0
+    recr_text51      BYTE    "Quad-Color",0
+    recr_text52      BYTE    "* E-Paper",0
+    recr_text53      BYTE    "* 122 x 250 pixels",0
+    recr_text54      BYTE    "* B/R/Y/W Colors",0
+    recr_text55      BYTE    "* SPI Interface",0
+
 PRI eraseDisplay()
 ' Erases the display by filling it with white color
 ''
@@ -443,7 +472,7 @@ PRI eraseDisplay()
     debug(" ")
     waitms(5000)
 
-PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWidth, imgHeight, imgWidthInPix, leftEdge, firstLine, lineSpacing, vertOffset
+PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWidth, imgHeight, imgWidthInPix, leftEdge, firstLine, lineSpacing, vertOffset, startX, startY, topGap
 ' Demonstrates region image placement with P2 logo and device-specific layouts
 '
 '
@@ -507,6 +536,57 @@ PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWid
                 eInkDisplay.setTextAtXY(firstLine + lineSpacing * 1, leftEdge, @recr_text43)
                 eInkDisplay.setTextAtXY(firstLine + lineSpacing * 2, leftEdge, @recr_text44)
                 eInkDisplay.setTextAtXY(firstLine + lineSpacing * 3, leftEdge, @recr_text45)
+
+            eInkDisplay.DSAF_213BRYW:
+                debug(" - filling DSAF_213BRYW")
+                eInkDisplay.borderAtXY(2, 2, eInkDisplay.EINK_COLOR_RED, 1, dsplyWidthInPix-4, dsplyHeightInPix-4)
+
+                ' --- Actual bounding boxes ---
+                ' P2 logo after rot270: X=40px (imgHeight=40), Y=100px (imgWidth*2=100)
+                ' Coffee cup after rot270: X=49px (imgHeight=49), Y=32px (imgWidth*2=32)
+                ' Tahoma_8: 13px tall    Tahoma_10: 16px tall    Tahoma_14: 23px tall
+
+                ' --- P2 logo + "Spin2"/"Driver" (overlay on logo) ---
+                startX := 11
+                leftEdge := dsplyHeightInPix - imgWidthInPix - 11
+                eInkDisplay.placeImageAtXY(startX, leftEdge, pImageBits, imgWidth, imgHeight, 270)
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_RED, eInkDisplay.FONT_Tahoma_10)
+                eInkDisplay.setTextAtXY(startX + 5, leftEdge - 3, @"Spin2")
+                eInkDisplay.setTextAtXY(startX + 20, leftEdge - 3, @"Driver")
+
+                ' --- 4 spec text lines - aligned with P2, 1px indent ---
+                lineSpacing := 8+5
+                firstLine := 54
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_8)
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 0, leftEdge + imgWidthInPix, @recr_text52)
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 1, leftEdge + imgWidthInPix, @recr_text53)
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 2, leftEdge + imgWidthInPix, @recr_text54)
+                eInkDisplay.setTextAtXY(firstLine + lineSpacing * 3, leftEdge + imgWidthInPix, @recr_text55)
+
+                ' --- Yellow panel ---
+                ' Top: halfway between P2 bottom and spec text top
+                ' Extends to bottom inner border
+                startY := startX + imgHeight                       ' P2 bottom = 11+40 = 51
+                vertOffset := startY + (firstLine - startY) / 2   ' panel top X
+                topGap := dsplyWidthInPix - 3 - vertOffset         ' panel height to bottom border
+                startX := leftEdge - 15                            ' panel Y extent (past text area)
+                eInkDisplay.fillRegionAtXY(vertOffset, 4, eInkDisplay.EINK_COLOR_YELLOW, topGap, startX - 4)
+
+                ' Title text - centered in yellow panel
+                ' Title (23px) + gap(4) + subtitle (16px) = 43px centered in topGap
+                startY := vertOffset + (topGap - 43) / 2
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_14)
+                eInkDisplay.setTextAtXY(startY, (startX + 4) / 2 + 25, @recr_text50)
+                eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_10)
+                eInkDisplay.setTextAtXY(startY + 23 + 4, (startX + 4) / 2 + 25, @recr_text51)
+
+                ' --- Red coffee cup - centered in panel Y, 1px gap above panel ---
+                ' Cup after rot270: X extent = imgHeight(49), Y extent = imgWidth*2(32)
+                pImageBits, imgWidth, imgHeight := coffeeImage.imageInfo(coffeeImage.IMAGE_Coffee)
+                debug("* imageInfo() ", uhex_long(pImageBits), ", w,h=(", udec_(imgWidth), udec_(imgHeight), ")")
+                if pImageBits <> coffeeImage.IMAGE_UNKNOWN
+                    startY := 4 + (startX - 4 - imgHeight) / 2    ' center cup in panel Y range
+                    placeImageColor270(vertOffset - imgHeight - 1, startY, pImageBits, imgWidth, imgHeight, eInkDisplay.EINK_COLOR_RED)
 
             eInkDisplay.DSWS_5in65F:
                 debug(" - filling DSWS_5in65F")

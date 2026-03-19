@@ -34,17 +34,23 @@ These documents serve as additional reference for the eINK display as shipped fr
 </p>
 
 
-
 **2.13" eINK hardware** - 104x212 pixels- 3 color - (avail as RPi HAT Bundle from [Amazon](https://www.amazon.com/waveshare-2-13inch-HAT-Resolution-Raspberry/dp/B07Q22WDB9) also from [Waveshare.com](https://www.waveshare.com/product/displays/e-paper/epaper-3/2.13inch-e-paper-hat-b.htm))
+
 <p align="center">
   <img src="../Images/eink_WS_2in13bV3.png" width="333">
 </p>
+**NOTE**1 *: this display has red in addition to black and white.*
 
-**NOTE***: this display has red in addition to black and white.*
+**NOTE2** *: I detached ribbon from HAT and plugged it into the click module.*
 
-**NOTE2***: I detached ribbon from HAT and plugged it into the click module.*
+**2.13" eINK hardware** - 122x250 pixels - 4 color (Black/Red/Yellow/White) - JD79661AA controller - (avail from [Adafruit.com](https://www.adafruit.com/product/6373))
 
-## Hardware Documents
+<p align="center">
+  <img src="../Images/eink_WS_2in13bV3.png" width="333">
+</p>
+**NOTE** *: this display has red and yellow in addition to black and white. Connects via the P2 Eval Click Adapter like all other supported displays.*
+
+# Hardware Documents
 
 The following documents are found in this repo (this driver is inteded to support all of these displays):
 
@@ -55,7 +61,8 @@ The following documents are found in this repo (this driver is inteded to suppor
 | [ssd1606.pdf](ssd1606.pdf) | controller chip | **Solomon Systech SSD1606** 4GS Active Matrix EPD 128 x 180 Display Driver with Controller - Oct 2011 | 2.00"
 | [ssd1608.pdf](ssd1608.pdf) | controller chip | **Solomon Systech SSD1608** Active Matrix EPD 240 x 320 Display Driver with Controller - Jan 2015 | 1.54"
 | [ssd1675.pdf](ssd1675.pdf) | controller chip | **Solomon Systech SSD1675** 160 Source x 296 Gate Active Matrix EPD Display Driver with Controller - Aug 2016 | 2.13" and 2.9"
-| [2in13bV3.pdf](2.13inch_e-Paper_(B)_V3_Specification.pdf) | eINK Display | **WaveShare** Datasheet - 2.13" E-PAPER Display V3 (B) - Mar 2020 | 2.13"
+| [2in13bV3.pdf](2.13inch_e-Paper_(B)_V3_Specification.pdf) | eINK Display | **WaveShare** Datasheet - 2.13" E-PAPER Display V3 (B) - Mar 2020 | 2.13" 3-color
+| [JD79661AA_V1.0.4_20230720_spec.pdf](JD79661AA_V1.0.4_20230720_spec.pdf) | controller chip | **JADARD JD79661AA** All-in-one driver with TCON for Color application - Jul 2023 | 2.13" 4-color
 
 
 
