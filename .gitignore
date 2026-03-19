@@ -151,3 +151,9 @@ src/isp_eink_gd.spin2
 src/demo_eInk_gd.spin2
 *.bin
 *.dat
+.claude/settings.local.json
+*.obj
+*.map
+src/pnut-term-settings.json
+src/tests/recordings/catalog.json
+*.lst

@@ -46,9 +46,9 @@ These documents serve as additional reference for the eINK display as shipped fr
 **2.13" eINK hardware** - 122x250 pixels - 4 color (Black/Red/Yellow/White) - JD79661AA controller - (avail from [Adafruit.com](https://www.adafruit.com/product/6373))
 
 <p align="center">
-  <img src="../Images/eink_WS_2in13bV3.png" width="333">
+  <img src="../Images/eink_ada_213.jpg" width="333">
 </p>
-**NOTE** *: this display has red and yellow in addition to black and white. Connects via the P2 Eval Click Adapter like all other supported displays.*
+**NOTE** *: this display has red and yellow in addition to black and white.*
 
 # Hardware Documents
 
