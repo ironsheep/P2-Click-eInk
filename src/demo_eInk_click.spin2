@@ -576,9 +576,9 @@ PRI p2_demoRegionImage() | dsplyWidthInPix, dsplyHeightInPix, pImageBits, imgWid
                 ' Title (23px) + gap(4) + subtitle (16px) = 43px centered in topGap
                 startY := vertOffset + (topGap - 43) / 2
                 eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_14)
-                eInkDisplay.setTextAtXY(startY, (startX + 4) / 2 + 25, @recr_text50)
+                eInkDisplay.setTextAtXY(startY, (startX + 4) / 2 + 32, @recr_text50)
                 eInkDisplay.selectFont(eInkDisplay.FO_VERTICAL, eInkDisplay.EINK_COLOR_BLACK, eInkDisplay.FONT_Tahoma_10)
-                eInkDisplay.setTextAtXY(startY + 23 + 4, (startX + 4) / 2 + 25, @recr_text51)
+                eInkDisplay.setTextAtXY(startY + 23 + 4, (startX + 4) / 2 + 28, @recr_text51)
 
                 ' --- Red coffee cup - centered in panel Y, 1px gap above panel ---
                 ' Cup after rot270: X extent = imgHeight(49), Y extent = imgWidth*2(32)

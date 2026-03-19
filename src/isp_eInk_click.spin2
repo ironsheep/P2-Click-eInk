@@ -2918,9 +2918,9 @@ PRI char_wr(chrCode, textColor) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, 
                 mask &= $ff
 
         if fontOrientation == FO_HORIZONTAL
-            textPosnX := frmX + 1    ' move to next char position HORIZONTAL
+            textPosnX := frmX + 2    ' move to next char position HORIZONTAL (1px gap)
         else
-            textPosnY := frmY        ' move to next char position VERTICAL
+            textPosnY := frmY + 1   ' move to next char position VERTICAL_COLUMN (1px gap)
 
     else
         ' place vertical letter
@@ -2942,7 +2942,7 @@ PRI char_wr(chrCode, textColor) | descriptorOffset, chrWidth, fntIdxX, fntIdxY, 
                 mask &= $ff
 
 
-        textPosnY := frmX - 1    ' move to next char position vertically
+        textPosnY := frmX - 2    ' move to next char position vertically (1px gap)
 
 CON ' --- PRIVATE Click SPI I/O Methods ---
 
