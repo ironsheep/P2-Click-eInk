@@ -27,7 +27,8 @@ CON { Public Interface Constants }
     '   *GD_ = fm Good Display (Dalian Good Display, LTD)
     '   *Tch = eINK w/Touch
     '   *AF_ = fm Adafruit
-    #$40, DS_eink154, DS_eink200gs, DS_eink213, DS_eink290, DSWS_2in13BV3, DSWS_5in65F, DSGD_370Tch, DSAF_213BRYW
+    '   *WS_ = fm WaveShare (alternate prefix)
+    #$40, DS_eink154, DS_eink200gs, DS_eink213, DS_eink290, DSWS_2in13BV3, DSWS_5in65F, DSGD_370Tch, DSAF_213BRYW, DSWS_370BW
     ' return value when user makes bad choice
     INVALID_DISPLAY_TYPE = -1
 
@@ -184,6 +185,15 @@ CON { PRIVATE eInk Constants }
     EINKAF213_DISPLAY_WIDTH = 176           ' JD79661 internal SRAM width (176 source channels)
     EINKAF213_DISPLAY_HEIGHT = 250
     EINKAF213_DISPLAY_RESOLUTION = 11_000    ' = 176 * 250 / 4 (2 bits per pixel)
+
+' ---------------------------------------
+' 3.7" WaveShare rectangular eInk display 480x280 - SSD1677 controller
+' resolution 280-gate, 480-source
+'  B/W display with 4 grayscale levels via LUT
+
+    EINKWS370_DISPLAY_WIDTH = 480
+    EINKWS370_DISPLAY_HEIGHT = 280
+    EINKWS370_DISPLAY_RESOLUTION = 16_800   ' = 480 * 280 / 8 (1 bit per pixel)
 
 ' =======================================
 
@@ -400,6 +410,14 @@ PUB start(eDisplayType, eClickBasePin) : ok | legalBase
             displayWidthInPix   := 122                             ' 122 visible pixels (176 SRAM, offset 7)
             displayHeightInPix  := EINKAF213_DISPLAY_HEIGHT
 
+        DSWS_370BW:
+            eInkPhysWidth       := EINKWS370_DISPLAY_WIDTH
+            eInkPhysHeight      := EINKWS370_DISPLAY_HEIGHT
+            frameSizeInBytes    := EINKWS370_DISPLAY_RESOLUTION
+
+            displayWidthInPix   := EINKWS370_DISPLAY_WIDTH
+            displayHeightInPix  := EINKWS370_DISPLAY_HEIGHT
+
         OTHER:
             deviceType := INVALID_DISPLAY_TYPE
 
@@ -485,6 +503,14 @@ PUB resetDevice()
         pinhigh(eiPinRST)
         waitms(10)
         waitDeviceIdleDS213BV3()            ' wait for controller ready after reset
+    elseif deviceType == DSWS_370BW
+        ' SSD1677 reset: 20ms/2ms/20ms per WaveShare reference
+        pinhigh(eiPinRST)
+        waitms(20)
+        pinlow(eiPinRST)
+        waitms(2)
+        pinhigh(eiPinRST)
+        waitms(20)
     else
         pinhigh(eiPinRST)   ' toggle reset
         waitms(1)
@@ -505,6 +531,9 @@ PUB enterSleepMode()
         sleepGD370Tch()
     elseif deviceType == DSAF_213BRYW
         sleepAF213BRYW()
+    elseif deviceType == DSWS_370BW
+        writeCmd(CMD_DEEP_SLEEP_MODE)      ' $10
+        writeData($03)                      ' deep sleep mode 2
     else
         writeCmd(CMD_DEEP_SLEEP_MODE)
         waitForDeviceIdle()
@@ -692,6 +721,9 @@ PUB displayImage(pImageBffr) | xCtr, yCtr, imgIdx
     elseif deviceType == DSAF_213BRYW
         BYTEMOVE(@deviceFrame, pImageBffr, frameSizeInBytes)
         updateDisplay()
+    elseif deviceType == DSWS_370BW
+        BYTEMOVE(@deviceFrame, pImageBffr, frameSizeInBytes)
+        updateDisplay()
     else
         ' set memory area to full display
         if deviceType <> DS_eink200gs
@@ -874,6 +906,8 @@ PUB updateDisplay() | byteCtr, yCtr, xCtr, cmdValue, startMs, elapsedMs, elapsed
         writeBufferGD370Tch()
     elseif deviceType == DSAF_213BRYW
         writeBufferAF213BRYW()
+    elseif deviceType == DSWS_370BW
+        writeBufferWS370BW()
     else
         waitForDeviceIdle()
         if deviceType <> DS_eink200gs
@@ -1732,6 +1766,8 @@ PRI configDevice()
             initGD370Tch()
         DSAF_213BRYW:
             initAF213BRYW()
+        DSWS_370BW:
+            initWS370BW()
         OTHER:
             debug("sc() ERROR unknown display size")
 
@@ -1835,7 +1871,7 @@ PRI validColor(eColor) : valColor
 
     ' override color if it is not one of the supported by the device!
     case deviceType
-        DS_eink154, DS_eink213, DS_eink290, DSGD_370Tch:
+        DS_eink154, DS_eink213, DS_eink290, DSGD_370Tch, DSWS_370BW:
             case eColor
                 EINK_COLOR_WHITE:
                     valColor := EINKDS_COLOR_WHITE
@@ -2400,6 +2436,156 @@ PRI updateDisplayWS565F()
     ' power off, wait for busy to assert
     wrCmdWtDesiredBusyWS565F(CMD_POWER_OFF_CMD, 0)
     waitms(200)
+
+CON ' --- PRIVATE DSWS_370BW (WaveShare 3.7" B/W) Display Methods ---
+
+PRI initWS370BW()
+'' Initialize the WaveShare 3.7" B/W display (SSD1677)
+'' Init sequence from WaveShare reference driver
+
+    ' Software reset
+    writeCmd(CMD_SW_RESET)                  ' $12
+    waitms(300)
+
+    ' Auto write RAM commands
+    writeCmd($46)
+    writeData($F7)
+    waitForDeviceIdle()
+    writeCmd($47)
+    writeData($F7)
+    waitForDeviceIdle()
+
+    ' Gate number setting: 280 gates (0x117 = 279)
+    writeCmd(CMD_DRIVER_OUTPUT_CTRL)        ' $01
+    writeData($17)                          ' (280-1) & $FF = $17
+    writeData($01)                          ' (280-1) >> 8 = $01
+    writeData($00)
+
+    ' Gate voltage
+    writeCmd($03)
+    writeData($00)
+
+    ' Source voltage
+    writeCmd($04)
+    writeData($41)
+    writeData($A8)
+    writeData($32)
+
+    ' Data entry sequence: X incr, Y incr
+    writeCmd(CMD_DATA_ENTRY_MODE_SETTING)   ' $11
+    writeData($03)
+
+    ' Border waveform control
+    writeCmd(CMD_BORDER_WAVEFORM_CTRL)      ' $3C
+    writeData($00)
+
+    ' Booster soft start
+    writeCmd(CMD_BOOSTER_SOFT_START_CTRL)   ' $0C
+    writeData($AE)
+    writeData($C7)
+    writeData($C3)
+    writeData($C0)
+    writeData($C0)
+
+    ' Internal temperature sensor enable
+    writeCmd(CMD_TEMPERATURE_SENSOR_CTRL)   ' $18  (note: $1A in some SSD16xx variants)
+    writeData($80)
+
+    ' VCOM voltage
+    writeCmd(CMD_WRITE_VCOM_REGISTER)       ' $2C
+    writeData($44)
+
+    ' Display option
+    writeCmd($37)
+    writeData($00)
+    writeData($FF)
+    writeData($FF)
+    writeData($FF)
+    writeData($FF)
+    writeData($4F)
+    writeData($FF)
+    writeData($FF)
+    writeData($FF)
+    writeData($FF)
+
+    ' RAM X address range
+    writeCmd(CMD_SET_RAM_X_ADDR_SRTEND_POS) ' $44
+    writeData($00)
+    writeData($00)
+    writeData(((eInkPhysWidth - 1) >> 3) & $FF)       ' (480/8 - 1) = 59 = $3B... wait
+    writeData(((eInkPhysWidth - 1) >> 3) >> 8)
+
+    ' RAM Y address range
+    writeCmd(CMD_SET_RAM_Y_ADDR_SRTEND_POS) ' $45
+    writeData($00)
+    writeData($00)
+    writeData((eInkPhysHeight - 1) & $FF)              ' 279 = $17
+    writeData(((eInkPhysHeight - 1) >> 8) & $FF)       ' $01
+
+    ' Display update control
+    writeCmd(CMD_DISPLAY_UPDATE_CTRL_2)     ' $22
+    writeData($CF)
+
+PRI writeBufferWS370BW() | byteIdx, nIdx
+'' Write frame buffer to the WaveShare 3.7" display and refresh
+''
+' Local Variables:
+' @local byteIdx - byte index counter
+' @local nIdx - LUT index counter
+
+    waitForDeviceIdle()
+
+    ' Set RAM address to (0,0)
+    writeCmd($4E)                           ' RAM X counter
+    writeData($00)
+    writeData($00)
+    writeCmd($4F)                           ' RAM Y counter
+    writeData($00)
+    writeData($00)
+
+    ' Write frame buffer to RAM
+    writeCmd(CMD_WRITE_RAM)                 ' $24
+    repeat byteIdx from 0 to frameSizeInBytes - 1
+        writeData(BYTE [@deviceFrame][byteIdx])
+
+    ' Load LUT for grayscale clear mode
+    writeCmd(CMD_WRITE_LUT_REGISTER)        ' $32
+    repeat nIdx from 0 to 104
+        writeData(BYTE [@EINKWS370_LUT_GC][nIdx])
+
+    ' Trigger display update
+    writeCmd(CMD_MASTER_ACTIVATION)         ' $20
+    waitForDeviceIdle()
+
+DAT { WaveShare 3.7" LUT Data }
+
+    ' Grayscale Clear LUT - 105 bytes (from WaveShare reference)
+    EINKWS370_LUT_GC
+                    BYTE    $2A, $05, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $05, $2A, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $2A, $15, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $05, $0A, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $00, $02, $03, $0A, $00, $02, $06, $0A, $05, $00
+                    BYTE    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $22, $22, $22, $22, $22
+
+    ' A2 mode LUT for partial/fast refresh - 105 bytes
+    EINKWS370_LUT_A2
+                    BYTE    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $0A, $00, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $05, $00, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $00, $00, $03, $05, $00, $00, $00, $00, $00, $00
+                    BYTE    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $00, $00, $00, $00, $00, $00, $00, $00, $00, $00
+                    BYTE    $22, $22, $22, $22, $22
 
 CON ' --- PRIVATE DSAF_213BRYW (Adafruit Quad-Color) Display Methods ---
 

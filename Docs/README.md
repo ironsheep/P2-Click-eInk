@@ -50,6 +50,10 @@ These documents serve as additional reference for the eINK display as shipped fr
 </p>
 **NOTE** *: this display has red and yellow in addition to black and white.*
 
+**3.7" eINK hardware** - 480x280 pixels - 4 grayscale levels - SSD1677 controller - (avail from [WaveShare.com](https://www.waveshare.com/3.7inch-e-paper.htm))
+
+**NOTE** *: this display is black and white with 4 grayscale levels. Fast 3 second full refresh, 0.3 second partial refresh.*
+
 # Hardware Documents
 
 The following documents are found in this repo (this driver is inteded to support all of these displays):

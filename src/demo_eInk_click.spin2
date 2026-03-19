@@ -31,8 +31,8 @@ CON { click module io pins }
     ' our Click module is on 32-47!
     EINK_CLICK_PINGROUP = eInkDisplay.PINS_P32_P47
 
-    ' we are using a 2.13" quad-color (B/R/Y/W) eInk display
-    EINK_DISPLAY_TYPE = eInkDisplay.DSAF_213BRYW
+    ' we are using a 3.7" B/W eInk display (WaveShare, SSD1677)
+    EINK_DISPLAY_TYPE = eInkDisplay.DSWS_370BW
 
 OBJ { the object being demo'd }
 
