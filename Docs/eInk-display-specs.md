@@ -147,6 +147,24 @@ Detailed technical specifications for each eINK display supported by this driver
 
 ---
 
+## 3.70" WaveShare B/W Display (DSWS_370BW)
+
+| Specification | Value |
+| --- | --- |
+| **Physical Size** | 3.70" diagonal |
+| **Resolution** | 480 × 280 pixels (480 wide × 280 tall physical) |
+| **Colors** | 2 — Black, White |
+| **Bits Per Pixel** | 1 bpp (8 pixels/byte) |
+| **Controller** | SSD1677 (Solomon Systech) |
+| **Frame Buffer** | 16,800 bytes |
+| **SRAM Organization** | 280-source (35 bytes/row) × 480-gate |
+| **Interface** | SPI via Mikroe eINK Click adapter |
+| **Source** | WaveShare.com |
+
+**Notes:** The SSD1677 uses 16-bit addressing for both X and Y coordinates (unlike the 8-bit addressing of the SSD1675). Supports two LUT modes: GC (Grayscale Clear) for full-quality refresh and A2 for fast partial-quality updates. The LUT is reloaded before each display update, allowing dynamic mode switching. Reset timing requires longer HIGH-state holds (200 ms) with a shorter LOW pulse (5 ms).
+
+---
+
 ## Display Comparison Summary
 
 | Display | Size | Resolution | Colors | BPP | Buffer | Controller |
@@ -159,11 +177,13 @@ Detailed technical specifications for each eINK display supported by this driver
 | DSAF_213BRYW | 2.13" | 122×250 | 4 (B/R/Y/W) | 2 | 11,000 B | JD79661AA |
 | DSGD_370Tch | 3.70" | 240×416 | 2 (B/W) | 1 | 12,480 B | UC8253 |
 | DSWS_5in65F | 5.65" | 600×448 | 7 (color) | 4 | 134,400 B | UC8159 |
+| DSWS_370BW | 3.70" | 480×280 | 2 (B/W) | 1 | 16,800 B | SSD1677 |
 
 ---
 
 Additional pages:
 
+- [Technical Protocol Reference](./eInk-protocol-reference.md) — SPI commands, init sequences, LUTs, memory maps
 - [Display Images and Hardware Docs](./README.md)
 - [eInk Touch Wiring Guide](./eInk-touch.md)
 - [Display Orientation Guide](./Orientation.md)
