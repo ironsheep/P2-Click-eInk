@@ -157,3 +157,6 @@ src/demo_eInk_gd.spin2
 src/pnut-term-settings.json
 src/tests/recordings/catalog.json
 *.lst
+*.zip
+/REF-Arduino
+
